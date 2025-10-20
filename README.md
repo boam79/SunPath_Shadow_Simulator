@@ -128,43 +128,6 @@ cd frontend
 npm test
 ```
 
-## ☁️ 배포 (Vercel)
-
-프론트엔드는 Vercel로, 백엔드는 FastAPI를 별도 호스팅(Render/Railway/Fly.io 등)으로 배포하는 구성을 권장합니다.
-
-### 1) 백엔드 배포 (Render 예시)
-- 리포지토리를 연결하고 Docker 없이 Python 환경으로 배포
-- Build Command: `pip install -r backend/requirements.txt`
-- Start Command: `uvicorn app.main:app --host 0.0.0.0 --port 8000`
-- Root Directory: `backend`
-- 환경변수
-  - `REDIS_URL` (선택) / `REDIS_HOST`, `REDIS_PORT`
-  - `REDIS_CACHE_TTL`
-
-배포 URL 예: `https://your-fastapi.onrender.com`
-
-### 2) 프론트엔드 배포 (Vercel)
-- Vercel에 GitHub 리포지토리 연결
-- Framework Preset: Next.js
-- Root Directory: `frontend`
-- Build Command: 기본값(Next.js)
-- Output Directory: `.next`
-- 환경변수(Production/Preview 공통)
-  - `NEXT_PUBLIC_API_BASE` = 백엔드 배포 주소 (예: `https://your-fastapi.onrender.com`)
-
-배포 후 `NEXT_PUBLIC_API_BASE`가 맞지 않으면 데이터 로딩에 실패합니다. 변경 후 재배포하세요.
-
-### 3) Docker 기반 단일 호스트 배포 (선택)
-- 서버에 Docker 설치 후 프로젝트 루트에서
-```bash
-docker-compose up -d --build
-```
-- Nginx로 `frontend`(3000) ↔ `backend`(8000) 리버스 프록시 구성
-
-### 4) PR/브랜치 자동 배포
-- GitHub 연결 시 Vercel이 Pull Request마다 Preview 생성
-- 보호 브랜치 설정 후 `main`/`master`에 머지되면 Production 자동 배포
-
 ## 📊 API 엔드포인트
 
 ### ✅ 구현 완료 (16개 엔드포인트)
@@ -217,6 +180,7 @@ docker-compose up -d --build
 - [ ] 배포
 
 ### Phase 2: 고급 기능
+- [ ] 네이버 지도(Naver Maps JS v3) 통합 및 기본 지도 엔진 전환 예정
 - [ ] Perez Sky Model
 - [ ] 사용자 프리셋
 - [ ] 배치 계산 API
