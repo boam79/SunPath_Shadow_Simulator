@@ -78,7 +78,6 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
         onClick={handleMapClick}
         mapStyle="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
         style={{ width: '100%', height: '100%' }}
-        attributionControl={true}
       >
         {/* Navigation Controls */}
         <NavigationControl position="top-right" />
