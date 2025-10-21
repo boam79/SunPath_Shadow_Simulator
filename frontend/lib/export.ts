@@ -41,8 +41,10 @@ export function exportToCSV(data: SolarCalculationResponse, filename?: string): 
       point.irradiance?.dni.toFixed(2) || '',
       point.irradiance?.dhi.toFixed(2) || '',
       point.irradiance?.par?.toFixed(2) || '',
-      point.shadow?.length !== Infinity ? point.shadow?.length.toFixed(2) : 'Infinite' || '',
-      point.shadow?.direction?.toFixed(2) || ''
+      typeof point.shadow?.length === 'number' 
+        ? (point.shadow.length === Infinity ? 'Infinite' : point.shadow.length.toFixed(2))
+        : '',
+      typeof point.shadow?.direction === 'number' ? point.shadow.direction.toFixed(2) : ''
     ];
   });
 
