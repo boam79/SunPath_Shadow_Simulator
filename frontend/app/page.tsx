@@ -134,7 +134,25 @@ export default function Home() {
         />
       </div>
 
-
+      {/* Footer */}
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center space-x-4 mb-2 md:mb-0">
+            <span>© 2025 SunPath & Shadow Simulator</span>
+            <span className="hidden md:inline">•</span>
+            <span>제작자: <strong className="text-gray-800 dark:text-gray-200">boam79</strong></span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span>문의사항:</span>
+            <a 
+              href="mailto:ckadltmfxhrxhrxhr@gmail.com"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+            >
+              ckadltmfxhrxhrxhr@gmail.com
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
