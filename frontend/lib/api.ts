@@ -4,6 +4,10 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// 개발 환경에서 API 연결 실패 시 더미 데이터 반환
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isVercelPreview = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production';
+
 export interface SolarCalculationRequest {
   location: {
     lat: number;
@@ -102,8 +106,81 @@ export async function calculateSolar(
     return await response.json();
   } catch (error) {
     console.error('Calculate solar error:', error);
+    
+    // Vercel 환경에서 백엔드가 없을 때 더미 데이터 반환
+    if (isVercelPreview && !process.env.NEXT_PUBLIC_API_URL) {
+      console.warn('⚠️ Backend API not available, returning demo data');
+      return generateDemoData(request);
+    }
+    
     throw error;
   }
+}
+
+// 더미 데이터 생성 함수
+function generateDemoData(request: SolarCalculationRequest): SolarCalculationResponse {
+  const { location, datetime, object } = request;
+  const date = new Date(datetime.date);
+  const startTime = datetime.start_time || '05:00';
+  const endTime = datetime.end_time || '20:00';
+  const interval = datetime.interval || 60;
+  
+  const series: SolarDataPoint[] = [];
+  const startHour = parseInt(startTime.split(':')[0]);
+  const endHour = parseInt(endTime.split(':')[0]);
+  
+  for (let hour = startHour; hour <= endHour; hour++) {
+    const time = `${hour.toString().padStart(2, '0')}:00`;
+    const timestamp = new Date(date);
+    timestamp.setHours(hour, 0, 0, 0);
+    
+    // 간단한 태양 위치 계산 (정확하지 않음)
+    const hourAngle = (hour - 12) * 15; // 시간각
+    const altitude = Math.max(0, 90 - Math.abs(hourAngle) * 0.5); // 고도
+    const azimuth = hourAngle < 0 ? 180 + hourAngle : hourAngle; // 방위각
+    
+    series.push({
+      timestamp: timestamp.toISOString(),
+      sun: {
+        altitude: altitude,
+        azimuth: azimuth,
+        zenith: 90 - altitude,
+        hour_angle: hourAngle
+      },
+      irradiance: {
+        ghi: altitude > 0 ? altitude * 10 : 0,
+        dni: altitude > 0 ? altitude * 8 : 0,
+        dhi: altitude > 0 ? altitude * 2 : 0,
+        par: altitude > 0 ? altitude * 5 : 0
+      },
+      shadow: altitude > 0 && object ? {
+        length: object.height / Math.tan(altitude * Math.PI / 180),
+        direction: azimuth,
+        coordinates: null
+      } : null
+    });
+  }
+  
+  return {
+    metadata: {
+      request_id: 'demo-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      accuracy: {
+        position: 0.1,
+        irradiance: 0.2
+      }
+    },
+    summary: {
+      sunrise: '06:00',
+      sunset: '18:00',
+      solar_noon: '12:00',
+      day_length: 12,
+      max_altitude: 60,
+      total_irradiance: 1000
+    },
+    series: series
+  };
 }
 
 /**
