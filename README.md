@@ -218,13 +218,28 @@ vercel
 2. Redis 인스턴스 생성
 3. Internal Redis URL을 백엔드 `REDIS_URL`에 연결
 
-### 배포 체크리스트
-- [ ] Frontend 환경변수 설정 (`NEXT_PUBLIC_API_URL`)
-- [ ] Backend 환경변수 설정 (`REDIS_URL`, `ALLOWED_ORIGINS`)
-- [ ] CORS 설정 확인 (backend/app/main.py)
-- [ ] Redis 연결 테스트
-- [ ] API 엔드포인트 테스트 (`/health`, `/api/integrated/calculate`)
-- [ ] 프론트엔드에서 백엔드 API 호출 확인
+### 배포 체크리스트 ✅ (완료)
+- [x] Frontend 환경변수 설정 (`NEXT_PUBLIC_API_URL`)
+- [x] Backend 환경변수 설정 (`REDIS_URL`, `ALLOWED_ORIGINS`)
+- [x] CORS 설정 확인 (backend/app/main.py)
+- [x] Redis 연결 테스트
+- [x] API 엔드포인트 테스트 (`/health`, `/api/integrated/calculate`)
+- [x] 프론트엔드에서 백엔드 API 호출 확인
+
+### 🎉 배포 완료 현황
+
+**프로덕션 환경:**
+- ✅ **Frontend**: https://sunpathshadowsimulator.vercel.app (Vercel)
+- ✅ **Backend**: https://sunpath-api.onrender.com (Render)
+- ✅ **Redis**: Render Redis 인스턴스 연결됨
+- ✅ **CORS**: 환경변수 기반 설정으로 해결
+- ✅ **자동 배포**: Git push 시 자동 재배포 활성화
+
+**주요 해결 사항:**
+- ✅ CORS 오류 해결 (환경변수 기반 `ALLOWED_ORIGINS` 설정)
+- ✅ Render 백엔드 502 오류 해결 (수동 재배포)
+- ✅ 프론트엔드-백엔드 API 통신 정상화
+- ✅ 실시간 태양 경로 및 그림자 시뮬레이션 정상 작동
 
 ### 대안 플랫폼
 - **Frontend**: Netlify, Cloudflare Pages
@@ -233,7 +248,7 @@ vercel
 
 ## 🗺️ 개발 로드맵
 
-### Phase 1: MVP ✅ (87% 완료)
+### Phase 1: MVP ✅ (100% 완료)
 - [x] 프로젝트 초기 설정
 - [x] 태양 위치 계산 API (NREL SPA 알고리즘)
 - [x] 그림자 계산 로직
@@ -245,9 +260,9 @@ vercel
 - [x] 타임라인 애니메이션 (30fps)
 - [x] 태양/그림자 시각화
 - [x] 데이터 내보내기 (CSV/JSON)
-- [ ] 차트 시각화 (선택적)
-- [ ] 테스트 작성
-- [ ] 배포
+- [x] 차트 시각화 (선택적)
+- [x] 테스트 작성
+- [x] 배포 (Vercel + Render)
 
 ### Phase 2: 고급 기능
 - [ ] 네이버 지도(Naver Maps JS v3) 통합 및 기본 지도 엔진 전환 예정
@@ -353,6 +368,19 @@ vercel
 **최종 수정:** 2025-10-20
 
 ### 부록: 트러블슈팅 메모
+
+**개발 환경:**
 - Next.js 빌드 오류 `Unexpected token div`: JSX 중첩/닫힘 태그 검증. 편집 시 `<div>` 짝 확인.
 - `Module not found: Package path . is not exported from react-map-gl`: MapLibre 사용 시 `react-map-gl/maplibre`로 임포트할 것.
 - `ValueError: Out of range float values are not JSON compliant`: 백엔드에서 NaN/Inf → None 변환 유지.
+
+**배포 환경:**
+- **CORS 오류 해결**: `backend/app/main.py`에서 하드코딩된 origins를 환경변수 기반으로 변경
+  ```python
+  allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+  ```
+- **Render 502 Bad Gateway**: 수동 재배포로 해결. GitHub 푸시 후 자동 재배포가 실패할 경우 Render Dashboard에서 "Manual Deploy" 실행
+- **Vercel 빌드 오류**: ESLint 규칙을 warning으로 변경하여 빌드 통과 (`frontend/.eslintrc.json`)
+- **환경변수 설정**: 
+  - Vercel: `NEXT_PUBLIC_API_URL=https://sunpath-api.onrender.com`
+  - Render: `ALLOWED_ORIGINS=https://sunpathshadowsimulator.vercel.app` (마지막 슬래시 제거)
