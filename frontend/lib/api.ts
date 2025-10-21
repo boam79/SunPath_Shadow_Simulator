@@ -113,7 +113,7 @@ export async function getSunriseSunset(
   lat: number,
   lon: number,
   date: string
-): Promise<any> {
+): Promise<{ sunrise: string; sunset: string; [key: string]: unknown }> {
   try {
     const response = await fetch(
       `${API_BASE_URL}/api/solar/sunrise-sunset?lat=${lat}&lon=${lon}&date=${date}`
@@ -139,7 +139,7 @@ export async function calculateShadow(
   date: string,
   time: string,
   object_height: number
-): Promise<any> {
+): Promise<Shadow> {
   try {
     const response = await fetch(
       `${API_BASE_URL}/api/shadow/calculate?lat=${lat}&lon=${lon}&date=${date}&time=${time}&object_height=${object_height}`
@@ -159,7 +159,7 @@ export async function calculateShadow(
 /**
  * Get cache statistics
  */
-export async function getCacheStats(): Promise<any> {
+export async function getCacheStats(): Promise<{ [key: string]: unknown }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/cache/stats`);
     

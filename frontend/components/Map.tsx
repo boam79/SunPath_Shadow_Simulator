@@ -65,7 +65,7 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
     }
   }, [location]);
 
-  const handleMapClick = (event: any) => {
+  const handleMapClick = (event: { lngLat: { lng: number; lat: number } }) => {
     const { lng, lat } = event.lngLat;
     onLocationChange(lat, lng);
   };

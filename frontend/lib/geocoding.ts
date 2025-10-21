@@ -43,7 +43,7 @@ export async function searchAddress(query: string): Promise<GeocodeResult[]> {
 
     const data = await response.json();
     
-    return data.map((item: any) => {
+    return data.map((item: { lat: string; lon: string; display_name: string; address?: Record<string, string>; namedetails?: Record<string, string> }) => {
       const road = item?.address?.road || item?.namedetails?.name || '';
       const house = item?.address?.house_number ? ` ${item.address.house_number}` : '';
       const city = item?.address?.city || item?.address?.town || item?.address?.county || '';
@@ -101,7 +101,7 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string |
 /**
  * Debounce function for search input
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {

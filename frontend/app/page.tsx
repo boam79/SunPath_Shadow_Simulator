@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import MainContent from '@/components/layout/MainContent';
-import Timeline from '@/components/Timeline';
 import { calculateSolar, type SolarCalculationResponse } from '@/lib/api';
 
 export default function Home() {
@@ -19,14 +18,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-calculate when parameters change
-  useEffect(() => {
-    if (location && date) {
-      fetchSolarData();
-    }
-  }, [location, date, objectHeight]);
-
-  const fetchSolarData = async () => {
+  const fetchSolarData = useCallback(async () => {
     if (!location) return;
 
     setIsLoading(true);
@@ -62,7 +54,14 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [location, date, objectHeight]);
+
+  // Auto-calculate when parameters change
+  useEffect(() => {
+    if (location && date) {
+      fetchSolarData();
+    }
+  }, [location, date, fetchSolarData]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">

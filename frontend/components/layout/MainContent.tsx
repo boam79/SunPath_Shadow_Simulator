@@ -1,6 +1,5 @@
 'use client';
 
-import { AlertCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Timeline from '@/components/Timeline';
 
@@ -38,7 +37,6 @@ interface MainContentProps {
 export default function MainContent({
   location,
   date,
-  objectHeight,
   currentTime,
   onLocationChange,
   solarData,
@@ -76,7 +74,7 @@ export default function MainContent({
 
     const lerp = (a: number, b: number) => a + (b - a) * ratio;
     const lerpAngle = (a: number, b: number) => {
-      let diff = ((b - a + 540) % 360) - 180; // shortest path
+      const diff = ((b - a + 540) % 360) - 180; // shortest path
       return (a + diff * ratio + 360) % 360;
     };
 
