@@ -159,7 +159,7 @@ export async function calculateShadow(
 /**
  * Get cache statistics
  */
-export async function getCacheStats(): Promise<{ [key: string]: unknown }> {
+export async function getCacheStats(): Promise<{ [key: string]: unknown } | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/cache/stats`);
     
