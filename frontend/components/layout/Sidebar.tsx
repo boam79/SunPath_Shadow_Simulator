@@ -37,17 +37,18 @@ export default function Sidebar({
 
   // Debounced search function
   const debouncedSearch = useCallback(
-    debounce(async (query: string) => {
+    debounce((query: string) => {
       if (!query || query.trim().length < 2) {
         setSearchResults([]);
         return;
       }
 
       setIsSearching(true);
-      const results = await searchAddress(query);
-      setSearchResults(results);
-      setIsSearching(false);
-      setShowResults(true);
+      searchAddress(query).then((results) => {
+        setSearchResults(results);
+        setIsSearching(false);
+        setShowResults(true);
+      });
     }, 500),
     []
   );
