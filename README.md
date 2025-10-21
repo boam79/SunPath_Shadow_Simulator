@@ -161,6 +161,76 @@ npm test
 
 **API 문서:** http://localhost:8000/docs
 
+## 🚀 배포 (Deployment)
+
+### Vercel 배포 (Frontend)
+
+#### 1. Vercel 계정 준비
+1. [Vercel](https://vercel.com)에 가입/로그인
+2. GitHub 계정 연동
+
+#### 2. 프로젝트 배포
+```bash
+# Vercel CLI 설치 (선택사항)
+npm i -g vercel
+
+# 프로젝트 배포
+vercel
+```
+
+또는 Vercel 대시보드에서:
+1. **New Project** 클릭
+2. GitHub 저장소 선택: `boam79/SunPath_Shadow_Simulator`
+3. **Framework Preset**: Next.js (자동 감지됨)
+4. **Root Directory**: `frontend` 선택
+5. **Environment Variables** 설정:
+   ```
+   NEXT_PUBLIC_API_URL=https://your-backend-api-url.com
+   ```
+6. **Deploy** 클릭
+
+#### 3. 배포 후 확인
+- 프론트엔드 URL: `https://your-project.vercel.app`
+- 자동 HTTPS 적용
+- Git push 시 자동 재배포
+
+### Backend 배포 (Render 권장)
+
+#### Render 배포
+1. [Render](https://render.com)에 가입/로그인
+2. **New +** → **Web Service** 선택
+3. GitHub 저장소 연결
+4. 설정:
+   - **Name**: `sunpath-api`
+   - **Root Directory**: `backend`
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. **Environment Variables** 설정:
+   ```
+   REDIS_URL=redis://red-xxxxx:6379
+   ALLOWED_ORIGINS=https://your-frontend.vercel.app
+   ```
+6. **Create Web Service** 클릭
+
+#### Redis 추가 (Render)
+1. **New +** → **Redis** 선택
+2. Redis 인스턴스 생성
+3. Internal Redis URL을 백엔드 `REDIS_URL`에 연결
+
+### 배포 체크리스트
+- [ ] Frontend 환경변수 설정 (`NEXT_PUBLIC_API_URL`)
+- [ ] Backend 환경변수 설정 (`REDIS_URL`, `ALLOWED_ORIGINS`)
+- [ ] CORS 설정 확인 (backend/app/main.py)
+- [ ] Redis 연결 테스트
+- [ ] API 엔드포인트 테스트 (`/health`, `/api/integrated/calculate`)
+- [ ] 프론트엔드에서 백엔드 API 호출 확인
+
+### 대안 플랫폼
+- **Frontend**: Netlify, Cloudflare Pages
+- **Backend**: Railway, Fly.io, Google Cloud Run, AWS Elastic Beanstalk
+- **Redis**: Upstash, Redis Cloud
+
 ## 🗺️ 개발 로드맵
 
 ### Phase 1: MVP ✅ (87% 완료)
