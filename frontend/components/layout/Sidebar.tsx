@@ -1,8 +1,8 @@
 'use client';
 
 import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
-import { searchAddress, debounce, type GeocodeResult } from '@/lib/geocoding';
+import { useState, useEffect, useRef } from 'react';
+import { searchAddress, type GeocodeResult } from '@/lib/geocoding';
 import { exportToCSV, exportToJSON, exportSummary, copyToClipboard } from '@/lib/export';
 import type { SolarCalculationResponse } from '@/lib/api';
 
@@ -34,28 +34,39 @@ export default function Sidebar({
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (!query || query.trim().length < 2) {
-        setSearchResults([]);
-        return;
-      }
-
-      setIsSearching(true);
-      searchAddress(query).then((results) => {
-        setSearchResults(results);
-        setIsSearching(false);
-        setShowResults(true);
-      });
-    }, 500),
-    []
-  );
-
+  // Debounced search effect
   useEffect(() => {
-    debouncedSearch(searchQuery);
-  }, [searchQuery, debouncedSearch]);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await searchAddress(searchQuery);
+        setSearchResults(results);
+        setShowResults(true);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   const handleSelectResult = (result: GeocodeResult) => {
     setLocation({ lat: result.lat, lon: result.lon });
