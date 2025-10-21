@@ -212,10 +212,10 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
                       <div className="text-purple-700 dark:text-purple-400 mt-1">
                         <span className="font-semibold">🌒 그림자:</span>{' '}
                         {typeof currentDataPoint.shadow.length === 'number' 
-                        ? `${currentDataPoint.shadow.length.toFixed(2)}m`
-                        : currentDataPoint.shadow.length === Infinity 
+                        ? (currentDataPoint.shadow.length === Infinity 
                             ? '무한대' 
-                          : 'N/A'}
+                            : `${currentDataPoint.shadow.length.toFixed(2)}m`)
+                        : 'N/A'}
                     {typeof currentDataPoint.shadow.direction === 'number' && 
                       ` / ${currentDataPoint.shadow.direction.toFixed(0)}°`}
                       </div>
