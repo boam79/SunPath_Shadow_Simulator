@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import Script from "next/script";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -90,7 +91,18 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
-        <meta name="google-site-verification" content="gdRYdro50Sl0V2hiAoIOSCSS7yb_4XaAPXU-EuWoCN4" />
+        <Script
+          id="google-site-verification"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              const meta = document.createElement('meta');
+              meta.name = 'google-site-verification';
+              meta.content = 'gdRYdro50Sl0V2hiAoIOSCSS7yb_4XaAPXU-EuWoCN4';
+              document.head.appendChild(meta);
+            `,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900`}
