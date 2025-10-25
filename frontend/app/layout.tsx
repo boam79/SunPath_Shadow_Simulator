@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import Script from "next/script";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -79,7 +78,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'gdRYdro50Sl0V2hiAoIOSCSS7yb_4XaAPXU-EuWoCN4', // Google Search Console 인증 코드
+    google: 'gdRYdro50Sl0V2hiAoIOSCSS7yb_4XaAPXU-EuWoCN4',
   },
 };
 
@@ -90,20 +89,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <head>
-        <Script
-          id="google-site-verification"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              const meta = document.createElement('meta');
-              meta.name = 'google-site-verification';
-              meta.content = 'gdRYdro50Sl0V2hiAoIOSCSS7yb_4XaAPXU-EuWoCN4';
-              document.head.appendChild(meta);
-            `,
-          }}
-        />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900`}
       >
