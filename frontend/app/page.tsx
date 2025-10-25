@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import MainContent from '@/components/layout/MainContent';
+import StructuredData from '@/components/StructuredData';
 import { calculateSolar, type SolarCalculationResponse } from '@/lib/api';
 
 export default function Home() {
@@ -65,6 +66,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <StructuredData />
       {/* Header */}
       <Header onReset={() => {
         setLocation(null);
