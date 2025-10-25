@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'google635228f3e17c5761', // Google Search Console 인증 코드
+    google: 'gdRYdro50Sl0V2hiAoIOSCSS7yb_4XaAPXU-EuWoCN4', // Google Search Console 인증 코드
   },
 };
 
