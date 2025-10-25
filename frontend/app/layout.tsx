@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'your-google-verification-code', // Google Search Console에서 발급받은 코드
+    google: 'google635228f3e17c5761', // Google Search Console 인증 코드
   },
 };
 
