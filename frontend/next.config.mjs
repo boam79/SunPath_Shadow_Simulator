@@ -46,6 +46,15 @@ const nextConfig = {
       },
     ];
   },
+  // Google Search Console 인증 파일 제공
+  async rewrites() {
+    return [
+      {
+        source: '/google635228f3e17c5761.html',
+        destination: '/api/google-verification',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
