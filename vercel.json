@@ -4,6 +4,12 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "rewrites": [
+    {
+      "source": "/google635228f3e17c5761.html",
+      "destination": "/google635228f3e17c5761.html"
+    }
+  ]
 }
 
