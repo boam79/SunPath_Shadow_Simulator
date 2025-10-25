@@ -325,6 +325,28 @@ vercel
 - [ ] 사용자 프리셋 저장/불러오기(LocalStorage)
 - [ ] 다국어(i18n): ko/en 토글
 
+### 8) SEO 최적화 ✅ (완료)
+- [x] **메타데이터 최적화**: 동적 제목, 키워드, Open Graph, Twitter Cards
+- [x] **구조화된 데이터**: JSON-LD 스키마로 검색엔진 이해도 향상
+- [x] **검색엔진 최적화**: robots.txt, sitemap.xml 자동 생성
+- [x] **성능 최적화**: 압축, 이미지 최적화, 보안 헤더
+- [x] **한국어 SEO**: 한국어 키워드 및 로케일 설정
+- [x] **소셜 미디어**: 페이스북, 트위터 공유 최적화
+
+**SEO 구현 세부사항:**
+- **키워드**: 태양 경로, 그림자 시뮬레이터, 일조량 계산, 건축 설계, 조경 설계, 태양광, 실시간 시뮬레이션, 지오코딩, NREL SPA
+- **메타데이터**: 제목 템플릿, 설명, 작성자 정보, Open Graph, Twitter Cards
+- **구조화된 데이터**: WebApplication 스키마로 기능 및 특징 명시
+- **보안 헤더**: XSS, CSRF 방지, 콘텐츠 타입 보호
+- **성능**: 압축, ETag, 이미지 포맷 최적화
+
+**추가 권장사항:**
+- [ ] OG 이미지 생성 (1200x630px)
+- [ ] Google Search Console 등록
+- [ ] 파비콘 추가
+- [ ] Google Analytics 연동
+- [ ] 네이버 웹마스터 도구 등록
+
 ---
 
 ## 📝 개발 가이드
@@ -384,3 +406,10 @@ vercel
 - **환경변수 설정**: 
   - Vercel: `NEXT_PUBLIC_API_URL=https://sunpath-api.onrender.com`
   - Render: `ALLOWED_ORIGINS=https://sunpathshadowsimulator.vercel.app` (마지막 슬래시 제거)
+
+**SEO 최적화:**
+- **메타데이터 설정**: Next.js App Router의 `metadata` 객체를 활용한 동적 SEO 설정
+- **구조화된 데이터**: JSON-LD 스키마로 검색엔진이 웹 애플리케이션으로 인식하도록 최적화
+- **Open Graph/Twitter Cards**: 소셜 미디어 공유 시 풍부한 미리보기 제공
+- **robots.txt/sitemap.xml**: Next.js 자동 생성 기능 활용으로 검색엔진 크롤링 최적화
+- **보안 헤더**: XSS, CSRF 방지 헤더로 사용자 신뢰도 및 SEO 점수 향상
