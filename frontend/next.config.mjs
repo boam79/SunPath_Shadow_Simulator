@@ -20,15 +20,6 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
   },
-  // 정적 파일 서빙 설정
-  async rewrites() {
-    return [
-      {
-        source: '/google635228f3e17c5761.html',
-        destination: '/google635228f3e17c5761.html',
-      },
-    ];
-  },
   // 헤더 최적화
   async headers() {
     return [
