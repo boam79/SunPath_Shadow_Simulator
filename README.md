@@ -332,6 +332,7 @@ vercel
 - [x] **성능 최적화**: 압축, 이미지 최적화, 보안 헤더
 - [x] **한국어 SEO**: 한국어 키워드 및 로케일 설정
 - [x] **소셜 미디어**: 페이스북, 트위터 공유 최적화
+- [x] **Google Search Console**: HTML 태그 방식으로 사이트 소유권 인증 완료
 
 **SEO 구현 세부사항:**
 - **키워드**: 태양 경로, 그림자 시뮬레이터, 일조량 계산, 건축 설계, 조경 설계, 태양광, 실시간 시뮬레이션, 지오코딩, NREL SPA
@@ -339,10 +340,11 @@ vercel
 - **구조화된 데이터**: WebApplication 스키마로 기능 및 특징 명시
 - **보안 헤더**: XSS, CSRF 방지, 콘텐츠 타입 보호
 - **성능**: 압축, ETag, 이미지 포맷 최적화
+- **Google 검증**: `<meta name="google-site-verification">` 태그로 소유권 확인
 
 **추가 권장사항:**
 - [ ] OG 이미지 생성 (1200x630px)
-- [ ] Google Search Console 등록
+- [x] ~~Google Search Console 등록~~ ✅ 완료
 - [ ] 파비콘 추가
 - [ ] Google Analytics 연동
 - [ ] 네이버 웹마스터 도구 등록
@@ -413,3 +415,7 @@ vercel
 - **Open Graph/Twitter Cards**: 소셜 미디어 공유 시 풍부한 미리보기 제공
 - **robots.txt/sitemap.xml**: Next.js 자동 생성 기능 활용으로 검색엔진 크롤링 최적화
 - **보안 헤더**: XSS, CSRF 방지 헤더로 사용자 신뢰도 및 SEO 점수 향상
+- **Google Search Console 인증**: 
+  - HTML 태그 방식으로 소유권 인증 (메타 태그: `verification.google`)
+  - Next.js Metadata에서 `authors` 필드 타입 이슈 해결 (`email` → `url: "mailto:..."` 형식으로 변경)
+  - 배포 URL: https://sunpathshadowsimulator.vercel.app/
