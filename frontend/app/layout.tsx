@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     "지오코딩",
     "NREL SPA"
   ],
-  authors: [{ name: "boam79", email: "ckadltmfxhrxhrxhr@gmail.com" }],
+  authors: [{ name: "boam79", url: "mailto:ckadltmfxhrxhrxhr@gmail.com" }],
   creator: "boam79",
   publisher: "boam79",
   formatDetection: {
