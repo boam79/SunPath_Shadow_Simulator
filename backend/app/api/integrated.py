@@ -116,8 +116,10 @@ async def calculate_all(
         def safe_number(value: float):
             try:
                 f = float(value)
-                return f if math.isfinite(f) else None
-            except Exception:
+                if math.isnan(f) or math.isinf(f):
+                    return None
+                return f
+            except (TypeError, ValueError):
                 return None
 
         # Format series data with all information
@@ -211,8 +213,15 @@ async def calculate_all(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid input: {str(e)}"
         )
-    except Exception as e:
+    except KeyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error: {str(e)}"
+            detail=f"Missing data column: {str(e)}"
+        )
+    except Exception as e:
+        # Log unexpected errors for debugging
+        print(f"❌ Unexpected error in calculate_all: {type(e).__name__}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal error: {type(e).__name__}"
         )

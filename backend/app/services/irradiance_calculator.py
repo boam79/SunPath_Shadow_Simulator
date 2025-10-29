@@ -89,11 +89,14 @@ class IrradianceCalculator:
         """
         # Convert interval to hours
         interval_hours = interval_minutes / 60.0
-        
-        # Integrate using trapezoidal rule (W/m² * hours → Wh/m² → kWh/m²)
-        total_ghi = np.trapz(irradiance_data['ghi'].values) * interval_hours / 1000
-        total_dni = np.trapz(irradiance_data['dni'].values) * interval_hours / 1000
-        total_dhi = np.trapz(irradiance_data['dhi'].values) * interval_hours / 1000
+
+        # Create time axis in hours for proper integration
+        time_hours = np.arange(len(irradiance_data)) * interval_hours
+
+        # Integrate using trapezoidal rule with time axis (W/m² * hours → Wh/m² → kWh/m²)
+        total_ghi = np.trapz(irradiance_data['ghi'].values, x=time_hours) / 1000
+        total_dni = np.trapz(irradiance_data['dni'].values, x=time_hours) / 1000
+        total_dhi = np.trapz(irradiance_data['dhi'].values, x=time_hours) / 1000
         
         return {
             'ghi': float(total_ghi),

@@ -62,7 +62,8 @@ export default function Home() {
     if (location && date) {
       fetchSolarData();
     }
-  }, [location, date, fetchSolarData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location, date, objectHeight]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">

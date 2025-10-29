@@ -66,7 +66,7 @@ class Shadow(BaseModel):
     """Shadow properties"""
     length: Optional[float] = Field(None, description="Shadow length in meters (None if not applicable)")
     direction: Optional[float] = Field(None, description="Shadow direction in degrees (may be None when sun below horizon)")
-    coordinates: Optional[List[List[float]]] = Field(None, description="Shadow polygon coordinates")
+    coordinates: Optional[List[List[float]]] = Field(None, description="Shadow line coordinates [[lon1, lat1], [lon2, lat2]]. None when sun is below horizon or shadow is infinite.")
 
 class SolarDataPoint(BaseModel):
     """Solar data at a specific timestamp"""
