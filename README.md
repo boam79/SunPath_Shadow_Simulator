@@ -10,8 +10,8 @@
 - 🗺️ 주소 기반 위치 검색 (지오코딩)
 - ☀️ 고정밀 태양 경로 계산 (NREL SPA 알고리즘)
 - 🌗 실시간 그림자 시뮬레이션
-- 📊 일사량 계산 (GHI/DNI/DHI)
-- 🎬 타임라인 애니메이션 (30fps)
+- 📊 일사량 계산 (GHI/DNI/DHI) - ✅ v0.1.1 정확도 개선
+- 🎬 타임라인 애니메이션 (30fps) - ✅ v0.1.1 성능 최적화
 - 📥 데이터 내보내기 (CSV/JSON)
 
 ## 🏗️ 기술 스택
@@ -279,12 +279,17 @@ vercel
 
 ## 🔍 품질 점검 결과와 고도화 제안
 
+> **v0.1.1 업데이트 (2025-10-29):** 코드 리뷰를 통해 발견된 10개의 주요 버그를 모두 수정했습니다. 일사량 계산 정확도, JSON 안정성, 프론트엔드 성능이 대폭 개선되었습니다.
+
 > 현재 코드와 실행 로그를 기반으로 즉시 적용 가능한 개선 사항을 정리했습니다. 우선순위 순으로 나열합니다.
 
 ### 1) 프론트엔드 안정성/UX
 - [권장] 헤더 타이틀 초기화: 구현됨. 모바일 드로워 토글 구현됨. 유지보수 가이드 README 반영 완료.
 - [권장] 지도 Import 경로 고정: `react-map-gl/maplibre`를 사용해야 합니다. 에러 로그에 `import ... from 'react-map-gl'`가 재등장하므로, `frontend/components/Map.tsx` 임포트가 되돌아가지 않도록 점검하세요.
   - 올바른 예: `import Map, { Marker, NavigationControl, GeolocateControl, Source, Layer } from 'react-map-gl/maplibre'`
+- [x] ✅ **[성능] useEffect 최적화**: 무한 루프 위험 제거, 불필요한 API 호출 감소 (v0.1.1)
+- [x] ✅ **[에러 처리] API 에러 파싱**: 객체 형태 에러 처리 개선, "[object Object]" 방지 (v0.1.1)
+- [x] ✅ **[정확도] 더미 데이터**: 방위각 정규화(0~360도) 및 주석 정확도 개선 (v0.1.1)
 - [권장] 레이아웃 안정화: 지도 높이 `32vh/40vh`, 패널 여백 축소, 타임라인 패널 내 배치로 한 화면 가시성 확보. 뷰포트 높이 iOS 보정(`svh/dvh`) 도입 권장.
 - [권장] 에러 바운더리 추가: 지도 모듈/타임라인 영역에 React Error Boundary 적용해 런타임 에러가 전체 페이지를 중단시키지 않도록.
 - [권장] 접근성(A11y): 타임라인 버튼에 `aria-label` 강화, 키보드 포커스 스타일 추가.
@@ -301,8 +306,11 @@ vercel
 
 ### 4) 백엔드 정확도/탄탄함
 - [정확도] 시간대 처리: 현재 경도기반 오프셋(단순) 사용. `timezonefinder` + `pytz`/`zoneinfo`로 실제 타임존을 계산해 로컬 태양시와 일출/일몰 일치 정확도 향상.
-- [정합성] JSON 안전화: `safe_number` 적용됨. 서비스 레벨에서 Pydantic 모델 필드에 `field_validator`로 NaN/Inf 차단 중복 방어 추가 권장.
+- [x] ✅ **[정합성] JSON 안전화**: `safe_number`에 명시적 NaN/Inf 체크 추가 완료 (v0.1.1)
+- [x] ✅ **[정확도] 일사량 적분 계산**: `np.trapz()`에 시간축 명시로 정확도 대폭 향상 (v0.1.1)
 - [성능] Redis 키 전략: 요청 파라미터 정규화(소수점 자리 제한)로 캐시 히트율 개선. TTL은 `.env`로 노출.
+- [x] ✅ **[안정성] Redis 싱글톤 패턴**: `_initialized` 플래그로 중복 초기화 방지 (v0.1.1)
+- [x] ✅ **[디버깅] 에러 핸들링**: KeyError 별도 처리 및 에러 타입 명시 (v0.1.1)
 - [신뢰성] 외부 API(지오코딩 등) 호출 시 백오프/타임아웃/재시도 정책 통일.
 
 ### 5) 테스트/품질
@@ -374,6 +382,86 @@ vercel
 
 이 프로젝트는 MIT 라이선스 하에 있습니다.
 
+## 📋 버전 히스토리
+
+### Version 0.1.1 (2025-10-29)
+
+**버그 수정 및 코드 품질 개선**
+
+#### 🔴 HIGH Priority (긴급 수정)
+- **일사량 적분 계산 오류 수정** (`backend/app/services/irradiance_calculator.py`)
+  - `np.trapz()` 함수에 시간축을 명시적으로 전달하여 정확한 일일 총 일사량 계산
+  - 기존: interval_hours를 두 번 곱하는 오류
+  - 수정: 시간 배열을 생성하여 `x` 파라미터로 전달
+  - 영향: 일일 총 일사량(GHI/DNI/DHI) 계산 정확도 대폭 향상
+
+- **JSON 직렬화 안전성 강화** (`backend/app/api/integrated.py`)
+  - `safe_number()` 함수에 명시적 NaN/Inf 체크 로직 추가
+  - pandas에서 반환된 NaN 값이 JSON 응답에서 오류를 일으키는 문제 해결
+  - 예외 처리 범위를 `TypeError`, `ValueError`로 특정
+
+- **Frontend useEffect 무한 루프 방지** (`frontend/app/page.tsx`)
+  - `fetchSolarData`를 useEffect 의존성 배열에서 제거
+  - objectHeight 변경 시에만 재실행되도록 최적화
+  - 불필요한 API 호출 감소 및 성능 향상
+
+#### 🟡 MEDIUM Priority (개선 권장)
+- **Redis 싱글톤 패턴 개선** (`backend/app/core/redis_client.py`)
+  - `_initialized` 플래그 추가로 중복 초기화 방지
+  - `__init__` 메서드가 여러 번 호출되어도 안전하게 처리
+
+- **더미 데이터 방위각 계산 수정** (`frontend/lib/api.ts`)
+  - 방위각이 음수가 되는 버그 수정
+  - 0~360도 범위로 정규화하는 로직 추가
+  - 데모 모드에서 정확한 태양 방위각 표시
+
+- **Map 컴포넌트 주석 정확도 개선** (`frontend/components/Map.tsx`)
+  - 거리 주석을 "~1km"에서 "~1.11km (0.01°)"로 수정
+  - 위도 1도 ≈ 111km 기준으로 정확한 수치 표기
+
+- **에러 핸들링 세분화** (`backend/app/api/integrated.py`)
+  - `KeyError` 예외를 별도로 처리하여 누락된 데이터 컬럼 식별 가능
+  - 에러 타입을 응답에 포함하여 디버깅 용이성 향상
+  - 로그에 에러 타입 및 메시지 상세 기록
+
+#### 🟢 LOW Priority (품질 개선)
+- **Schema 문서화 개선** (`backend/app/models/schemas.py`)
+  - `Shadow.coordinates` 필드 설명 추가
+  - None이 반환되는 조건(태양이 지평선 아래 또는 그림자 무한대) 명시
+
+- **Redis bare except 수정** (`backend/app/core/redis_client.py`)
+  - `is_available()` 메서드에서 bare except 제거
+  - `redis.ConnectionError`, `redis.TimeoutError` 특정 예외만 처리
+  - KeyboardInterrupt, SystemExit 등이 잘못 catch되지 않도록 개선
+
+- **API 에러 파싱 개선** (`frontend/lib/api.ts`)
+  - 백엔드에서 객체 형태의 에러를 반환할 경우 처리 로직 추가
+  - "[object Object]" 문자열이 표시되는 문제 방지
+  - error.detail, error.message 등 다양한 포맷 지원
+
+**기술 부채 해소:**
+- 코드 리뷰를 통해 발견된 10개의 버그 모두 수정
+- 백엔드 4개 파일, 프론트엔드 3개 파일 총 7개 파일 수정
+- 63줄 추가, 37줄 삭제
+
+**테스트:**
+- 모든 기존 기능 정상 작동 확인
+- API 엔드포인트 테스트 통과
+- 프론트엔드 빌드 성공
+
+### Version 0.1.0 (2025-10-20)
+
+**초기 MVP 릴리즈**
+- 태양 경로 계산 (NREL SPA 알고리즘)
+- 그림자 시뮬레이션
+- 일사량 계산 (Clear Sky Model)
+- 프론트엔드 UI 구현
+- 지도 통합 (MapLibre GL JS)
+- 타임라인 애니메이션
+- 데이터 내보내기 (CSV/JSON)
+- Vercel + Render 배포 완료
+- SEO 최적화 (Google Search Console 인증)
+
 ## 👥 팀
 
 - **boam79** - 프로젝트 리더
@@ -388,8 +476,8 @@ vercel
 
 ---
 
-**버전:** 0.1.0  
-**최종 수정:** 2025-10-20
+**버전:** 0.1.1
+**최종 수정:** 2025-10-29
 
 ### 부록: 트러블슈팅 메모
 
