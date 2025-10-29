@@ -74,6 +74,12 @@ export default function Home() {
     });
   }, []);
 
+  // Memoize time change handler to prevent unnecessary re-renders
+  const handleTimeChange = useCallback((time: string) => {
+    console.log('[Timeline] handleTimeChange called with:', time);
+    setCurrentTime(time);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <StructuredData />
@@ -137,7 +143,7 @@ export default function Home() {
           error={error}
           timeline={{
             currentTime,
-            onTimeChange: setCurrentTime,
+            onTimeChange: handleTimeChange,
             isPlaying,
             onPlayPause: handlePlayPause,
             startTime: '05:00',
