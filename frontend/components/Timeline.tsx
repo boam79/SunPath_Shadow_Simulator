@@ -40,6 +40,11 @@ export default function Timeline({
 
   const playing = isPlaying !== undefined ? isPlaying : internalPlaying;
 
+  // Debug: Log playing state changes
+  useEffect(() => {
+    console.log('[Timeline] playing state changed:', { isPlaying, internalPlaying, playing });
+  }, [isPlaying, internalPlaying, playing]);
+
   // Convert time string to minutes with improved error handling
   const timeToMinutes = useCallback((time: string): number => {
     if (!time || typeof time !== 'string') {
@@ -107,9 +112,15 @@ export default function Timeline({
 
   // Animation loop with useRef to avoid interval recreation
   useEffect(() => {
-    if (!playing) return;
+    console.log('[Timeline] useEffect animation loop - playing:', playing);
+    if (!playing) {
+      console.log('[Timeline] Animation not playing, skipping interval setup');
+      return;
+    }
 
+    console.log('[Timeline] Setting up animation interval');
     const interval = setInterval(() => {
+      console.log('[Timeline] Animation tick - current:', currentTimeRef.current);
       // Use ref to get latest values without recreating interval
       const current = timeToMinutes(currentTimeRef.current);
       const speed = playSpeedRef.current;
@@ -136,11 +147,16 @@ export default function Timeline({
         // Always clamp to end time
         onTimeChange(endTime);
       } else {
-        onTimeChange(minutesToTime(next));
+        const nextTime = minutesToTime(next);
+        console.log('[Timeline] Updating time from', currentTimeRef.current, 'to', nextTime);
+        onTimeChange(nextTime);
       }
     }, 1000 / 30); // 30fps
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log('[Timeline] Cleaning up animation interval');
+      clearInterval(interval);
+    };
   }, [playing, onTimeChange, onPlayPause, timeToMinutes, minutesToTime, isPlaying, endTime]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
