@@ -26,6 +26,8 @@ export default function Timeline({
   // useRef로 최신 값 참조하여 interval 재생성 방지
   const playSpeedRef = useRef(playSpeed);
   const currentTimeRef = useRef(currentTime);
+  // Accumulate fractional minutes so animation progresses smoothly
+  const accumulatedMinutesRef = useRef<number>(0);
   const endMinutesRef = useRef(0);
 
   // playSpeed가 변경될 때 ref 업데이트
@@ -36,6 +38,8 @@ export default function Timeline({
   // currentTime이 변경될 때 ref 업데이트
   useEffect(() => {
     currentTimeRef.current = currentTime;
+    // Sync accumulator with current time (in minutes)
+    accumulatedMinutesRef.current = timeToMinutes(currentTime);
   }, [currentTime]);
 
   const playing = isPlaying !== undefined ? isPlaying : internalPlaying;
@@ -122,7 +126,7 @@ export default function Timeline({
     const interval = setInterval(() => {
       console.log('[Timeline] Animation tick - current:', currentTimeRef.current);
       // Use ref to get latest values without recreating interval
-      const current = timeToMinutes(currentTimeRef.current);
+      const current = accumulatedMinutesRef.current;
       const speed = playSpeedRef.current;
       const end = endMinutesRef.current;
       
@@ -131,6 +135,7 @@ export default function Timeline({
       // 0.5x speed = 0.5 minutes per second = 0.5/30 per frame
       const minutesPerFrame = speed / 30;
       const next = current + minutesPerFrame;
+      accumulatedMinutesRef.current = next;
 
       if (next >= end) {
         // Reached end, stop
@@ -161,6 +166,7 @@ export default function Timeline({
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const minutes = parseInt(e.target.value);
+    accumulatedMinutesRef.current = minutes;
     onTimeChange(minutesToTime(minutes));
   };
 
@@ -175,12 +181,14 @@ export default function Timeline({
   const handleStepBackward = () => {
     const current = timeToMinutes(currentTime);
     const prev = Math.max(startMinutes, current - 60); // 1 hour back
+    accumulatedMinutesRef.current = prev;
     onTimeChange(minutesToTime(prev));
   };
 
   const handleStepForward = () => {
     const current = timeToMinutes(currentTime);
     const next = Math.min(endMinutes, current + 60); // 1 hour forward
+    accumulatedMinutesRef.current = next;
     onTimeChange(minutesToTime(next));
   };
 
@@ -188,6 +196,7 @@ export default function Timeline({
     onTimeChange(startTime);
     // If isPlaying is controlled by parent, notify to stop
     // Otherwise, stop internal playing state
+    accumulatedMinutesRef.current = startMinutes;
     if (isPlaying !== undefined && onPlayPause) {
       // Parent controls playing state, stop if currently playing
       if (isPlaying) {
