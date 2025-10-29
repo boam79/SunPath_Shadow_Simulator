@@ -91,11 +91,14 @@ async def calculate_shadow(
             )
         
         # Get description
-        description = shadow_calculator.get_shadow_description(
-            shadow_length=shadow_result['length'],
-            shadow_direction=shadow_result['direction'] if shadow_result['direction'] else 0,
-            object_height=object_height
-        )
+        if shadow_result['status'] == 'normal' and shadow_result['direction'] is not None:
+            description = shadow_calculator.get_shadow_description(
+                shadow_length=shadow_result['length'],
+                shadow_direction=shadow_result['direction'],
+                object_height=object_height
+            )
+        else:
+            description = shadow_result.get('message') or "그림자 정보 없음"
         
         return {
             'request_id': str(uuid.uuid4()),
