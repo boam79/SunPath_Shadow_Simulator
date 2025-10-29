@@ -389,6 +389,12 @@ vercel
 **타임라인 및 API 컴포넌트 종합 버그 수정**
 
 #### 🔴 CRITICAL Priority (안정성 및 성능)
+- **Timeline 재생 버튼 미작동 버그 수정** (`frontend/app/page.tsx`, `frontend/components/Timeline.tsx`)
+  - `onPlayPause` 클로저 문제 해결: `setIsPlaying(prev => !prev)` 함수형 업데이트 사용
+  - `onPlayPause`를 `useCallback`으로 메모이제이션하여 불필요한 재렌더링 방지
+  - `endMinutes`를 `useRef`로 참조하여 interval 재생성 최소화
+  - 재생 버튼 클릭 시 정상 작동 보장
+
 - **Timeline useEffect 클로저 문제 해결** (`frontend/components/Timeline.tsx`)
   - `useRef`를 사용하여 `playSpeed`와 `currentTime` 최신 값 참조
   - interval 재생성 없이 배속 변경 즉시 반영
