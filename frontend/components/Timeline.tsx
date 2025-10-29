@@ -22,9 +22,11 @@ export default function Timeline({
 }: TimelineProps) {
   const [playSpeed, setPlaySpeed] = useState<number>(1);
   const [internalPlaying, setInternalPlaying] = useState(false);
-  // useRef로 최신 playSpeed 참조하여 interval 재생성 방지
+  
+  // useRef로 최신 값 참조하여 interval 재생성 방지
   const playSpeedRef = useRef(playSpeed);
   const currentTimeRef = useRef(currentTime);
+  const endMinutesRef = useRef(0);
 
   // playSpeed가 변경될 때 ref 업데이트
   useEffect(() => {
@@ -88,6 +90,11 @@ export default function Timeline({
   const startMinutes = timeToMinutes(startTime);
   const endMinutes = timeToMinutes(endTime);
 
+  // endMinutes ref 업데이트
+  useEffect(() => {
+    endMinutesRef.current = endMinutes;
+  }, [endMinutes]);
+
   // Validate play speed
   const setPlaySpeedSafe = useCallback((speed: number) => {
     // Only allow positive speeds between 0.1 and 10
@@ -106,6 +113,7 @@ export default function Timeline({
       // Use ref to get latest values without recreating interval
       const current = timeToMinutes(currentTimeRef.current);
       const speed = playSpeedRef.current;
+      const end = endMinutesRef.current;
       
       // 30fps: each frame advances by (playSpeed / 30) minutes
       // 1x speed = 1 minute per second = 1/30 per frame
@@ -113,7 +121,7 @@ export default function Timeline({
       const minutesPerFrame = speed / 30;
       const next = current + minutesPerFrame;
 
-      if (next >= endMinutes) {
+      if (next >= end) {
         // Reached end, stop
         setInternalPlaying(false);
         onPlayPause?.();
@@ -123,7 +131,7 @@ export default function Timeline({
     }, 1000 / 30); // 30fps
 
     return () => clearInterval(interval);
-  }, [playing, endMinutes, onTimeChange, onPlayPause, timeToMinutes, minutesToTime]);
+  }, [playing, onTimeChange, onPlayPause, timeToMinutes, minutesToTime]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const minutes = parseInt(e.target.value);

@@ -65,6 +65,11 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, date, objectHeight]);
 
+  // Memoize play/pause handler to prevent unnecessary re-renders
+  const handlePlayPause = useCallback(() => {
+    setIsPlaying(prev => !prev);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <StructuredData />
@@ -130,7 +135,7 @@ export default function Home() {
             currentTime,
             onTimeChange: setCurrentTime,
             isPlaying,
-            onPlayPause: () => setIsPlaying(!isPlaying),
+            onPlayPause: handlePlayPause,
             startTime: '05:00',
             endTime: '20:00'
           }}
