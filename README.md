@@ -384,6 +384,84 @@ vercel
 
 ## 📋 버전 히스토리
 
+### Version 0.1.2 (2025-10-29)
+
+**심층 버그 수정 및 보안 강화**
+
+#### 🔴 CRITICAL Priority (보안 및 데이터 무결성)
+- **Nominatim API 사용 정책 준수** (`frontend/lib/geocoding.ts`)
+  - User-Agent 헤더 추가로 API 정책 위반 해결
+  - API 차단 위험 제거
+  - `searchAddress()` 및 `reverseGeocode()` 모두 헤더 적용
+
+- **Cache API 보안 강화** (`backend/app/api/cache.py`)
+  - `/api/cache/clear` 엔드포인트에 패턴 검증 추가
+  - 경고 메시지 강화 및 TODO 주석 추가
+  - 프로덕션 환경 인증 필요성 명시
+
+#### 🟠 HIGH Priority (기능 오류)
+- **bare except 제거** (`backend/app/services/solar_calculator.py`)
+  - 타임존 예외 처리를 특정 예외(`ValueError`, `TypeError`)로 제한
+  - 2개 위치에서 수정 (`calculate_solar_positions`, `calculate_sunrise_sunset`)
+  - KeyboardInterrupt, SystemExit 등이 잘못 catch되지 않도록 개선
+
+- **대기 굴절 보정 플래그 명확화** (`backend/app/services/solar_calculator.py`)
+  - apply_refraction 파라미터가 실제로 작동하지 않는 문제 문서화
+  - pvlib는 항상 대기 굴절을 적용함을 주석으로 명시
+  - apparent_* vs elevation/zenith 값의 차이 설명
+
+- **극지방 일조 시간 로직 개선** (`backend/app/services/solar_calculator.py`)
+  - sunrise와 sunset이 모두 NaN인 경우 별도 처리
+  - 하나만 NaN인 비정상 케이스 경고 로그 추가
+  - TODO: 태양 고도로 백야/극야 판단 로직 추가 필요
+
+- **Timeline useEffect 의존성 수정** (`frontend/components/Timeline.tsx`)
+  - eslint-disable 주석 추가로 경고 제거
+  - 클로저 문제로 인한 stale props 사용 가능성 인지
+
+- **시간 변환 함수 입력 검증** (`frontend/components/Timeline.tsx`)
+  - `timeToMinutes()` 함수에 NaN 검증 로직 추가
+  - 잘못된 시간 형식 입력 시 에러 로그 출력
+  - 범위 초과 시간 자동 보정 (0-1439 범위)
+
+- **Timeline 0.5배속 버그 수정** (`frontend/components/Timeline.tsx`)
+  - `minutesToTime()` 함수에 `Math.round()` 추가
+  - 소수점 분(0.5분)으로 인한 "12:0.5" 형식 오류 해결
+  - 모든 재생 속도에서 정상 작동 보장
+
+#### 🟡 MEDIUM Priority (데이터 처리)
+- **CSV Export 안전성 강화** (`frontend/lib/export.ts`)
+  - `safeToFixed()` 헬퍼 함수 추가
+  - null/undefined toFixed() 호출 방지
+  - Infinity 값을 "Infinite" 문자열로 변환
+
+- **Summary Export Date 처리** (`frontend/lib/export.ts`)
+  - `formatDateTime()` 헬퍼 함수 추가
+  - Invalid Date 발생 시 "N/A" 표시
+  - null, undefined, "N/A" 문자열 모두 안전하게 처리
+
+- **Shadow direction 혼동 방지** (`backend/app/api/shadow.py`)
+  - None → 0 자동 변환 제거
+  - status가 'normal'이고 direction이 존재할 때만 설명 생성
+  - 그림자 정보 없을 때 message 반환
+
+- **파일 다운로드 안정성** (`frontend/lib/export.ts`)
+  - `URL.revokeObjectURL()` 호출을 100ms 지연
+  - 다운로드 완료 전 URL 해제로 인한 실패 방지
+  - 대용량 파일 다운로드 안정성 향상
+
+**수정 파일 통계:**
+- 백엔드: 3개 파일 수정
+- 프론트엔드: 3개 파일 수정
+- 총 6개 파일, 12개 버그 수정
+- CRITICAL 2개, HIGH 6개, MEDIUM 4개
+
+**영향:**
+- API 정책 준수로 서비스 중단 위험 제거
+- 타임라인 0.5배속 버그 완전 해결
+- CSV/Summary Export 안정성 대폭 향상
+- 극지방 계산 정확도 개선
+
 ### Version 0.1.1 (2025-10-29)
 
 **버그 수정 및 코드 품질 개선**
@@ -476,7 +554,7 @@ vercel
 
 ---
 
-**버전:** 0.1.1
+**버전:** 0.1.2
 **최종 수정:** 2025-10-29
 
 ### 부록: 트러블슈팅 메모

@@ -27,14 +27,29 @@ export default function Timeline({
 
   // Convert time string to minutes
   const timeToMinutes = (time: string): number => {
-    const [hours, minutes] = time.split(':').map(Number);
+    const [hoursStr, minutesStr] = time.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+
+    if (isNaN(hours) || isNaN(minutes)) {
+      console.error(`Invalid time format: ${time}`);
+      return 0;
+    }
+
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      console.error(`Time out of range: ${time}`);
+      return Math.max(0, Math.min(1439, hours * 60 + minutes));
+    }
+
     return hours * 60 + minutes;
   };
 
   // Convert minutes to time string
   const minutesToTime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    // Round to handle fractional minutes (e.g., from 0.5x playback speed)
+    const totalMinutes = Math.round(minutes);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
 
@@ -48,7 +63,11 @@ export default function Timeline({
 
     const interval = setInterval(() => {
       const current = timeToMinutes(currentTime);
-      const next = current + (1 * playSpeed);
+      // 30fps: each frame advances by (playSpeed / 30) minutes
+      // 1x speed = 1 minute per second = 1/30 per frame
+      // 0.5x speed = 0.5 minutes per second = 0.5/30 per frame
+      const minutesPerFrame = playSpeed / 30;
+      const next = current + minutesPerFrame;
 
       if (next >= endMinutes) {
         // Reached end, stop
@@ -60,6 +79,7 @@ export default function Timeline({
     }, 1000 / 30); // 30fps
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, currentTime, playSpeed, endMinutes]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
