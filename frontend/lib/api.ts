@@ -4,9 +4,12 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// 개발 환경에서 API 연결 실패 시 더미 데이터 반환
-const isDevelopment = process.env.NODE_ENV === 'development';
-const isVercelPreview = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production';
+// Vercel 환경 감지 (preview/production 또는 VERCEL 환경변수 존재 여부)
+const isVercelEnv = !!(
+  process.env.VERCEL ||
+  process.env.VERCEL_ENV === 'preview' ||
+  process.env.VERCEL_ENV === 'production'
+);
 
 export interface SolarCalculationRequest {
   location: {
@@ -110,8 +113,8 @@ export async function calculateSolar(
   } catch (error) {
     console.error('Calculate solar error:', error);
     
-    // Vercel 환경에서 백엔드가 없을 때 더미 데이터 반환
-    if (isVercelPreview && !process.env.NEXT_PUBLIC_API_URL) {
+    // Vercel 환경에서 백엔드 API URL이 없거나 연결 실패 시 더미 데이터 반환
+    if (isVercelEnv && (!process.env.NEXT_PUBLIC_API_URL || API_BASE_URL === 'http://localhost:8000')) {
       console.warn('⚠️ Backend API not available, returning demo data');
       return generateDemoData(request);
     }

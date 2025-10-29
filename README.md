@@ -384,6 +384,64 @@ vercel
 
 ## 📋 버전 히스토리
 
+### Version 0.1.3 (2025-10-29)
+
+**타임라인 및 API 컴포넌트 종합 버그 수정**
+
+#### 🔴 CRITICAL Priority (안정성 및 성능)
+- **Timeline useEffect 클로저 문제 해결** (`frontend/components/Timeline.tsx`)
+  - `useRef`를 사용하여 `playSpeed`와 `currentTime` 최신 값 참조
+  - interval 재생성 없이 배속 변경 즉시 반영
+  - 애니메이션 끊김 현상 제거
+  - dependency array에 모든 필수 콜백 함수 추가
+
+- **Timeline 0으로 나누기 방지** (`frontend/components/Timeline.tsx`)
+  - 그래디언트 계산에서 `startMinutes === endMinutes` 경우 처리
+  - 인디케이터 위치 계산에서 0으로 나누기 방지
+  - NaN 발생 방지를 위한 안전 검사 추가
+
+#### 🟠 HIGH Priority (정확도 및 안정성)
+- **Timeline 시간 범위 검증 강화** (`frontend/components/Timeline.tsx`)
+  - `timeToMinutes()`: split 실패, undefined 값 처리 개선
+  - `minutesToTime()`: 음수 및 24시간 초과 값 자동 보정 (0-1439분 범위)
+  - 시간 형식 오류 시 상세한 에러 로그 출력
+
+- **Timeline 배속 제어 개선** (`frontend/components/Timeline.tsx`)
+  - `setPlaySpeedSafe()` 함수 추가: 배속 값 유효성 검사 (0.1-10 범위)
+  - 불합리한 배속 값 자동 클램핑
+  - 배속 변경 시 경고 메시지 출력
+
+- **API 환경 변수 처리 개선** (`frontend/lib/api.ts`)
+  - 미사용 변수 `isDevelopment` 제거
+  - Vercel 환경 감지 로직 개선 (`VERCEL` 환경변수 추가 확인)
+  - 더미 데이터 폴백 조건 명확화
+
+- **Export 안전성 강화** (`frontend/lib/export.ts`)
+  - `data.series[0]` 접근 전 배열 길이 및 존재 여부 확인
+  - 모든 export 함수(CSV, JSON, Summary)에 안전한 null 체크 적용
+  - 빈 데이터 배열에서도 안전하게 동작
+
+#### 🟡 MEDIUM Priority (코드 품질)
+- **Timeline 콜백 함수 최적화** (`frontend/components/Timeline.tsx`)
+  - `timeToMinutes`와 `minutesToTime`을 `useCallback`으로 메모이제이션
+  - 불필요한 함수 재생성 방지로 성능 개선
+  - 그래디언트 및 인디케이터 위치 계산 함수 분리
+
+**수정 파일 통계:**
+- 프론트엔드: 3개 파일 수정
+  - `frontend/components/Timeline.tsx`: 16개 버그 수정 (클로저, 0으로 나누기, 범위 검증, 배속 등)
+  - `frontend/lib/api.ts`: 2개 버그 수정 (미사용 변수, 환경 감지)
+  - `frontend/lib/export.ts`: 3개 버그 수정 (null 안전성)
+- 총 21개 버그 수정
+- 103줄 추가, 35줄 삭제
+
+**영향:**
+- 타임라인 애니메이션이 배속 변경 시 끊김 없이 부드럽게 작동
+- 0으로 나누기 오류 완전 제거 (그래디언트 및 인디케이터)
+- 모든 시간 범위에서 안정적으로 작동
+- Export 함수의 안전성 대폭 향상
+- 코드 품질 및 유지보수성 개선
+
 ### Version 0.1.2 (2025-10-29)
 
 **심층 버그 수정 및 보안 강화**
@@ -554,7 +612,7 @@ vercel
 
 ---
 
-**버전:** 0.1.2
+**버전:** 0.1.3
 **최종 수정:** 2025-10-29
 
 ### 부록: 트러블슈팅 메모

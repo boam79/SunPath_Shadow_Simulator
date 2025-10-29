@@ -1,7 +1,7 @@
 'use client';
 
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface TimelineProps {
   currentTime: string;
@@ -22,17 +22,48 @@ export default function Timeline({
 }: TimelineProps) {
   const [playSpeed, setPlaySpeed] = useState<number>(1);
   const [internalPlaying, setInternalPlaying] = useState(false);
+  // useRef로 최신 playSpeed 참조하여 interval 재생성 방지
+  const playSpeedRef = useRef(playSpeed);
+  const currentTimeRef = useRef(currentTime);
+
+  // playSpeed가 변경될 때 ref 업데이트
+  useEffect(() => {
+    playSpeedRef.current = playSpeed;
+  }, [playSpeed]);
+
+  // currentTime이 변경될 때 ref 업데이트
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
 
   const playing = isPlaying !== undefined ? isPlaying : internalPlaying;
 
-  // Convert time string to minutes
-  const timeToMinutes = (time: string): number => {
-    const [hoursStr, minutesStr] = time.split(':');
+  // Convert time string to minutes with improved error handling
+  const timeToMinutes = useCallback((time: string): number => {
+    if (!time || typeof time !== 'string') {
+      console.error(`Invalid time input: ${time}`);
+      return 0;
+    }
+
+    const parts = time.split(':');
+    if (parts.length < 2 || parts.length > 2) {
+      console.error(`Invalid time format: ${time} (expected HH:MM)`);
+      return 0;
+    }
+
+    const hoursStr = parts[0]?.trim();
+    const minutesStr = parts[1]?.trim();
+
+    if (!hoursStr || !minutesStr) {
+      console.error(`Invalid time format: ${time} (missing hours or minutes)`);
+      return 0;
+    }
+
     const hours = parseInt(hoursStr, 10);
     const minutes = parseInt(minutesStr, 10);
 
     if (isNaN(hours) || isNaN(minutes)) {
-      console.error(`Invalid time format: ${time}`);
+      console.error(`Invalid time format: ${time} (non-numeric values)`);
       return 0;
     }
 
@@ -42,31 +73,44 @@ export default function Timeline({
     }
 
     return hours * 60 + minutes;
-  };
+  }, []);
 
-  // Convert minutes to time string
-  const minutesToTime = (minutes: number): string => {
-    // Round to handle fractional minutes (e.g., from 0.5x playback speed)
-    const totalMinutes = Math.round(minutes);
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
+  // Convert minutes to time string with range validation
+  const minutesToTime = useCallback((minutes: number): string => {
+    // Clamp to valid day range (0-1439 minutes = 0:00-23:59)
+    const clampedMinutes = Math.max(0, Math.min(1439, Math.round(minutes)));
+    const hours = Math.floor(clampedMinutes / 60) % 24;
+    const mins = clampedMinutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  };
+  }, []);
 
   const currentMinutes = timeToMinutes(currentTime);
   const startMinutes = timeToMinutes(startTime);
   const endMinutes = timeToMinutes(endTime);
 
-  // Animation loop
+  // Validate play speed
+  const setPlaySpeedSafe = useCallback((speed: number) => {
+    // Only allow positive speeds between 0.1 and 10
+    const validatedSpeed = Math.max(0.1, Math.min(10, speed));
+    if (validatedSpeed !== speed) {
+      console.warn(`Play speed clamped from ${speed} to ${validatedSpeed}`);
+    }
+    setPlaySpeed(validatedSpeed);
+  }, []);
+
+  // Animation loop with useRef to avoid interval recreation
   useEffect(() => {
     if (!playing) return;
 
     const interval = setInterval(() => {
-      const current = timeToMinutes(currentTime);
+      // Use ref to get latest values without recreating interval
+      const current = timeToMinutes(currentTimeRef.current);
+      const speed = playSpeedRef.current;
+      
       // 30fps: each frame advances by (playSpeed / 30) minutes
       // 1x speed = 1 minute per second = 1/30 per frame
       // 0.5x speed = 0.5 minutes per second = 0.5/30 per frame
-      const minutesPerFrame = playSpeed / 30;
+      const minutesPerFrame = speed / 30;
       const next = current + minutesPerFrame;
 
       if (next >= endMinutes) {
@@ -79,8 +123,7 @@ export default function Timeline({
     }, 1000 / 30); // 30fps
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, currentTime, playSpeed, endMinutes]);
+  }, [playing, endMinutes, onTimeChange, onPlayPause, timeToMinutes, minutesToTime]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const minutes = parseInt(e.target.value);
@@ -113,6 +156,31 @@ export default function Timeline({
     onPlayPause?.();
   };
 
+  // Calculate safe gradient percentages with division by zero protection
+  const getGradientStyle = () => {
+    const timeRange = endMinutes - startMinutes;
+    if (timeRange <= 0) {
+      return 'linear-gradient(to right, #1e3a8a 0%, #1e3a8a 100%)';
+    }
+    const hour6Percent = ((6 * 60 - startMinutes) / timeRange) * 100;
+    const hour12Percent = ((12 * 60 - startMinutes) / timeRange) * 100;
+    const hour18Percent = ((18 * 60 - startMinutes) / timeRange) * 100;
+    return `linear-gradient(to right, 
+      #1e3a8a 0%, 
+      #3b82f6 ${Math.max(0, Math.min(100, hour6Percent))}%,
+      #fbbf24 ${Math.max(0, Math.min(100, hour12Percent))}%,
+      #f97316 ${Math.max(0, Math.min(100, hour18Percent))}%,
+      #1e3a8a 100%)`;
+  };
+
+  // Calculate safe indicator position with division by zero protection
+  const getIndicatorPosition = () => {
+    const timeRange = endMinutes - startMinutes;
+    if (timeRange <= 0) return '50%';
+    const percent = ((currentMinutes - startMinutes) / timeRange) * 100;
+    return `${Math.max(0, Math.min(100, percent))}%`;
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 md:p-4">
       <div className="max-w-7xl mx-auto space-y-3 md:space-y-4">
@@ -131,12 +199,7 @@ export default function Timeline({
               onChange={handleSliderChange}
               className="w-full h-2 bg-gradient-to-r from-blue-900 via-yellow-400 to-orange-600 rounded-lg appearance-none cursor-pointer accent-yellow-500"
               style={{
-                background: `linear-gradient(to right, 
-                  #1e3a8a 0%, 
-                  #3b82f6 ${((6 * 60 - startMinutes) / (endMinutes - startMinutes)) * 100}%,
-                  #fbbf24 ${((12 * 60 - startMinutes) / (endMinutes - startMinutes)) * 100}%,
-                  #f97316 ${((18 * 60 - startMinutes) / (endMinutes - startMinutes)) * 100}%,
-                  #1e3a8a 100%)`
+                background: getGradientStyle()
               }}
             />
             
@@ -144,7 +207,7 @@ export default function Timeline({
             <div 
               className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white dark:bg-gray-200 border-2 border-yellow-500 rounded-full shadow-lg pointer-events-none"
               style={{
-                left: `${((currentMinutes - startMinutes) / (endMinutes - startMinutes)) * 100}%`,
+                left: getIndicatorPosition(),
                 transform: 'translateX(-50%) translateY(-50%)'
               }}
             />
@@ -223,7 +286,7 @@ export default function Timeline({
           {[0.5, 1, 2, 5].map((speed) => (
             <button
               key={speed}
-              onClick={() => setPlaySpeed(speed)}
+              onClick={() => setPlaySpeedSafe(speed)}
               className={`px-2.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs rounded-full transition-colors ${
                 playSpeed === speed
                   ? 'bg-blue-600 text-white'
