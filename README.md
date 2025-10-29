@@ -384,6 +384,47 @@ vercel
 
 ## 📋 버전 히스토리
 
+### Version 0.1.4 (2025-10-29)
+
+**타임라인 재생 버튼 및 애니메이션 진행 버그 완전 해결**
+
+#### 🔴 CRITICAL Priority (핵심 기능 수정)
+- **Timeline 재생 버튼 미작동 및 애니메이션 진행 불가 문제 해결** (`frontend/components/Timeline.tsx`, `frontend/app/page.tsx`)
+  - **문제 1: 재생 버튼 클릭 시 반응 없음**
+    - 원인: `onPlayPause` 클로저 문제로 항상 초기값만 참조
+    - 해결: `setIsPlaying(prev => !prev)` 함수형 업데이트 사용
+    - 해결: `onPlayPause`를 `useCallback`으로 메모이제이션
+    - 해결: `endMinutes`를 `useRef`로 참조하여 interval 재생성 최소화
+  
+  - **문제 2: 재생 중에도 타임라인이 진행되지 않음 (가장 심각)**
+    - 원인: 순환 업데이트 문제
+      1. 애니메이션이 `onTimeChange(nextTime)` 호출 (예: `12:00.033` → `"12:00"`)
+      2. `currentTime` 변경으로 `useEffect` 트리거
+      3. `accumulatedMinutesRef`가 매번 리셋됨
+      4. 소수점 분 누적이 불가능하여 같은 분에서 반복
+    - 해결: `accumulatedMinutesRef` 도입하여 소수점 분 누적
+    - 해결: 애니메이션 중에는 accumulator 리셋 방지 (1분 미만 차이 시 스킵)
+    - 해결: 분이 실제로 바뀔 때만 `onTimeChange` 호출하여 불필요한 업데이트 방지
+  
+  - **추가 최적화:**
+    - `onTimeChange` 콜백 메모이제이션 (`handleTimeChange` with `useCallback`)
+    - 사용자 조작 시 accumulator 동기화 (슬라이더, -1h, +1h, Reset)
+    - 애니메이션 종료 및 리셋 시 상태 동기화 개선
+
+**수정 파일 통계:**
+- 프론트엔드: 2개 파일 수정
+  - `frontend/components/Timeline.tsx`: 핵심 애니메이션 로직 개선 (accumulator 패턴 도입)
+  - `frontend/app/page.tsx`: 상태 관리 및 콜백 최적화
+- 총 핵심 버그 2개 완전 해결 + 성능 최적화
+
+**영향:**
+- ✅ 재생 버튼 정상 작동 (클릭 시 즉시 반응)
+- ✅ 타임라인 애니메이션 정상 진행 (시간이 부드럽게 증가)
+- ✅ 타임라인 슬라이더 정상 이동 (시간에 따라 인디케이터 이동)
+- ✅ 30fps 부드러운 애니메이션 (소수점 분 누적으로 정확한 시간 진행)
+- ✅ 불필요한 상태 업데이트 제거로 성능 개선
+- ✅ 사용자 경험 대폭 향상
+
 ### Version 0.1.3 (2025-10-29)
 
 **타임라인 및 API 컴포넌트 종합 버그 수정**
@@ -618,7 +659,7 @@ vercel
 
 ---
 
-**버전:** 0.1.3
+**버전:** 0.1.4
 **최종 수정:** 2025-10-29
 
 ### 부록: 트러블슈팅 메모
