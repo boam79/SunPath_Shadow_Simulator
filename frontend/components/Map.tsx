@@ -31,7 +31,7 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
     const sunAltitude = currentDataPoint.sun.altitude;
 
     // Distance from center based on altitude (higher = closer to center)
-    const distance = (90 - sunAltitude) / 90 * 0.01; // ~1km max
+    const distance = (90 - sunAltitude) / 90 * 0.01; // ~1.11km max (0.01°)
 
     // Convert azimuth to radians (0° = North, clockwise)
     const azimuthRad = (sunAzimuth * Math.PI) / 180;

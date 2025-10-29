@@ -100,7 +100,10 @@ export async function calculateSolar(
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || 'API request failed');
+      const errorMessage = typeof error.detail === 'string'
+        ? error.detail
+        : error.message || error.detail?.message || 'API request failed';
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -137,7 +140,9 @@ function generateDemoData(request: SolarCalculationRequest): SolarCalculationRes
     // 간단한 태양 위치 계산 (정확하지 않음)
     const hourAngle = (hour - 12) * 15; // 시간각
     const altitude = Math.max(0, 90 - Math.abs(hourAngle) * 0.5); // 고도
-    const azimuth = hourAngle < 0 ? 180 + hourAngle : hourAngle; // 방위각
+    // 방위각 계산 (0°=북, 180°=남) 및 0~360 정규화
+    let azimuth = 180 + hourAngle;
+    azimuth = ((azimuth % 360) + 360) % 360;
     
     series.push({
       timestamp: timestamp.toISOString(),

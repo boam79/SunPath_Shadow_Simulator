@@ -10,36 +10,41 @@ from app.core.config import settings
 
 class RedisClient:
     """Redis client singleton"""
-    
+
     _instance = None
     _client = None
-    
+    _initialized = False
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(RedisClient, cls).__new__(cls)
         return cls._instance
-    
+
     def __init__(self):
-        if self._client is None:
-            try:
-                self._client = redis.Redis(
-                    host=settings.REDIS_HOST,
-                    port=settings.REDIS_PORT,
-                    db=settings.REDIS_DB,
-                    decode_responses=True,
-                    socket_connect_timeout=5,
-                    socket_timeout=5
-                )
-                # Test connection
-                self._client.ping()
-                print(f"✅ Redis connected: {settings.REDIS_HOST}:{settings.REDIS_PORT}")
-            except redis.ConnectionError as e:
-                print(f"⚠️ Redis connection failed: {e}")
-                print("   Continuing without cache...")
-                self._client = None
-            except Exception as e:
-                print(f"⚠️ Redis initialization error: {e}")
-                self._client = None
+        # Only initialize once
+        if RedisClient._initialized:
+            return
+
+        RedisClient._initialized = True
+        try:
+            self._client = redis.Redis(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                db=settings.REDIS_DB,
+                decode_responses=True,
+                socket_connect_timeout=5,
+                socket_timeout=5
+            )
+            # Test connection
+            self._client.ping()
+            print(f"✅ Redis connected: {settings.REDIS_HOST}:{settings.REDIS_PORT}")
+        except redis.ConnectionError as e:
+            print(f"⚠️ Redis connection failed: {e}")
+            print("   Continuing without cache...")
+            self._client = None
+        except Exception as e:
+            print(f"⚠️ Redis initialization error: {e}")
+            self._client = None
     
     @property
     def client(self) -> Optional[redis.Redis]:
@@ -53,7 +58,10 @@ class RedisClient:
         try:
             self._client.ping()
             return True
-        except:
+        except (redis.ConnectionError, redis.TimeoutError):
+            return False
+        except Exception as e:
+            print(f"⚠️ Unexpected Redis error: {e}")
             return False
 
 class CacheManager:
