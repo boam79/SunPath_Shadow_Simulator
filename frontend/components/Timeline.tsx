@@ -27,14 +27,29 @@ export default function Timeline({
 
   // Convert time string to minutes
   const timeToMinutes = (time: string): number => {
-    const [hours, minutes] = time.split(':').map(Number);
+    const [hoursStr, minutesStr] = time.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+
+    if (isNaN(hours) || isNaN(minutes)) {
+      console.error(`Invalid time format: ${time}`);
+      return 0;
+    }
+
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      console.error(`Time out of range: ${time}`);
+      return Math.max(0, Math.min(1439, hours * 60 + minutes));
+    }
+
     return hours * 60 + minutes;
   };
 
   // Convert minutes to time string
   const minutesToTime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    // Round to handle fractional minutes (e.g., from 0.5x playback speed)
+    const totalMinutes = Math.round(minutes);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
 
@@ -46,9 +61,16 @@ export default function Timeline({
   useEffect(() => {
     if (!playing) return;
 
+    // Adjust interval time based on playSpeed to always increment by 1 minute
+    // 1x speed = 1 minute per second (1000ms interval)
+    // 0.5x speed = 1 minute per 2 seconds (2000ms interval)
+    // 2x speed = 1 minute per 0.5 seconds (500ms interval)
+    // 5x speed = 1 minute per 0.2 seconds (200ms interval)
+    const intervalTime = 1000 / playSpeed;
+
     const interval = setInterval(() => {
       const current = timeToMinutes(currentTime);
-      const next = current + (1 * playSpeed);
+      const next = current + 1; // Always increment by 1 minute
 
       if (next >= endMinutes) {
         // Reached end, stop
@@ -57,9 +79,10 @@ export default function Timeline({
       } else {
         onTimeChange(minutesToTime(next));
       }
-    }, 1000 / 30); // 30fps
+    }, intervalTime);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, currentTime, playSpeed, endMinutes]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {

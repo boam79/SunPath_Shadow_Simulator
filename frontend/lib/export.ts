@@ -24,6 +24,13 @@ export function exportToCSV(data: SolarCalculationResponse, filename?: string): 
     'Shadow Direction (°)'
   ];
 
+  // Helper function for safe number formatting
+  const safeToFixed = (value: number | null | undefined, digits: number): string => {
+    if (typeof value !== 'number') return '';
+    if (!isFinite(value)) return 'Infinite';
+    return value.toFixed(digits);
+  };
+
   // CSV Rows
   const rows = data.series.map(point => {
     const timestamp = new Date(point.timestamp);
@@ -34,17 +41,15 @@ export function exportToCSV(data: SolarCalculationResponse, filename?: string): 
       point.timestamp,
       dateStr,
       timeStr,
-      point.sun.altitude.toFixed(4),
-      point.sun.azimuth.toFixed(4),
-      point.sun.zenith.toFixed(4),
-      point.irradiance?.ghi.toFixed(2) || '',
-      point.irradiance?.dni.toFixed(2) || '',
-      point.irradiance?.dhi.toFixed(2) || '',
-      point.irradiance?.par?.toFixed(2) || '',
-      typeof point.shadow?.length === 'number' 
-        ? (point.shadow.length === Infinity ? 'Infinite' : point.shadow.length.toFixed(2))
-        : '',
-      typeof point.shadow?.direction === 'number' ? point.shadow.direction.toFixed(2) : ''
+      safeToFixed(point.sun.altitude, 4),
+      safeToFixed(point.sun.azimuth, 4),
+      safeToFixed(point.sun.zenith, 4),
+      safeToFixed(point.irradiance?.ghi, 2),
+      safeToFixed(point.irradiance?.dni, 2),
+      safeToFixed(point.irradiance?.dhi, 2),
+      safeToFixed(point.irradiance?.par, 2),
+      safeToFixed(point.shadow?.length, 2),
+      safeToFixed(point.shadow?.direction, 2)
     ];
   });
 
@@ -79,6 +84,20 @@ export function exportToJSON(data: SolarCalculationResponse, filename?: string):
 }
 
 /**
+ * Helper to safely format date/time strings
+ */
+function formatDateTime(dateStr: string | null | undefined): string {
+  if (!dateStr || dateStr === 'N/A') return 'N/A';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleString('ko-KR');
+  } catch {
+    return 'N/A';
+  }
+}
+
+/**
  * Export summary as text
  */
 export function exportSummary(data: SolarCalculationResponse, filename?: string): void {
@@ -86,9 +105,9 @@ export function exportSummary(data: SolarCalculationResponse, filename?: string)
 SunPath & Shadow Simulator - 계산 결과
 =======================================
 
-일출: ${new Date(data.summary.sunrise).toLocaleString('ko-KR')}
-일몰: ${new Date(data.summary.sunset).toLocaleString('ko-KR')}
-정오: ${new Date(data.summary.solar_noon).toLocaleString('ko-KR')}
+일출: ${formatDateTime(data.summary.sunrise)}
+일몰: ${formatDateTime(data.summary.sunset)}
+정오: ${formatDateTime(data.summary.solar_noon)}
 
 일조 시간: ${data.summary.day_length.toFixed(2)}시간
 최대 태양 고도: ${data.summary.max_altitude.toFixed(2)}°
@@ -120,7 +139,11 @@ function downloadFile(content: string, filename: string, mimeType: string): void
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+
+  // Delay URL revocation to ensure download completes
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 100);
 }
 
 /**

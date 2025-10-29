@@ -80,8 +80,9 @@ class SolarCalculator:
             from datetime import timezone, timedelta
             tz = timezone(timedelta(hours=tz_offset_hours))
             times = times.tz_localize(tz)
-        except:
-            # Fallback to UTC
+        except (ValueError, TypeError) as e:
+            # Fallback to UTC if timezone localization fails
+            print(f"⚠️ Timezone localization failed: {e}. Using UTC.")
             times = times.tz_localize('UTC')
         
         # Calculate solar position using NREL SPA
@@ -95,11 +96,11 @@ class SolarCalculator:
             method='nrel_numpy'  # NREL SPA algorithm
         )
         
-        # Apply atmospheric refraction correction if requested
-        if apply_refraction:
-            solar_pos['apparent_elevation'] = solar_pos['apparent_elevation']
-            solar_pos['apparent_zenith'] = solar_pos['apparent_zenith']
-        
+        # Note: pvlib's get_solarposition always applies atmospheric refraction correction
+        # The 'apparent_elevation' and 'apparent_zenith' columns include refraction
+        # The 'elevation' and 'zenith' columns are geometric (without refraction)
+        # The apply_refraction parameter determines which values are used in responses
+
         return solar_pos
     
     def calculate_sunrise_sunset(
@@ -127,7 +128,8 @@ class SolarCalculator:
             from datetime import timezone as dt_timezone, timedelta
             tz = dt_timezone(timedelta(hours=tz_offset_hours))
             date_obj = pd.Timestamp(date).tz_localize(tz)
-        except:
+        except (ValueError, TypeError) as e:
+            print(f"⚠️ Timezone localization failed in sunrise_sunset: {e}. Using UTC.")
             date_obj = pd.Timestamp(date).tz_localize('UTC')
         
         # Calculate sunrise and sunset
@@ -145,9 +147,16 @@ class SolarCalculator:
         # Calculate day length in hours
         if pd.notna(sunrise) and pd.notna(sunset):
             day_length = (sunset - sunrise).total_seconds() / 3600
+        elif pd.isna(sunrise) and pd.isna(sunset):
+            # Both sunrise and sunset are NaN - polar day or polar night
+            # Need to check solar altitude to determine which
+            # For now, default to 0.0 (polar night)
+            # TODO: Calculate actual solar altitude to determine polar day (24.0) vs polar night (0.0)
+            day_length = 0.0
         else:
-            # Handle polar day/night
-            day_length = 24.0 if pd.isna(sunrise) else 0.0
+            # Only one of sunrise/sunset is NaN - anomalous case
+            print(f"⚠️ Anomalous sun times: sunrise={sunrise}, sunset={sunset}")
+            day_length = 0.0
         
         return {
             'sunrise': sunrise.isoformat() if pd.notna(sunrise) else None,

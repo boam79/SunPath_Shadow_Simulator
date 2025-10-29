@@ -37,15 +37,26 @@ async def clear_cache(
 ) -> Dict[str, Any]:
     """
     Clear cache entries matching pattern
-    
+
     **패턴 예시:**
     - `*`: 모든 캐시 삭제
     - `solar:*`: Solar 관련 캐시만 삭제
     - `integrated:*`: 통합 계산 캐시만 삭제
-    
-    **주의:** 프로덕션 환경에서는 인증 필요
+
+    **⚠️ WARNING:** This endpoint should be protected with authentication in production!
+    **보안 주의:** 프로덕션 환경에서는 반드시 인증을 추가해야 합니다!
     """
     try:
+        # TODO: Add authentication check for production
+        # Example: verify_admin_token(request)
+
+        # Pattern validation
+        if not pattern or len(pattern) > 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid pattern: must be 1-100 characters"
+            )
+
         deleted_count = cache_manager.clear_pattern(pattern)
         return {
             'message': f'Cleared {deleted_count} cache entries',

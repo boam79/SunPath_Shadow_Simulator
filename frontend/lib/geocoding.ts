@@ -35,7 +35,11 @@ export async function searchAddress(query: string): Promise<GeocodeResult[]> {
       countrycodes: 'kr',
       limit: '5'
     });
-    const response = await fetch(`${NOMINATIM_URL}/search?${params.toString()}`);
+    const response = await fetch(`${NOMINATIM_URL}/search?${params.toString()}`, {
+      headers: {
+        'User-Agent': 'SunPath-Shadow-Simulator/0.1.1 (https://sunpathshadowsimulator.vercel.app)',
+      }
+    });
 
     if (!response.ok) {
       throw new Error(`Geocoding failed: ${response.statusText}`);
@@ -79,7 +83,11 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string |
       zoom: '18',
       'accept-language': 'ko,en'
     });
-    const response = await fetch(`${NOMINATIM_URL}/reverse?${params.toString()}`);
+    const response = await fetch(`${NOMINATIM_URL}/reverse?${params.toString()}`, {
+      headers: {
+        'User-Agent': 'SunPath-Shadow-Simulator/0.1.1 (https://sunpathshadowsimulator.vercel.app)',
+      }
+    });
 
     if (!response.ok) {
       return null;
