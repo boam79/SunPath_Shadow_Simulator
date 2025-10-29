@@ -123,15 +123,25 @@ export default function Timeline({
 
       if (next >= end) {
         // Reached end, stop
-        setInternalPlaying(false);
-        onPlayPause?.();
+        // If isPlaying is controlled by parent, we need to notify parent to stop
+        // Otherwise, stop internal playing state
+        if (isPlaying !== undefined && onPlayPause) {
+          // Parent controls playing state, notify to stop if currently playing
+          if (isPlaying) {
+            onPlayPause(); // This will toggle to false
+          }
+        } else {
+          setInternalPlaying(false);
+        }
+        // Always clamp to end time
+        onTimeChange(endTime);
       } else {
         onTimeChange(minutesToTime(next));
       }
     }, 1000 / 30); // 30fps
 
     return () => clearInterval(interval);
-  }, [playing, onTimeChange, onPlayPause, timeToMinutes, minutesToTime]);
+  }, [playing, onTimeChange, onPlayPause, timeToMinutes, minutesToTime, isPlaying, endTime]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const minutes = parseInt(e.target.value);
@@ -160,8 +170,16 @@ export default function Timeline({
 
   const handleReset = () => {
     onTimeChange(startTime);
-    setInternalPlaying(false);
-    onPlayPause?.();
+    // If isPlaying is controlled by parent, notify to stop
+    // Otherwise, stop internal playing state
+    if (isPlaying !== undefined && onPlayPause) {
+      // Parent controls playing state, stop if currently playing
+      if (isPlaying) {
+        onPlayPause(); // This will toggle to false
+      }
+    } else {
+      setInternalPlaying(false);
+    }
   };
 
   // Calculate safe gradient percentages with division by zero protection
