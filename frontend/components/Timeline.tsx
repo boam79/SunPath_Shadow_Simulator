@@ -35,14 +35,24 @@ export default function Timeline({
     playSpeedRef.current = playSpeed;
   }, [playSpeed]);
 
+  const playing = isPlaying !== undefined ? isPlaying : internalPlaying;
+
   // currentTime이 변경될 때 ref 업데이트
   useEffect(() => {
     currentTimeRef.current = currentTime;
-    // Sync accumulator with current time (in minutes)
-    accumulatedMinutesRef.current = timeToMinutes(currentTime);
-  }, [currentTime]);
-
-  const playing = isPlaying !== undefined ? isPlaying : internalPlaying;
+    const currentMinutes = timeToMinutes(currentTime);
+    const accumulatedMinutes = accumulatedMinutesRef.current;
+    
+    // Only sync accumulator if change is significant (more than 1 minute difference)
+    // This prevents resetting accumulator during animation when time hasn't changed by a full minute yet
+    // For external changes (user interaction, prop changes), sync immediately
+    if (Math.abs(currentMinutes - accumulatedMinutes) >= 1 || !playing) {
+      console.log('[Timeline] Syncing accumulator from', accumulatedMinutes, 'to', currentMinutes, '(external change or not playing)');
+      accumulatedMinutesRef.current = currentMinutes;
+    } else {
+      console.log('[Timeline] Skipping accumulator sync (animation in progress, diff:', Math.abs(currentMinutes - accumulatedMinutes), 'minutes)');
+    }
+  }, [currentTime, playing, timeToMinutes]);
 
   // Debug: Log playing state changes
   useEffect(() => {
@@ -153,8 +163,16 @@ export default function Timeline({
         onTimeChange(endTime);
       } else {
         const nextTime = minutesToTime(next);
-        console.log('[Timeline] Updating time from', currentTimeRef.current, 'to', nextTime);
-        onTimeChange(nextTime);
+        const currentTimeMinutes = timeToMinutes(currentTimeRef.current);
+        
+        // Only call onTimeChange if the minute value has actually changed
+        // This prevents unnecessary state updates and useEffect triggers
+        if (Math.floor(next) !== Math.floor(currentTimeMinutes)) {
+          console.log('[Timeline] Updating time from', currentTimeRef.current, 'to', nextTime, '(minute changed)');
+          onTimeChange(nextTime);
+        } else {
+          console.log('[Timeline] Time update skipped (same minute, accumulated:', next.toFixed(3), 'minutes)');
+        }
       }
     }, 1000 / 30); // 30fps
 
