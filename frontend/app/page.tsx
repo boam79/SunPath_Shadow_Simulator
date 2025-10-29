@@ -67,7 +67,11 @@ export default function Home() {
 
   // Memoize play/pause handler to prevent unnecessary re-renders
   const handlePlayPause = useCallback(() => {
-    setIsPlaying(prev => !prev);
+    setIsPlaying(prev => {
+      const next = !prev;
+      try { console.log(`[Timeline] onPlayPause clicked -> ${next ? 'PLAY' : 'PAUSE'}`); } catch {}
+      return next;
+    });
   }, []);
 
   return (

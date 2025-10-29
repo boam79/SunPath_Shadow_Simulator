@@ -276,9 +276,14 @@ export default function Timeline({
 
           {/* Play/Pause */}
           <button
-            onClick={handlePlayPause}
+            type="button"
+            onClick={() => {
+              try { console.log('[Timeline] Play/Pause button click'); } catch {}
+              handlePlayPause();
+            }}
             className="p-3 md:p-4 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors"
             title={playing ? "일시정지" : "재생"}
+            aria-pressed={playing}
           >
             {playing ? (
               <Pause className="w-5 h-5 md:w-6 md:h-6 text-white" fill="white" />
