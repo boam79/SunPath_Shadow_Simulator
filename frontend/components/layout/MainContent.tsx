@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import Timeline from '@/components/Timeline';
 import SolarChart from '@/components/Chart';
 import OptimizationPanel from '@/components/OptimizationPanel';
 
@@ -27,14 +26,6 @@ interface MainContentProps {
   isLoading: boolean;
   error: string | null;
   onRetry?: () => void;
-  timeline?: {
-    currentTime: string;
-    onTimeChange: (t: string) => void;
-    isPlaying: boolean;
-    onPlayPause: () => void;
-    startTime?: string;
-    endTime?: string;
-  };
 }
 
 export default function MainContent({
@@ -45,8 +36,7 @@ export default function MainContent({
   solarData,
   isLoading,
   error,
-  onRetry,
-  timeline
+  onRetry
 }: MainContentProps) {
   const handleLocationChange = (lat: number, lon: number) => {
     if (onLocationChange) {
@@ -177,11 +167,11 @@ export default function MainContent({
 
   return (
     <main className="flex-1 overflow-hidden flex flex-col">
-      {/* Fixed Header: Map + Timeline */}
+      {/* Fixed Header: Map Only */}
       <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="w-full md:max-w-6xl mx-auto px-4 pt-4 pb-2">
           {/* Map Container */}
-          <div className="bg-gray-100 dark:bg-gray-800 relative h-[25vh] md:h-[30vh] flex-none rounded-lg overflow-hidden">
+          <div className="bg-gray-100 dark:bg-gray-800 relative h-[30vh] md:h-[40vh] flex-none rounded-lg overflow-hidden">
             <Map 
               location={location} 
               onLocationChange={handleLocationChange}
@@ -190,20 +180,6 @@ export default function MainContent({
               currentTime={currentTime}
             />
           </div>
-          
-          {/* Timeline - Right below map */}
-          {timeline && (
-            <div className="mt-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-              <Timeline
-                currentTime={timeline.currentTime}
-                onTimeChange={timeline.onTimeChange}
-                startTime={timeline.startTime || '05:00'}
-                endTime={timeline.endTime || '20:00'}
-                isPlaying={timeline.isPlaying}
-                onPlayPause={timeline.onPlayPause}
-              />
-            </div>
-          )}
         </div>
       </div>
 

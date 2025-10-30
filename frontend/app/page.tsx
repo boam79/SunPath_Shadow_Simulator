@@ -111,6 +111,14 @@ export default function Home() {
                 currentTime={currentTime}
                 setCurrentTime={setCurrentTime}
                 solarData={solarData}
+                timeline={{
+                  currentTime,
+                  onTimeChange: handleTimeChange,
+                  isPlaying,
+                  onPlayPause: handlePlayPause,
+                  startTime: '05:00',
+                  endTime: '20:00'
+                }}
               />
             </div>
           </div>
@@ -128,6 +136,14 @@ export default function Home() {
           currentTime={currentTime}
           setCurrentTime={setCurrentTime}
           solarData={solarData}
+          timeline={{
+            currentTime,
+            onTimeChange: handleTimeChange,
+            isPlaying,
+            onPlayPause: handlePlayPause,
+            startTime: '05:00',
+            endTime: '20:00'
+          }}
           />
         </div>
         
@@ -142,14 +158,6 @@ export default function Home() {
           isLoading={isLoading}
           error={error}
           onRetry={fetchSolarData}
-          timeline={{
-            currentTime,
-            onTimeChange: handleTimeChange,
-            isPlaying,
-            onPlayPause: handlePlayPause,
-            startTime: '05:00',
-            endTime: '20:00'
-          }}
         />
       </div>
 
