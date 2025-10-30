@@ -177,9 +177,10 @@ export default function MainContent({
 
   return (
     <main className="flex-1 overflow-hidden flex flex-col">
-      <div className="flex-1 overflow-y-auto w-full md:max-w-6xl mx-auto px-4">
-        {/* Map Container - Sticky */}
-        <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 pb-2 pt-4">
+      {/* Fixed Header: Map + Timeline */}
+      <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="w-full md:max-w-6xl mx-auto px-4 pt-4 pb-2">
+          {/* Map Container */}
           <div className="bg-gray-100 dark:bg-gray-800 relative h-[25vh] md:h-[30vh] flex-none rounded-lg overflow-hidden">
             <Map 
               location={location} 
@@ -204,9 +205,11 @@ export default function MainContent({
             </div>
           )}
         </div>
+      </div>
 
-        {/* Bottom Panel - Data Display (Scrollable) */}
-        <div className="bg-white dark:bg-gray-800 pt-4">
+      {/* Scrollable Content: Data Display */}
+      <div className="flex-1 overflow-y-auto w-full md:max-w-6xl mx-auto px-4">
+        <div className="bg-white dark:bg-gray-800 pt-4 pb-4">
           <div className="p-3 md:p-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 md:mb-4">
             실시간 데이터
