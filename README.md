@@ -384,6 +384,66 @@ vercel
 
 ## 📋 버전 히스토리
 
+### Version 0.1.5 (2025-10-29)
+
+**버그 수정 및 리팩토링 - 코드 품질 개선**
+
+#### 🔴 CRITICAL Priority (핵심 버그 수정)
+- **Timeline 애니메이션 시간 비교 로직 버그 수정** (`frontend/components/Timeline.tsx`)
+  - `timeToMinutes()` 변환 대신 `accumulatedMinutesRef` 직접 비교 사용
+  - 문자열 변환으로 인한 정밀도 손실 방지
+  - 애니메이션 시간 업데이트 정확도 향상
+
+- **Timeline 애니메이션 비교 로직 버그 수정** (`frontend/components/Timeline.tsx`)
+  - ref 업데이트 전에 `previousMinute` 저장하여 비교 순서 수정
+  - 업데이트 후 비교로 인한 잘못된 비교 문제 해결
+  - 애니메이션 시간 업데이트 정확도 대폭 향상
+
+#### 🟠 HIGH Priority (기능 개선)
+- **Shadow 좌표 보간 계산 추가** (`frontend/components/layout/MainContent.tsx`)
+  - `calculateShadowEndpoint` 함수 추가
+  - 보간된 shadow length/direction으로 좌표 계산
+  - 애니메이션에서 그림자 끝점이 부드럽게 이동
+
+- **API 자동 재시도 로직 추가** (`frontend/lib/api.ts`)
+  - `fetchWithRetry` 함수 구현 (exponential backoff)
+  - 최대 3회 재시도, 지연: 1초 → 2초 → 4초
+  - 네트워크 오류 및 5xx 서버 오류에만 재시도 (4xx는 재시도하지 않음)
+  - Render 서버 cold start 문제 완화
+
+- **MainContent 날짜 파싱 및 Invalid Date 처리** (`frontend/components/layout/MainContent.tsx`)
+  - `sunrise`/`sunset`가 "N/A" 문자열일 때 Invalid Date 방지
+  - 날짜 파싱 안전성 검증 추가
+  - 에러 처리 개선
+
+#### 🟡 MEDIUM Priority (코드 품질)
+- **Timeline useEffect dependency 배열 정리** (`frontend/components/Timeline.tsx`)
+  - `timeToMinutes`, `minutesToTime` dependency에서 제거 (useCallback으로 메모이제이션됨)
+  - 불필요한 useEffect 재실행 방지
+
+- **MainContent 그림자 길이 표시 안전성 개선** (`frontend/components/layout/MainContent.tsx`)
+  - 불필요한 non-null assertion(`!`) 제거
+  - 옵셔널 체이닝으로 안전하게 접근
+
+- **프로덕션 디버그 로그 제거** (`frontend/components/Timeline.tsx`)
+  - `devLog` 헬퍼 함수 추가 (개발 환경에서만 출력)
+  - 디버그 로그 10개를 개발 환경에서만 출력하도록 수정
+  - 프로덕션 콘솔 노이즈 감소
+
+**수정 파일 통계:**
+- 프론트엔드: 3개 파일 수정
+  - `frontend/components/Timeline.tsx`: 애니메이션 버그 수정 및 리팩토링
+  - `frontend/components/layout/MainContent.tsx`: Shadow 좌표 보간 및 날짜 파싱 개선
+  - `frontend/lib/api.ts`: 자동 재시도 로직 추가
+- 총 8개 버그 수정 및 리팩토링
+
+**영향:**
+- ✅ Timeline 애니메이션 정확도 대폭 향상
+- ✅ Shadow 좌표 보간으로 부드러운 애니메이션
+- ✅ API 호출 안정성 향상 (Render cold start 대응)
+- ✅ 프로덕션 콘솔 로그 깔끔해짐
+- ✅ 코드 품질 및 유지보수성 개선
+
 ### Version 0.1.4 (2025-10-29)
 
 **타임라인 재생 버튼 및 애니메이션 진행 버그 완전 해결**
@@ -659,7 +719,7 @@ vercel
 
 ---
 
-**버전:** 0.1.4
+**버전:** 0.1.5
 **최종 수정:** 2025-10-29
 
 ### 부록: 트러블슈팅 메모

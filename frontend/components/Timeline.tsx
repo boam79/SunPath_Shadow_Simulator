@@ -3,6 +3,16 @@
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+// Development mode check
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// Helper function for development-only logging
+const devLog = (...args: unknown[]) => {
+  if (isDevelopment) {
+    console.log(...args);
+  }
+};
+
 interface TimelineProps {
   currentTime: string;
   onTimeChange: (time: string) => void;
@@ -47,16 +57,16 @@ export default function Timeline({
     // This prevents resetting accumulator during animation when time hasn't changed by a full minute yet
     // For external changes (user interaction, prop changes), sync immediately
     if (Math.abs(currentMinutes - accumulatedMinutes) >= 1 || !playing) {
-      console.log('[Timeline] Syncing accumulator from', accumulatedMinutes, 'to', currentMinutes, '(external change or not playing)');
+      devLog('[Timeline] Syncing accumulator from', accumulatedMinutes, 'to', currentMinutes, '(external change or not playing)');
       accumulatedMinutesRef.current = currentMinutes;
     } else {
-      console.log('[Timeline] Skipping accumulator sync (animation in progress, diff:', Math.abs(currentMinutes - accumulatedMinutes), 'minutes)');
+      devLog('[Timeline] Skipping accumulator sync (animation in progress, diff:', Math.abs(currentMinutes - accumulatedMinutes), 'minutes)');
     }
-  }, [currentTime, playing, timeToMinutes]);
+  }, [currentTime, playing]);
 
-  // Debug: Log playing state changes
+  // Debug: Log playing state changes (development only)
   useEffect(() => {
-    console.log('[Timeline] playing state changed:', { isPlaying, internalPlaying, playing });
+    devLog('[Timeline] playing state changed:', { isPlaying, internalPlaying, playing });
   }, [isPlaying, internalPlaying, playing]);
 
   // Convert time string to minutes with improved error handling
@@ -118,7 +128,7 @@ export default function Timeline({
   const setPlaySpeedSafe = useCallback((speed: number) => {
     // Only allow positive speeds between 0.1 and 10
     const validatedSpeed = Math.max(0.1, Math.min(10, speed));
-    if (validatedSpeed !== speed) {
+    if (validatedSpeed !== speed && isDevelopment) {
       console.warn(`Play speed clamped from ${speed} to ${validatedSpeed}`);
     }
     setPlaySpeed(validatedSpeed);
@@ -126,15 +136,15 @@ export default function Timeline({
 
   // Animation loop with useRef to avoid interval recreation
   useEffect(() => {
-    console.log('[Timeline] useEffect animation loop - playing:', playing);
+    devLog('[Timeline] useEffect animation loop - playing:', playing);
     if (!playing) {
-      console.log('[Timeline] Animation not playing, skipping interval setup');
+      devLog('[Timeline] Animation not playing, skipping interval setup');
       return;
     }
 
-    console.log('[Timeline] Setting up animation interval');
+    devLog('[Timeline] Setting up animation interval');
     const interval = setInterval(() => {
-      console.log('[Timeline] Animation tick - current:', currentTimeRef.current);
+      devLog('[Timeline] Animation tick - current:', currentTimeRef.current);
       // Use ref to get latest values without recreating interval
       const current = accumulatedMinutesRef.current;
       const speed = playSpeedRef.current;
@@ -145,12 +155,15 @@ export default function Timeline({
       // 0.5x speed = 0.5 minutes per second = 0.5/30 per frame
       const minutesPerFrame = speed / 30;
       const next = current + minutesPerFrame;
-      accumulatedMinutesRef.current = next;
+      
+      // Store previous minute value before updating ref (for comparison)
+      const previousMinute = Math.floor(current);
 
       if (next >= end) {
         // Reached end, stop
         // If isPlaying is controlled by parent, we need to notify parent to stop
         // Otherwise, stop internal playing state
+        accumulatedMinutesRef.current = end;
         if (isPlaying !== undefined && onPlayPause) {
           // Parent controls playing state, notify to stop if currently playing
           if (isPlaying) {
@@ -162,25 +175,27 @@ export default function Timeline({
         // Always clamp to end time
         onTimeChange(endTime);
       } else {
-        const nextTime = minutesToTime(next);
-        const currentTimeMinutes = timeToMinutes(currentTimeRef.current);
+        // Update ref first, then check if minute changed
+        accumulatedMinutesRef.current = next;
+        const nextMinute = Math.floor(next);
         
         // Only call onTimeChange if the minute value has actually changed
         // This prevents unnecessary state updates and useEffect triggers
-        if (Math.floor(next) !== Math.floor(currentTimeMinutes)) {
-          console.log('[Timeline] Updating time from', currentTimeRef.current, 'to', nextTime, '(minute changed)');
+        if (nextMinute !== previousMinute) {
+          const nextTime = minutesToTime(next);
+          devLog('[Timeline] Updating time from', currentTimeRef.current, 'to', nextTime, '(minute changed)');
           onTimeChange(nextTime);
         } else {
-          console.log('[Timeline] Time update skipped (same minute, accumulated:', next.toFixed(3), 'minutes)');
+          devLog('[Timeline] Time update skipped (same minute, accumulated:', next.toFixed(3), 'minutes)');
         }
       }
     }, 1000 / 30); // 30fps
 
     return () => {
-      console.log('[Timeline] Cleaning up animation interval');
+      devLog('[Timeline] Cleaning up animation interval');
       clearInterval(interval);
     };
-  }, [playing, onTimeChange, onPlayPause, timeToMinutes, minutesToTime, isPlaying, endTime]);
+  }, [playing, onTimeChange, onPlayPause, isPlaying, endTime]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const minutes = parseInt(e.target.value);
@@ -321,7 +336,7 @@ export default function Timeline({
           <button
             type="button"
             onClick={() => {
-              try { console.log('[Timeline] Play/Pause button click'); } catch {}
+              devLog('[Timeline] Play/Pause button click');
               handlePlayPause();
             }}
             className="p-3 md:p-4 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors"

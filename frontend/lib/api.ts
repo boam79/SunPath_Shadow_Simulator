@@ -11,6 +11,55 @@ const isVercelEnv = !!(
   process.env.VERCEL_ENV === 'production'
 );
 
+/**
+ * Fetch with automatic retry using exponential backoff
+ * Retries on network errors or 5xx server errors (Render cold start)
+ * Does not retry on 4xx client errors
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  maxRetries: number = 3,
+  initialDelay: number = 1000
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // Don't retry on 4xx client errors (bad request)
+      if (response.status >= 400 && response.status < 500) {
+        return response;
+      }
+      
+      // Retry on 5xx server errors or network errors
+      if (response.ok || attempt === maxRetries) {
+        return response;
+      }
+      
+      // If we get here, it's a 5xx error and we should retry
+      lastError = new Error(`Server error: ${response.status}`);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Network error');
+      
+      // If this is the last attempt, throw the error
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+    }
+    
+    // Exponential backoff: wait before retrying
+    // Delay: 1s, 2s, 4s for attempts 0, 1, 2
+    const delay = initialDelay * Math.pow(2, attempt);
+    console.log(`⚠️ API request failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  
+  // This should never be reached, but TypeScript needs it
+  throw lastError || new Error('Max retries exceeded');
+}
+
 export interface SolarCalculationRequest {
   location: {
     lat: number;
@@ -93,7 +142,7 @@ export async function calculateSolar(
   request: SolarCalculationRequest
 ): Promise<SolarCalculationResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/integrated/calculate`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/integrated/calculate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -200,7 +249,7 @@ export async function getSunriseSunset(
   date: string
 ): Promise<{ sunrise: string; sunset: string; [key: string]: unknown }> {
   try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_BASE_URL}/api/solar/sunrise-sunset?lat=${lat}&lon=${lon}&date=${date}`
     );
 
@@ -226,7 +275,7 @@ export async function calculateShadow(
   object_height: number
 ): Promise<Shadow> {
   try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_BASE_URL}/api/shadow/calculate?lat=${lat}&lon=${lon}&date=${date}&time=${time}&object_height=${object_height}`
     );
 
@@ -246,7 +295,7 @@ export async function calculateShadow(
  */
 export async function getCacheStats(): Promise<{ [key: string]: unknown } | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/cache/stats`);
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/cache/stats`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch cache stats');
@@ -264,7 +313,8 @@ export async function getCacheStats(): Promise<{ [key: string]: unknown } | null
  */
 export async function healthCheck(): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/health`);
+    // Health check doesn't need retries as it's used for keep-alive
+    const response = await fetchWithRetry(`${API_BASE_URL}/health`, {}, 1, 500);
     return response.ok;
   } catch (error) {
     console.error('Health check failed:', error);

@@ -50,10 +50,48 @@ export default function MainContent({
     }
   };
 
+  // Calculate shadow endpoint coordinates from length and direction
+  const calculateShadowEndpoint = (
+    startLat: number,
+    startLon: number,
+    shadowLength: number,
+    shadowDirection: number
+  ): number[][] | null => {
+    if (!isFinite(shadowLength) || shadowLength <= 0 || !isFinite(shadowDirection)) {
+      return null;
+    }
+
+    // Convert direction from degrees to radians
+    // Direction: 0° = North, 90° = East, 180° = South, 270° = West
+    const directionRad = (shadowDirection * Math.PI) / 180;
+    
+    // 1 degree latitude ≈ 111,320 meters
+    const metersPerDegreeLat = 111320;
+    
+    // Calculate offset in meters
+    const latOffsetMeters = shadowLength * Math.cos(directionRad);
+    const lonOffsetMeters = shadowLength * Math.sin(directionRad);
+    
+    // Convert to degrees (accounting for latitude-dependent longitude spacing)
+    const latOffset = latOffsetMeters / metersPerDegreeLat;
+    const lonOffset = lonOffsetMeters / (metersPerDegreeLat * Math.cos(startLat * Math.PI / 180));
+    
+    const endLat = startLat + latOffset;
+    const endLon = startLon + lonOffset;
+    
+    return [[startLon, startLat], [endLon, endLat]];
+  };
+
   // Interpolate data point at selected time for smooth animation
   const currentDataPoint = (() => {
     if (!solarData) return null;
+    // Use explicit timezone to avoid parsing issues
+    // Format: YYYY-MM-DDTHH:mm:ss (local timezone)
     const target = new Date(`${date}T${currentTime}:00`);
+    if (isNaN(target.getTime())) {
+      console.error(`Invalid date/time: ${date}T${currentTime}:00`);
+      return null;
+    }
     const series = solarData.series.map(p => ({ p, t: new Date(p.timestamp).getTime() }));
     const tt = target.getTime();
 
@@ -82,6 +120,39 @@ export default function MainContent({
     const sunAzi = lerpAngle(prev.p.sun.azimuth, next.p.sun.azimuth);
     const sunZen = lerp(prev.p.sun.zenith, next.p.sun.zenith);
 
+    // Calculate interpolated shadow
+    let interpolatedShadow = null;
+    if (prev.p.shadow || next.p.shadow) {
+      if (prev.p.shadow && next.p.shadow) {
+        const shadowLength = (typeof prev.p.shadow.length === 'number' && typeof next.p.shadow.length === 'number') 
+          ? lerp(prev.p.shadow.length, next.p.shadow.length) 
+          : undefined;
+        const shadowDirection = (typeof prev.p.shadow.direction === 'number' && typeof next.p.shadow.direction === 'number') 
+          ? lerpAngle(prev.p.shadow.direction, next.p.shadow.direction) 
+          : undefined;
+        
+        // Calculate coordinates if location and shadow data are available
+        let shadowCoordinates = null;
+        if (location && typeof shadowLength === 'number' && shadowLength > 0 && typeof shadowDirection === 'number') {
+          shadowCoordinates = calculateShadowEndpoint(
+            location.lat,
+            location.lon,
+            shadowLength,
+            shadowDirection
+          );
+        }
+        
+        interpolatedShadow = {
+          length: shadowLength,
+          direction: shadowDirection,
+          coordinates: shadowCoordinates
+        };
+      } else {
+        // Use existing shadow data if only one side has it
+        interpolatedShadow = prev.p.shadow || next.p.shadow;
+      }
+    }
+
     return {
       timestamp: target.toISOString(),
       sun: {
@@ -96,11 +167,7 @@ export default function MainContent({
         dhi: lerp(prev.p.irradiance.dhi, next.p.irradiance.dhi),
         par: prev.p.irradiance.par && next.p.irradiance.par ? lerp(prev.p.irradiance.par, next.p.irradiance.par) : undefined
       } : null,
-      shadow: prev.p.shadow || next.p.shadow ? (prev.p.shadow && next.p.shadow ? {
-        length: (typeof prev.p.shadow.length === 'number' && typeof next.p.shadow.length === 'number') ? lerp(prev.p.shadow.length, next.p.shadow.length) : undefined,
-        direction: (typeof prev.p.shadow.direction === 'number' && typeof next.p.shadow.direction === 'number') ? lerpAngle(prev.p.shadow.direction, next.p.shadow.direction) : undefined,
-        coordinates: null
-      } : prev.p.shadow || next.p.shadow) : null
+      shadow: interpolatedShadow
     } as typeof solarData.series[number];
   })();
 
@@ -159,7 +226,7 @@ export default function MainContent({
                 <div className="p-2 md:p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
                   <div className="text-xs text-purple-700 dark:text-purple-400 mb-1">그림자 길이</div>
                   <div className="text-xl font-bold text-purple-900 dark:text-purple-300">
-                    {typeof currentDataPoint?.shadow?.length === 'number' ? currentDataPoint!.shadow!.length!.toFixed(2) : '--'} m
+                    {typeof currentDataPoint?.shadow?.length === 'number' ? currentDataPoint.shadow.length.toFixed(2) : '--'} m
                   </div>
                 </div>
               </div>
@@ -169,13 +236,27 @@ export default function MainContent({
                 <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">일출</div>
                   <div className="font-semibold text-gray-900 dark:text-white">
-                    {new Date(solarData.summary.sunrise).toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})}
+                    {(() => {
+                      const sunrise = typeof solarData.summary.sunrise === 'string' && solarData.summary.sunrise !== 'N/A'
+                        ? new Date(solarData.summary.sunrise)
+                        : null;
+                      return sunrise && !isNaN(sunrise.getTime())
+                        ? sunrise.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
+                        : solarData.summary.sunrise || '--';
+                    })()}
                   </div>
                 </div>
                 <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">일몰</div>
                   <div className="font-semibold text-gray-900 dark:text-white">
-                    {new Date(solarData.summary.sunset).toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})}
+                    {(() => {
+                      const sunset = typeof solarData.summary.sunset === 'string' && solarData.summary.sunset !== 'N/A'
+                        ? new Date(solarData.summary.sunset)
+                        : null;
+                      return sunset && !isNaN(sunset.getTime())
+                        ? sunset.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
+                        : solarData.summary.sunset || '--';
+                    })()}
                   </div>
                 </div>
                 <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
