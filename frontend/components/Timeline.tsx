@@ -20,6 +20,7 @@ interface TimelineProps {
   endTime?: string;
   isPlaying?: boolean;
   onPlayPause?: () => void;
+  variant?: 'default' | 'sidebar';
 }
 
 export default function Timeline({
@@ -28,7 +29,8 @@ export default function Timeline({
   startTime = '00:00',
   endTime = '23:59',
   isPlaying = false,
-  onPlayPause
+  onPlayPause,
+  variant = 'default'
 }: TimelineProps) {
   const [playSpeed, setPlaySpeed] = useState<number>(1);
   const [internalPlaying, setInternalPlaying] = useState(false);
@@ -265,12 +267,14 @@ export default function Timeline({
     return `${Math.max(0, Math.min(100, percent))}%`;
   };
 
+  const isSidebar = variant === 'sidebar';
+
   return (
-    <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 md:p-4">
-      <div className="max-w-7xl mx-auto space-y-3 md:space-y-4">
+    <div className={`bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 ${isSidebar ? 'p-2' : 'p-3 md:p-4'}`}>
+      <div className={`${isSidebar ? 'space-y-2' : 'max-w-7xl mx-auto space-y-3 md:space-y-4'}`}>
         {/* Timeline Slider */}
-        <div className="flex items-center space-x-4">
-          <span className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 w-12 md:w-16">
+        <div className={`flex items-center ${isSidebar ? 'space-x-2' : 'space-x-4'}`}>
+          <span className={`font-medium text-gray-600 dark:text-gray-400 ${isSidebar ? 'text-[10px] w-10' : 'text-xs md:text-sm w-12 md:w-16'}`}>
             {startTime}
           </span>
           
@@ -281,7 +285,7 @@ export default function Timeline({
               max={endMinutes}
               value={currentMinutes}
               onChange={handleSliderChange}
-              className="w-full h-2 bg-gradient-to-r from-blue-900 via-yellow-400 to-orange-600 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+              className={`w-full ${isSidebar ? 'h-1.5' : 'h-2'} bg-gradient-to-r from-blue-900 via-yellow-400 to-orange-600 rounded-lg appearance-none cursor-pointer accent-yellow-500`}
               style={{
                 background: getGradientStyle()
               }}
@@ -289,7 +293,7 @@ export default function Timeline({
             
             {/* Current Time Indicator */}
             <div 
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white dark:bg-gray-200 border-2 border-yellow-500 rounded-full shadow-lg pointer-events-none"
+              className={`absolute top-1/2 -translate-y-1/2 ${isSidebar ? 'w-3 h-3 border' : 'w-4 h-4 border-2'} bg-white dark:bg-gray-200 border-yellow-500 rounded-full shadow-lg pointer-events-none`}
               style={{
                 left: getIndicatorPosition(),
                 transform: 'translateX(-50%) translateY(-50%)'
@@ -297,39 +301,39 @@ export default function Timeline({
             />
           </div>
           
-          <span className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 w-12 md:w-16 text-right">
+          <span className={`font-medium text-gray-600 dark:text-gray-400 text-right ${isSidebar ? 'text-[10px] w-10' : 'text-xs md:text-sm w-12 md:w-16'}`}>
             {endTime}
           </span>
         </div>
 
         {/* Current Time Display */}
         <div className="text-center">
-          <div className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+          <div className={`${isSidebar ? 'text-xl' : 'text-2xl md:text-3xl'} font-bold text-gray-900 dark:text-white`}>
             {currentTime}
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
+          <div className={`${isSidebar ? 'text-[11px]' : 'text-sm'} text-gray-500 dark:text-gray-400`}>
             현재 시각
           </div>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center justify-center space-x-3 md:space-x-4">
+        <div className={`flex items-center justify-center ${isSidebar ? 'space-x-2' : 'space-x-3 md:space-x-4'}`}>
           {/* Reset */}
           <button
             onClick={handleReset}
-            className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             title="처음으로"
           >
-            <SkipBack className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300" />
+            <SkipBack className={`${isSidebar ? 'w-3.5 h-3.5' : 'w-4 h-4 md:w-5 md:h-5'} text-gray-700 dark:text-gray-300`} />
           </button>
 
           {/* Step Backward */}
           <button
             onClick={handleStepBackward}
-            className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             title="1시간 뒤로"
           >
-            <span className="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-300">-1h</span>
+            <span className={`${isSidebar ? 'text-sm' : 'text-lg md:text-xl'} font-bold text-gray-700 dark:text-gray-300`}>-1h</span>
           </button>
 
           {/* Play/Pause */}
@@ -339,44 +343,44 @@ export default function Timeline({
               devLog('[Timeline] Play/Pause button click');
               handlePlayPause();
             }}
-            className="p-3 md:p-4 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors"
+            className={`${isSidebar ? 'p-2.5' : 'p-3 md:p-4'} bg-blue-600 hover:bg-blue-700 rounded-full transition-colors`}
             title={playing ? "일시정지" : "재생"}
             aria-pressed={playing}
           >
             {playing ? (
-              <Pause className="w-5 h-5 md:w-6 md:h-6 text-white" fill="white" />
+              <Pause className={`${isSidebar ? 'w-4 h-4' : 'w-5 h-5 md:w-6 md:h-6'} text-white`} fill="white" />
             ) : (
-              <Play className="w-5 h-5 md:w-6 md:h-6 text-white" fill="white" />
+              <Play className={`${isSidebar ? 'w-4 h-4' : 'w-5 h-5 md:w-6 md:h-6'} text-white`} fill="white" />
             )}
           </button>
 
           {/* Step Forward */}
           <button
             onClick={handleStepForward}
-            className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             title="1시간 앞으로"
           >
-            <span className="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-300">+1h</span>
+            <span className={`${isSidebar ? 'text-sm' : 'text-lg md:text-xl'} font-bold text-gray-700 dark:text-gray-300`}>+1h</span>
           </button>
 
           {/* End */}
           <button
             onClick={() => onTimeChange(endTime)}
-            className="p-1.5 md:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             title="마지막으로"
           >
-            <SkipForward className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300" />
+            <SkipForward className={`${isSidebar ? 'w-3.5 h-3.5' : 'w-4 h-4 md:w-5 md:h-5'} text-gray-700 dark:text-gray-300`} />
           </button>
         </div>
 
         {/* Speed Control */}
-        <div className="flex items-center justify-center space-x-1.5 md:space-x-2">
-          <span className="text-xs text-gray-500 dark:text-gray-400">재생 속도:</span>
+        <div className={`flex items-center justify-center ${isSidebar ? 'space-x-1' : 'space-x-1.5 md:space-x-2'}`}>
+          <span className={`${isSidebar ? 'text-[10px]' : 'text-xs'} text-gray-500 dark:text-gray-400`}>재생 속도:</span>
           {[0.5, 1, 2, 5].map((speed) => (
             <button
               key={speed}
               onClick={() => setPlaySpeedSafe(speed)}
-              className={`px-2.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs rounded-full transition-colors ${
+              className={`${isSidebar ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs'} rounded-full transition-colors ${
                 playSpeed === speed
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'

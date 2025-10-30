@@ -311,6 +311,7 @@ export default function Sidebar({
                 endTime={timeline.endTime || '20:00'}
                 isPlaying={timeline.isPlaying}
                 onPlayPause={timeline.onPlayPause}
+                variant="sidebar"
               />
             </div>
           </div>
