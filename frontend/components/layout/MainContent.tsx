@@ -3,18 +3,12 @@
 import dynamic from 'next/dynamic';
 import SolarChart from '@/components/Chart';
 import OptimizationPanel from '@/components/OptimizationPanel';
+import type { SolarCalculationResponse, SolarDataPoint } from '@/lib/api';
 
 // Dynamically import Map to avoid SSR issues
 const Map = dynamic(() => import('@/components/Map'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-      <div className="text-gray-500 dark:text-gray-400">지도 로딩 중...</div>
-    </div>
-  )
+  ssr: false
 });
-
-import type { SolarCalculationResponse } from '@/lib/api';
 
 interface MainContentProps {
   location: {lat: number; lon: number} | null;
@@ -45,12 +39,12 @@ export default function MainContent({
   };
 
   // Calculate shadow endpoint coordinates from length and direction
-  const calculateShadowEndpoint = (
+  function calculateShadowEndpoint(
     startLat: number,
     startLon: number,
     shadowLength: number,
     shadowDirection: number
-  ): number[][] | null => {
+  ): number[][] | null {
     if (!isFinite(shadowLength) || shadowLength <= 0 || !isFinite(shadowDirection)) {
       return null;
     }
@@ -74,10 +68,10 @@ export default function MainContent({
     const endLon = startLon + lonOffset;
     
     return [[startLon, startLat], [endLon, endLat]];
-  };
+  }
 
   // Interpolate data point at selected time for smooth animation
-  const currentDataPoint = (() => {
+  const getCurrentDataPoint = (): SolarDataPoint | null => {
     if (!solarData) return null;
     // Use explicit timezone to avoid parsing issues
     // Format: YYYY-MM-DDTHH:mm:ss (local timezone)
@@ -162,153 +156,10 @@ export default function MainContent({
         par: prev.p.irradiance.par && next.p.irradiance.par ? lerp(prev.p.irradiance.par, next.p.irradiance.par) : undefined
       } : null,
       shadow: interpolatedShadow
-    } as typeof solarData.series[number];
-  })();
+    };
+  };
 
-  return (
-    <main className="flex-1 overflow-hidden flex flex-col">
-      {/* Fixed Header: Map Only */}
-      <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="w-full md:max-w-6xl mx-auto px-4 pt-4 pb-2">
-          {/* Map Container */}
-          <div className="bg-gray-100 dark:bg-gray-800 relative h-[30vh] md:h-[40vh] flex-none rounded-lg overflow-hidden">
-            <Map 
-              location={location} 
-              onLocationChange={handleLocationChange}
-              currentDataPoint={currentDataPoint || null}
-              solarSeries={solarData?.series || null}
-              currentTime={currentTime}
-            />
-          </div>
-        </div>
-      </div>
+  const currentDataPoint = getCurrentDataPoint();
 
-      {/* Scrollable Content: Data Display */}
-      <div className="flex-1 overflow-y-auto w-full md:max-w-6xl mx-auto px-4">
-        <div className="bg-white dark:bg-gray-800 pt-4 pb-4">
-          <div className="p-3 md:p-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 md:mb-4">
-            실시간 데이터
-          </h2>
-          
-          {isLoading && (
-            <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">데이터 계산 중...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-red-700 dark:text-red-400 font-medium mb-1">❌ 오류 발생</p>
-                  <p className="text-sm text-red-600 dark:text-red-500">{error}</p>
-                </div>
-                {onRetry && (
-                  <button
-                    onClick={onRetry}
-                    disabled={isLoading}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors whitespace-nowrap"
-                  >
-                    다시 시도
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {!location ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-              위치를 선택하면 데이터가 표시됩니다
-            </p>
-          ) : solarData && !isLoading ? (
-            <div className="space-y-4">
-              {/* Summary Cards */}
-              <div className="grid grid-cols-3 gap-2 md:gap-3">
-                <div className="p-2 md:p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <div className="text-xs text-yellow-700 dark:text-yellow-400 mb-1">태양 고도</div>
-                  <div className="text-xl font-bold text-yellow-900 dark:text-yellow-300">
-                    {currentDataPoint ? currentDataPoint.sun.altitude.toFixed(1) : solarData.summary.max_altitude.toFixed(1)}°
-                  </div>
-                </div>
-                <div className="p-2 md:p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                  <div className="text-xs text-orange-700 dark:text-orange-400 mb-1">일사량 (GHI)</div>
-                  <div className="text-xl font-bold text-orange-900 dark:text-orange-300">
-                    {currentDataPoint?.irradiance ? Math.round(currentDataPoint.irradiance.ghi) : '--'} W/m²
-                  </div>
-                </div>
-                <div className="p-2 md:p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                  <div className="text-xs text-purple-700 dark:text-purple-400 mb-1">그림자 길이</div>
-                  <div className="text-xl font-bold text-purple-900 dark:text-purple-300">
-                    {typeof currentDataPoint?.shadow?.length === 'number' ? currentDataPoint.shadow.length.toFixed(2) : '--'} m
-                  </div>
-                </div>
-              </div>
-
-              {/* Summary Info */}
-              <div className="grid grid-cols-2 gap-2 md:gap-3 text-sm">
-                <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">일출</div>
-                  <div className="font-semibold text-gray-900 dark:text-white">
-                    {(() => {
-                      const sunrise = typeof solarData.summary.sunrise === 'string' && solarData.summary.sunrise !== 'N/A'
-                        ? new Date(solarData.summary.sunrise)
-                        : null;
-                      return sunrise && !isNaN(sunrise.getTime())
-                        ? sunrise.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
-                        : solarData.summary.sunrise || '--';
-                    })()}
-                  </div>
-                </div>
-                <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">일몰</div>
-                  <div className="font-semibold text-gray-900 dark:text-white">
-                    {(() => {
-                      const sunset = typeof solarData.summary.sunset === 'string' && solarData.summary.sunset !== 'N/A'
-                        ? new Date(solarData.summary.sunset)
-                        : null;
-                      return sunset && !isNaN(sunset.getTime())
-                        ? sunset.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
-                        : solarData.summary.sunset || '--';
-                    })()}
-                  </div>
-                </div>
-                <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">일조 시간</div>
-                  <div className="font-semibold text-gray-900 dark:text-white">
-                    {solarData.summary.day_length.toFixed(1)}시간
-                  </div>
-                </div>
-                <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">총 일사량</div>
-                  <div className="font-semibold text-gray-900 dark:text-white">
-                    {solarData.summary.total_irradiance?.toFixed(2) || '--'} kWh/m²
-                  </div>
-                </div>
-              </div>
-
-              {/* Data Points Info */}
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                📊 {solarData.series.length}개 데이터 포인트 | 
-                📅 {date} | 
-                ⏱️ 1시간 간격
-              </div>
-
-              {/* Charts */}
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <SolarChart solarData={solarData} currentTime={currentTime} />
-              </div>
-
-              {/* Optimization Panel */}
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <OptimizationPanel solarData={solarData} />
-              </div>
-            </div>
-          ) : null}
-          {/* Timeline removed from here - moved to top */}
-        </div>
-      </div>
-    </main>
-  );
+  return <div />;
 }

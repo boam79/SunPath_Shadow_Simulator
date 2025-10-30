@@ -132,7 +132,6 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
                 strokeWidth={2}
                 strokeDasharray="3 3"
                 label={{ value: '현재', position: 'top', fill: '#ef4444' }}
-                isAnimationActive={false}
               />
             )}
           </LineChart>
@@ -214,7 +213,6 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
                 strokeWidth={2}
                 strokeDasharray="3 3"
                 label={{ value: '현재', position: 'top', fill: '#ef4444' }}
-                isAnimationActive={false}
               />
             )}
           </AreaChart>
@@ -263,7 +261,6 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
                   strokeWidth={2}
                   strokeDasharray="3 3"
                   label={{ value: '현재', position: 'top', fill: '#ef4444' }}
-                  isAnimationActive={false}
                 />
               )}
             </BarChart>
