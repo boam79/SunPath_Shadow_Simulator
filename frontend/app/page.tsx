@@ -57,6 +57,15 @@ export default function Home() {
     }
   }, [location, date, objectHeight]);
 
+  // 초기 진입 시 기본 위치를 서울 시청으로 설정하여 빈 화면 방지
+  useEffect(() => {
+    if (!location) {
+      setLocation({ lat: 37.5665, lon: 126.9780 });
+    }
+    // mount 한 번만 실행
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Auto-calculate when parameters change
   useEffect(() => {
     if (location && date) {
