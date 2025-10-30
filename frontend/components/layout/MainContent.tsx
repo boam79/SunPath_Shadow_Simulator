@@ -177,8 +177,9 @@ export default function MainContent({
 
   return (
     <main className="flex-1 overflow-hidden flex flex-col">
-      {/* Map Container */}
-      <div className="bg-gray-100 dark:bg-gray-800 relative h-[32vh] md:h-[40vh] flex-none">
+      <div className="flex-1 overflow-y-auto w-full md:max-w-[calc(100vw-17rem)] mx-auto px-4">
+        {/* Map Container */}
+        <div className="bg-gray-100 dark:bg-gray-800 relative h-[32vh] md:h-[40vh] flex-none rounded-lg overflow-hidden mt-4">
         <Map 
           location={location} 
           onLocationChange={handleLocationChange}
@@ -189,7 +190,7 @@ export default function MainContent({
       </div>
 
       {/* Bottom Panel - Data Display + Timeline */}
-      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 mt-4">
         <div className="p-3 md:p-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 md:mb-4">
             실시간 데이터

@@ -122,11 +122,11 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="w-full md:w-80 bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-      <div className="p-4 md:p-6 space-y-6">
+    <aside className="w-full md:w-64 bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+      <div className="p-3 md:p-4 space-y-4">
         {/* Location Input */}
-        <div className="space-y-3">
-          <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="space-y-2">
+          <label className="flex items-center space-x-2 text-xs font-medium text-gray-700 dark:text-gray-300">
             <MapPin className="w-4 h-4" />
             <span>위치</span>
           </label>
@@ -140,7 +140,7 @@ export default function Sidebar({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchResults.length > 0 && setShowResults(true)}
                 placeholder="주소 검색 (예: 서울특별시 중구)"
-                className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                className="w-full pl-9 pr-9 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
               />
               <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               {isSearching && (
@@ -246,8 +246,8 @@ export default function Sidebar({
         </div>
 
         {/* Date Input */}
-        <div className="space-y-3">
-          <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="space-y-2">
+          <label className="flex items-center space-x-2 text-xs font-medium text-gray-700 dark:text-gray-300">
             <Calendar className="w-4 h-4" />
             <span>날짜</span>
           </label>
@@ -288,8 +288,8 @@ export default function Sidebar({
         </div>
 
         {/* Object Height Input */}
-        <div className="space-y-3">
-          <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="space-y-2">
+          <label className="flex items-center space-x-2 text-xs font-medium text-gray-700 dark:text-gray-300">
             <Ruler className="w-4 h-4" />
             <span>물체 높이</span>
           </label>
@@ -324,8 +324,8 @@ export default function Sidebar({
         </div>
 
         {/* Time Input */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
             시각
           </label>
           <input
@@ -338,8 +338,8 @@ export default function Sidebar({
 
         {/* Current Status */}
         {location && (
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <h3 className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1.5">
               현재 설정
             </h3>
             <div className="space-y-1 text-xs text-blue-800 dark:text-blue-400">
@@ -353,8 +353,8 @@ export default function Sidebar({
 
         {/* Export Section */}
         {solarData && (
-          <div className="space-y-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+          <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">
               데이터 내보내기
             </h3>
             

@@ -198,17 +198,6 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
-        <div className="flex items-center space-x-2">
-          <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-          <span className="text-sm text-red-700 dark:text-red-400">{error}</span>
-        </div>
-      </div>
-    );
-  }
-
   if (!optimization) {
     return null;
   }

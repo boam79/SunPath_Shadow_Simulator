@@ -100,7 +100,7 @@ export default function Home() {
         {sidebarOpen && (
           <div className="fixed inset-0 z-40 md:hidden">
             <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-            <div className="absolute left-0 top-0 bottom-0 w-80 bg-white dark:bg-gray-800 shadow-xl">
+            <div className="absolute left-0 top-0 bottom-0 w-64 bg-white dark:bg-gray-800 shadow-xl">
               <Sidebar
                 location={location}
                 setLocation={(v) => { setLocation(v); setSidebarOpen(false); }}
