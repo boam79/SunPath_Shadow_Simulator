@@ -35,9 +35,33 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
 
   // Find current time index for reference line
   const currentTimeIndex = useMemo(() => {
-    if (!solarData) return -1;
-    const target = new Date(`${solarData.series[0]?.timestamp.split('T')[0]}T${currentTime}:00`).getTime();
-    return chartData.findIndex(d => Math.abs(d.timestamp - target) < 30000); // 30초 오차 허용
+    if (!solarData || !currentTime) return -1;
+    
+    try {
+      // Parse current time more reliably
+      const [hours, minutes] = currentTime.split(':').map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return -1;
+      
+      // Find the closest data point
+      let closestIndex = -1;
+      let minDiff = Infinity;
+      
+      chartData.forEach((d, index) => {
+        const [dHours, dMinutes] = d.time.split(':').map(Number);
+        if (!isNaN(dHours) && !isNaN(dMinutes)) {
+          const diff = Math.abs((hours * 60 + minutes) - (dHours * 60 + dMinutes));
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestIndex = index;
+          }
+        }
+      });
+      
+      // Only return valid index if within reasonable range (5 minutes)
+      return minDiff <= 5 ? closestIndex : -1;
+    } catch {
+      return -1;
+    }
   }, [chartData, currentTime, solarData]);
 
   if (!solarData || chartData.length === 0) {
@@ -89,6 +113,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               strokeWidth={2}
               dot={false}
               name="고도"
+              isAnimationActive={false}
             />
             <Line 
               yAxisId="right"
@@ -98,14 +123,16 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               strokeWidth={2}
               dot={false}
               name="방위각"
+              isAnimationActive={false}
             />
-            {currentTimeIndex >= 0 && (
+            {currentTimeIndex >= 0 && currentTimeIndex < chartData.length && (
               <ReferenceLine 
                 x={chartData[currentTimeIndex]?.time} 
                 stroke="#ef4444" 
                 strokeWidth={2}
                 strokeDasharray="3 3"
                 label={{ value: '현재', position: 'top', fill: '#ef4444' }}
+                isAnimationActive={false}
               />
             )}
           </LineChart>
@@ -160,6 +187,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               strokeWidth={2}
               fill="url(#ghiGradient)"
               name="GHI"
+              isAnimationActive={false}
             />
             <Area 
               type="monotone" 
@@ -168,6 +196,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               strokeWidth={2}
               fill="url(#dniGradient)"
               name="DNI"
+              isAnimationActive={false}
             />
             <Area 
               type="monotone" 
@@ -176,14 +205,16 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               strokeWidth={2}
               fill="url(#dhiGradient)"
               name="DHI"
+              isAnimationActive={false}
             />
-            {currentTimeIndex >= 0 && (
+            {currentTimeIndex >= 0 && currentTimeIndex < chartData.length && (
               <ReferenceLine 
                 x={chartData[currentTimeIndex]?.time} 
                 stroke="#ef4444" 
                 strokeWidth={2}
                 strokeDasharray="3 3"
                 label={{ value: '현재', position: 'top', fill: '#ef4444' }}
+                isAnimationActive={false}
               />
             )}
           </AreaChart>
@@ -223,14 +254,16 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
                 fill="#6b21a8" 
                 name="그림자 길이"
                 radius={[4, 4, 0, 0]}
+                isAnimationActive={false}
               />
-              {currentTimeIndex >= 0 && (
+              {currentTimeIndex >= 0 && currentTimeIndex < chartData.length && (
                 <ReferenceLine 
                   x={chartData[currentTimeIndex]?.time} 
                   stroke="#ef4444" 
                   strokeWidth={2}
                   strokeDasharray="3 3"
                   label={{ value: '현재', position: 'top', fill: '#ef4444' }}
+                  isAnimationActive={false}
                 />
               )}
             </BarChart>
