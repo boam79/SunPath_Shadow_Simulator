@@ -297,6 +297,25 @@ export default function Sidebar({
           </div>
         </div>
 
+        {/* Timeline */}
+        {timeline && (
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+              타임라인
+            </h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+              <Timeline
+                currentTime={timeline.currentTime}
+                onTimeChange={timeline.onTimeChange}
+                startTime={timeline.startTime || '05:00'}
+                endTime={timeline.endTime || '20:00'}
+                isPlaying={timeline.isPlaying}
+                onPlayPause={timeline.onPlayPause}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Object Height Input */}
         <div className="space-y-2">
           <label className="flex items-center space-x-2 text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -415,25 +434,6 @@ export default function Sidebar({
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {solarData.series.length}개 데이터 포인트
             </p>
-          </div>
-        )}
-
-        {/* Timeline */}
-        {timeline && (
-          <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-              타임라인
-            </h3>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-              <Timeline
-                currentTime={timeline.currentTime}
-                onTimeChange={timeline.onTimeChange}
-                startTime={timeline.startTime || '05:00'}
-                endTime={timeline.endTime || '20:00'}
-                isPlaying={timeline.isPlaying}
-                onPlayPause={timeline.onPlayPause}
-              />
-            </div>
           </div>
         )}
       </div>
