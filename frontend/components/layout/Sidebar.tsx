@@ -1,8 +1,8 @@
 'use client';
 
-import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy } from 'lucide-react';
+import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy, Navigation } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { searchAddress, type GeocodeResult } from '@/lib/geocoding';
+import { searchAddress, reverseGeocode, type GeocodeResult } from '@/lib/geocoding';
 import { exportToCSV, exportToJSON, exportSummary, copyToClipboard } from '@/lib/export';
 import type { SolarCalculationResponse } from '@/lib/api';
 
@@ -34,6 +34,7 @@ export default function Sidebar({
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debounced search effect
@@ -72,6 +73,52 @@ export default function Sidebar({
     setLocation({ lat: result.lat, lon: result.lon });
     setSearchQuery(result.display_name);
     setShowResults(false);
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
+      return;
+    }
+
+    setIsGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ lat: latitude, lon: longitude });
+        setIsGettingLocation(false);
+        // Reverse geocode to get address name
+        reverseGeocode(latitude, longitude).then((address) => {
+          if (address) {
+            setSearchQuery(address);
+          }
+        }).catch(() => {
+          // Ignore geocoding errors
+        });
+      },
+      (error) => {
+        setIsGettingLocation(false);
+        let errorMessage = '위치를 가져올 수 없습니다.';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = '위치 정보를 사용할 수 없습니다.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = '위치 요청 시간이 초과되었습니다.';
+            break;
+        }
+        alert(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   return (
@@ -155,6 +202,25 @@ export default function Sidebar({
               className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
+
+          {/* Current Location Button */}
+          <button
+            onClick={handleGetCurrentLocation}
+            disabled={isGettingLocation}
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
+          >
+            {isGettingLocation ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>위치 가져오는 중...</span>
+              </>
+            ) : (
+              <>
+                <Navigation className="w-4 h-4" />
+                <span>현재 위치 사용</span>
+              </>
+            )}
+          </button>
 
           {/* Quick Locations */}
           <div className="flex flex-wrap gap-2">

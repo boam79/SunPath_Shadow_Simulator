@@ -12,6 +12,7 @@ from app.models.schemas import SolarCalculationRequest, SolarCalculationResponse
 from app.services.solar_calculator import SolarCalculator
 from app.services.shadow_calculator import ShadowCalculator
 from app.services.irradiance_calculator import IrradianceCalculator
+from app.services.optimizer import OptimizationService
 from app.models.schemas import Metadata, Accuracy, SolarSummary
 from app.core.redis_client import cache_manager
 from app.core.config import settings
@@ -20,6 +21,7 @@ router = APIRouter()
 solar_calculator = SolarCalculator()
 shadow_calculator = ShadowCalculator()
 irradiance_calculator = IrradianceCalculator()
+optimizer = OptimizationService()
 
 @router.post("/calculate", response_model=SolarCalculationResponse)
 async def calculate_all(
@@ -224,4 +226,67 @@ async def calculate_all(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal error: {type(e).__name__}"
+        )
+
+@router.post("/optimize")
+async def optimize_periods(
+    response: SolarCalculationResponse
+) -> Dict[str, Any]:
+    """
+    Analyze solar calculation results to find optimal time periods
+    
+    **최적화 분석:**
+    - 최대 일사량 시간대
+    - 최대 태양 고도 시간대
+    - 최소 그림자 시간대
+    - 최적 태양광 수집 시간대 (연속 구간)
+    - 그림자 간섭 시간대
+    
+    **사용 예시:**
+    ```json
+    POST /api/integrated/optimize
+    {
+      // SolarCalculationResponse 결과를 그대로 전달
+    }
+    ```
+    """
+    try:
+        # Convert series to dict format for optimizer
+        series_data = []
+        for point in response.series:
+            point_dict = {
+                'timestamp': point.timestamp,
+                'sun': {
+                    'altitude': point.sun.altitude,
+                    'azimuth': point.sun.azimuth,
+                    'zenith': point.sun.zenith,
+                    'hour_angle': point.sun.hour_angle
+                },
+                'irradiance': {
+                    'ghi': point.irradiance.ghi if point.irradiance else None,
+                    'dni': point.irradiance.dni if point.irradiance else None,
+                    'dhi': point.irradiance.dhi if point.irradiance else None,
+                    'par': point.irradiance.par if point.irradiance else None
+                } if point.irradiance else None,
+                'shadow': {
+                    'length': point.shadow.length if point.shadow else None,
+                    'direction': point.shadow.direction if point.shadow else None,
+                    'coordinates': point.shadow.coordinates if point.shadow else None
+                } if point.shadow else None
+            }
+            series_data.append(point_dict)
+        
+        # Analyze optimal periods
+        optimization_result = optimizer.analyze_optimal_periods(series_data)
+        
+        return {
+            "status": "success",
+            "optimization": optimization_result
+        }
+        
+    except Exception as e:
+        print(f"❌ Error in optimize_periods: {type(e).__name__}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Optimization error: {type(e).__name__}"
         )

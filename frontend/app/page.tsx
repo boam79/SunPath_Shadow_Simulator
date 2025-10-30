@@ -141,6 +141,7 @@ export default function Home() {
           solarData={solarData}
           isLoading={isLoading}
           error={error}
+          onRetry={fetchSolarData}
           timeline={{
             currentTime,
             onTimeChange: handleTimeChange,

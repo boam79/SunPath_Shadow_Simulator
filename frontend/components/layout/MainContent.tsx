@@ -2,6 +2,8 @@
 
 import dynamic from 'next/dynamic';
 import Timeline from '@/components/Timeline';
+import SolarChart from '@/components/Chart';
+import OptimizationPanel from '@/components/OptimizationPanel';
 
 // Dynamically import Map to avoid SSR issues
 const Map = dynamic(() => import('@/components/Map'), {
@@ -24,6 +26,7 @@ interface MainContentProps {
   solarData: SolarCalculationResponse | null;
   isLoading: boolean;
   error: string | null;
+  onRetry?: () => void;
   timeline?: {
     currentTime: string;
     onTimeChange: (t: string) => void;
@@ -42,6 +45,7 @@ export default function MainContent({
   solarData,
   isLoading,
   error,
+  onRetry,
   timeline
 }: MainContentProps) {
   const handleLocationChange = (lat: number, lon: number) => {
@@ -180,6 +184,7 @@ export default function MainContent({
           onLocationChange={handleLocationChange}
           currentDataPoint={currentDataPoint || null}
           solarSeries={solarData?.series || null}
+          currentTime={currentTime}
         />
       </div>
 
@@ -199,7 +204,21 @@ export default function MainContent({
 
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <p className="text-sm text-red-700 dark:text-red-400">❌ {error}</p>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-red-700 dark:text-red-400 font-medium mb-1">❌ 오류 발생</p>
+                  <p className="text-sm text-red-600 dark:text-red-500">{error}</p>
+                </div>
+                {onRetry && (
+                  <button
+                    onClick={onRetry}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    다시 시도
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -278,6 +297,16 @@ export default function MainContent({
                 📊 {solarData.series.length}개 데이터 포인트 | 
                 📅 {date} | 
                 ⏱️ 1시간 간격
+              </div>
+
+              {/* Charts */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <SolarChart solarData={solarData} currentTime={currentTime} />
+              </div>
+
+              {/* Optimization Panel */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <OptimizationPanel solarData={solarData} />
               </div>
             </div>
           ) : null}

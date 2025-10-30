@@ -12,9 +12,10 @@ interface MapComponentProps {
   onLocationChange: (lat: number, lon: number) => void;
   currentDataPoint?: SolarDataPoint | null;
   solarSeries?: SolarDataPoint[] | null;
+  currentTime?: string;
 }
 
-export default function MapComponent({ location, onLocationChange, currentDataPoint, solarSeries }: MapComponentProps) {
+export default function MapComponent({ location, onLocationChange, currentDataPoint, solarSeries, currentTime }: MapComponentProps) {
   const [viewState, setViewState] = useState({
     longitude: location?.lon || 126.9780,
     latitude: location?.lat || 37.5665,
@@ -22,6 +23,57 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
   });
 
   const [addressName, setAddressName] = useState<string | null>(null);
+
+  // Calculate color based on time of day (matches timeline gradient)
+  const getTimeBasedColor = (timeString: string): string => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes;
+    
+    // Color mapping based on timeline gradient
+    // 새벽 (0-6시): #1e3a8a (진한 파랑)
+    // 아침 (6-12시): #3b82f6 → #fbbf24 (파랑 → 노랑)
+    // 정오 (12시): #fbbf24 (노랑)
+    // 오후 (12-18시): #f97316 (주황)
+    // 저녁 (18시 이후): #1e3a8a (진한 파랑)
+    
+    if (totalMinutes < 360) { // 0-6시: 새벽
+      return '#1e3a8a';
+    } else if (totalMinutes < 720) { // 6-12시: 아침 (파랑 → 노랑)
+      const ratio = (totalMinutes - 360) / 360; // 0 to 1
+      return interpolateColor('#3b82f6', '#fbbf24', ratio);
+    } else if (totalMinutes < 1080) { // 12-18시: 오후 (노랑 → 주황)
+      const ratio = (totalMinutes - 720) / 360; // 0 to 1
+      return interpolateColor('#fbbf24', '#f97316', ratio);
+    } else { // 18시 이후: 저녁
+      return '#1e3a8a';
+    }
+  };
+
+  // Interpolate between two hex colors
+  const interpolateColor = (color1: string, color2: string, ratio: number): string => {
+    const hex1 = color1.replace('#', '');
+    const hex2 = color2.replace('#', '');
+    
+    const r1 = parseInt(hex1.substring(0, 2), 16);
+    const g1 = parseInt(hex1.substring(2, 4), 16);
+    const b1 = parseInt(hex1.substring(4, 6), 16);
+    
+    const r2 = parseInt(hex2.substring(0, 2), 16);
+    const g2 = parseInt(hex2.substring(2, 4), 16);
+    const b2 = parseInt(hex2.substring(4, 6), 16);
+    
+    const r = Math.round(r1 + (r2 - r1) * ratio);
+    const g = Math.round(g1 + (g2 - g1) * ratio);
+    const b = Math.round(b1 + (b2 - b1) * ratio);
+    
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  };
+
+  // Get current shadow color based on current time
+  const getCurrentShadowColor = (): string => {
+    if (!currentTime) return '#6b21a8';
+    return getTimeBasedColor(currentTime);
+  };
 
   // Calculate sun position on map (visual representation)
   const getSunPosition = () => {
@@ -151,7 +203,7 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
             <Layer
               type="line"
               paint={{
-                'line-color': '#6b21a8',
+                'line-color': getCurrentShadowColor(),
                 'line-width': 4,
                 'line-opacity': 0.7
               }}
@@ -201,6 +253,29 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
           </Marker>
         )}
       </Map>
+
+      {/* Map Legend */}
+      <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg text-xs z-10">
+        <div className="font-semibold text-gray-900 dark:text-white mb-2 text-center">범례</div>
+        <div className="space-y-1.5 text-gray-700 dark:text-gray-300">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-red-500" fill="red" />
+            <span>기준점 (위치)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Sun className="w-4 h-4 text-yellow-500" />
+            <span>태양 위치</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-0.5 bg-purple-600" />
+            <span>현재 그림자</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-0.5 bg-orange-500 border-dashed border-t border-orange-500" />
+            <span>하루 그림자 궤적</span>
+          </div>
+        </div>
+      </div>
 
       {/* Map Info Overlay */}
       <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-4 py-3 rounded-lg shadow-lg text-xs max-w-sm">

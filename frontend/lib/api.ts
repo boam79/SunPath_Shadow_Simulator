@@ -321,3 +321,66 @@ export async function healthCheck(): Promise<boolean> {
     return false;
   }
 }
+
+export interface OptimizationResult {
+  status: string;
+  optimization: {
+    max_irradiance_period: {
+      time: string;
+      ghi: number;
+      altitude: number;
+    } | null;
+    max_altitude_period: {
+      time: string;
+      altitude: number;
+      ghi: number;
+    } | null;
+    min_shadow_period: {
+      time: string;
+      shadow_length: number;
+      ghi: number;
+    } | null;
+    optimal_solar_collection_periods: Array<{
+      start: string;
+      end: string;
+      average_ghi: number;
+      duration_hours: number;
+    }>;
+    shadow_interference_periods: Array<{
+      start: string;
+      end: string;
+      average_ghi: number;
+      duration_hours: number;
+    }>;
+  };
+}
+
+/**
+ * Analyze solar data to find optimal time periods
+ */
+export async function optimizePeriods(
+  solarData: SolarCalculationResponse
+): Promise<OptimizationResult> {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/integrated/optimize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(solarData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      const errorMessage = typeof error.detail === 'string'
+        ? error.detail
+        : error.message || error.detail?.message || 'Optimization failed';
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Optimization error:', error);
+    throw error;
+  }
+}
