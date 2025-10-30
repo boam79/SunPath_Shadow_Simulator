@@ -6,12 +6,12 @@ import OptimizationPanel from '@/components/OptimizationPanel';
 
 // Dynamically import Map to avoid SSR issues
 const Map = dynamic(() => import('@/components/Map'), {
-ssr: false,
-loading: () => (
-<div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-<div className="text-gray-500 dark:text-gray-400">지도 로딩 중...</div>
-</div>
-)
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+      <div className="text-gray-500 dark:text-gray-400">지도 로딩 중...</div>
+    </div>
+  )
 });
 
 import type { SolarCalculationResponse } from '@/lib/api';
