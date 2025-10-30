@@ -178,20 +178,36 @@ export default function MainContent({
   return (
     <main className="flex-1 overflow-hidden flex flex-col">
       <div className="flex-1 overflow-y-auto w-full md:max-w-6xl mx-auto px-4">
-        {/* Map Container */}
-        <div className="bg-gray-100 dark:bg-gray-800 relative h-[25vh] md:h-[30vh] flex-none rounded-lg overflow-hidden mt-4">
-        <Map 
-          location={location} 
-          onLocationChange={handleLocationChange}
-          currentDataPoint={currentDataPoint || null}
-          solarSeries={solarData?.series || null}
-          currentTime={currentTime}
-        />
-      </div>
+        {/* Map Container - Sticky */}
+        <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 pb-2 pt-4">
+          <div className="bg-gray-100 dark:bg-gray-800 relative h-[25vh] md:h-[30vh] flex-none rounded-lg overflow-hidden">
+            <Map 
+              location={location} 
+              onLocationChange={handleLocationChange}
+              currentDataPoint={currentDataPoint || null}
+              solarSeries={solarData?.series || null}
+              currentTime={currentTime}
+            />
+          </div>
+          
+          {/* Timeline - Right below map */}
+          {timeline && (
+            <div className="mt-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+              <Timeline
+                currentTime={timeline.currentTime}
+                onTimeChange={timeline.onTimeChange}
+                startTime={timeline.startTime || '05:00'}
+                endTime={timeline.endTime || '20:00'}
+                isPlaying={timeline.isPlaying}
+                onPlayPause={timeline.onPlayPause}
+              />
+            </div>
+          )}
+        </div>
 
-      {/* Bottom Panel - Data Display + Timeline */}
-      <div className="bg-white dark:bg-gray-800">
-        <div className="p-3 md:p-4">
+        {/* Bottom Panel - Data Display (Scrollable) */}
+        <div className="bg-white dark:bg-gray-800 pt-4">
+          <div className="p-3 md:p-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 md:mb-4">
             실시간 데이터
           </h2>
@@ -311,19 +327,7 @@ export default function MainContent({
               </div>
             </div>
           ) : null}
-          {/* Timeline inside panel */}
-          {timeline && (
-            <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Timeline
-                currentTime={timeline.currentTime}
-                onTimeChange={timeline.onTimeChange}
-                startTime={timeline.startTime || '05:00'}
-                endTime={timeline.endTime || '20:00'}
-                isPlaying={timeline.isPlaying}
-                onPlayPause={timeline.onPlayPause}
-              />
-            </div>
-          )}
+          {/* Timeline removed from here - moved to top */}
         </div>
       </div>
     </main>
