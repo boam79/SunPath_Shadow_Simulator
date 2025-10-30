@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Lightbulb, TrendingUp, Sun, Moon, AlertTriangle } from 'lucide-react';
 import { optimizePeriods, type SolarCalculationResponse, type OptimizationResult } from '@/lib/api';
 
@@ -11,26 +11,177 @@ interface OptimizationPanelProps {
 export default function OptimizationPanel({ solarData }: OptimizationPanelProps) {
   const [optimization, setOptimization] = useState<OptimizationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [useBackend, setUseBackend] = useState(true);
+
+  // Fallback: Calculate optimization locally if API fails
+  const localOptimization = useMemo(() => {
+    if (!solarData || solarData.series.length === 0) return null;
+
+    const series = solarData.series;
+    let maxGhi = -1;
+    let maxGhiTime = null;
+    let maxAltitude = -1;
+    let maxAltitudeTime = null;
+    let minShadow = Infinity;
+    let minShadowTime = null;
+    const optimalPeriods: Array<{ time: string; ghi: number; altitude: number; dni: number }> = [];
+    const shadowPeriods: Array<{ time: string; shadow_length: number; ghi: number }> = [];
+
+    series.forEach((point) => {
+      const time = new Date(point.timestamp);
+      const timeStr = time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+      // Max irradiance
+      if (point.irradiance?.ghi && point.irradiance.ghi > maxGhi) {
+        maxGhi = point.irradiance.ghi;
+        maxGhiTime = {
+          time: timeStr,
+          ghi: maxGhi,
+          altitude: point.sun.altitude
+        };
+      }
+
+      // Max altitude
+      if (point.sun.altitude > maxAltitude) {
+        maxAltitude = point.sun.altitude;
+        maxAltitudeTime = {
+          time: timeStr,
+          altitude: maxAltitude,
+          ghi: point.irradiance?.ghi || 0
+        };
+      }
+
+      // Min shadow
+      if (point.shadow?.length && typeof point.shadow.length === 'number' && point.shadow.length > 0 && point.shadow.length < minShadow) {
+        minShadow = point.shadow.length;
+        minShadowTime = {
+          time: timeStr,
+          shadow_length: minShadow,
+          ghi: point.irradiance?.ghi || 0
+        };
+      }
+
+      // Optimal periods (GHI > 600)
+      if (point.irradiance?.ghi && point.irradiance.ghi > 600) {
+        optimalPeriods.push({
+          time: timeStr,
+          ghi: point.irradiance.ghi,
+          altitude: point.sun.altitude,
+          dni: point.irradiance.dni || 0
+        });
+      }
+
+      // Shadow interference (shadow > 10m)
+      if (point.shadow?.length && typeof point.shadow.length === 'number' && point.shadow.length > 10 && point.shadow.length !== Infinity) {
+        shadowPeriods.push({
+          time: timeStr,
+          shadow_length: point.shadow.length,
+          ghi: point.irradiance?.ghi || 0
+        });
+      }
+    });
+
+    // Find continuous periods
+    const findContinuous = (periods: Array<{ time: string; ghi: number }>) => {
+      if (periods.length === 0) return [];
+      const sorted = [...periods].sort((a, b) => {
+        const [h1, m1] = a.time.split(':').map(Number);
+        const [h2, m2] = b.time.split(':').map(Number);
+        return (h1 * 60 + m1) - (h2 * 60 + m2);
+      });
+
+      const continuous: Array<{ start: string; end: string; average_ghi: number; duration_hours: number }> = [];
+      let start = sorted[0].time;
+      let end = sorted[0].time;
+      let sumGhi = sorted[0].ghi;
+      let count = 1;
+
+      for (let i = 1; i < sorted.length; i++) {
+        const [h1, m1] = sorted[i - 1].time.split(':').map(Number);
+        const [h2, m2] = sorted[i].time.split(':').map(Number);
+        const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+
+        if (diff <= 120) {
+          end = sorted[i].time;
+          sumGhi += sorted[i].ghi;
+          count++;
+        } else {
+          if (count > 0) {
+            const [sh, sm] = start.split(':').map(Number);
+            const [eh, em] = end.split(':').map(Number);
+            const duration = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+            continuous.push({
+              start,
+              end,
+              average_ghi: sumGhi / count,
+              duration_hours: duration
+            });
+          }
+          start = sorted[i].time;
+          end = sorted[i].time;
+          sumGhi = sorted[i].ghi;
+          count = 1;
+        }
+      }
+
+      if (count > 0) {
+        const [sh, sm] = start.split(':').map(Number);
+        const [eh, em] = end.split(':').map(Number);
+        const duration = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+        continuous.push({
+          start,
+          end,
+          average_ghi: sumGhi / count,
+          duration_hours: duration
+        });
+      }
+
+      return continuous;
+    };
+
+    return {
+      status: 'success',
+      optimization: {
+        max_irradiance_period: maxGhiTime,
+        max_altitude_period: maxAltitudeTime,
+        min_shadow_period: minShadow !== Infinity ? minShadowTime : null,
+        optimal_solar_collection_periods: findContinuous(optimalPeriods),
+        shadow_interference_periods: findContinuous(shadowPeriods)
+      }
+    } as OptimizationResult;
+  }, [solarData]);
 
   useEffect(() => {
     if (solarData && solarData.series.length > 0) {
-      setIsLoading(true);
-      setError(null);
-      
-      optimizePeriods(solarData)
-        .then((result) => {
-          setOptimization(result);
-          setIsLoading(false);
-        })
-        .catch((err) => {
-          setError(err instanceof Error ? err.message : '최적화 분석 실패');
-          setIsLoading(false);
-        });
+      // Try backend first, fallback to local calculation
+      if (useBackend) {
+        setIsLoading(true);
+        
+        optimizePeriods(solarData)
+          .then((result) => {
+            setOptimization(result);
+            setIsLoading(false);
+          })
+          .catch((err) => {
+            // Silently fallback to local calculation
+            console.warn('최적화 API 실패, 로컬 계산으로 전환:', err);
+            setUseBackend(false);
+            setIsLoading(false);
+            // Use local calculation immediately
+            if (localOptimization) {
+              setOptimization(localOptimization);
+            }
+          });
+      } else {
+        // Use local calculation
+        if (localOptimization) {
+          setOptimization(localOptimization);
+        }
+      }
     } else {
       setOptimization(null);
     }
-  }, [solarData]);
+  }, [solarData, useBackend, localOptimization]);
 
   if (!solarData) {
     return null;
