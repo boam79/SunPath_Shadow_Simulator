@@ -160,6 +160,89 @@ export default function MainContent({
   };
 
   const currentDataPoint = getCurrentDataPoint();
+  const sunriseStr = (() => {
+    const s = solarData?.summary?.sunrise;
+    if (typeof s === 'string' && s !== 'N/A') {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return d.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+      return s;
+    }
+    return s || '--';
+  })();
+  const sunsetStr = (() => {
+    const s = solarData?.summary?.sunset;
+    if (typeof s === 'string' && s !== 'N/A') {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return d.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+      return s;
+    }
+    return s || '--';
+  })();
 
-  return <div />;
+  return (
+    <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="w-full md:max-w-6xl mx-auto px-4 pt-4 pb-2">
+          <div className="bg-gray-100 dark:bg-gray-800 relative h-[30vh] md:h-[40vh] flex-none rounded-lg overflow-hidden">
+            <Map 
+              location={location} 
+              onLocationChange={handleLocationChange}
+              currentDataPoint={currentDataPoint || null}
+              solarSeries={solarData?.series || null}
+              currentTime={currentTime}
+            />
+          </div>
+        </div>
+    </div>
+
+      {/* Scrollable Content: Data Display (safe minimal) */}
+      <div className="flex-1 overflow-y-auto w-full md:max-w-6xl mx-auto px-4">
+        <div className="bg-white dark:bg-gray-800 pt-4 pb-4">
+          {location && solarData && !isLoading ? (
+            <div className="space-y-4 p-3 md:p-4">
+              <div className="grid grid-cols-3 gap-2 md:gap-3">
+                <div className="p-2 md:p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <div className="text-xs text-yellow-700 dark:text-yellow-400 mb-1">태양 고도</div>
+                  <div className="text-xl font-bold text-yellow-900 dark:text-yellow-300">
+                    {currentDataPoint ? currentDataPoint.sun.altitude.toFixed(1) : solarData.summary.max_altitude.toFixed(1)}°
+                  </div>
+                </div>
+                <div className="p-2 md:p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <div className="text-xs text-orange-700 dark:text-orange-400 mb-1">일사량 (GHI)</div>
+                  <div className="text-xl font-bold text-orange-900 dark:text-orange-300">
+                    {currentDataPoint?.irradiance ? Math.round(currentDataPoint.irradiance.ghi) : '--'} W/m²
+                  </div>
+                </div>
+                <div className="p-2 md:p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <div className="text-xs text-purple-700 dark:text-purple-400 mb-1">그림자 길이</div>
+                  <div className="text-xl font-bold text-purple-900 dark:text-purple-300">
+                    {typeof currentDataPoint?.shadow?.length === 'number' ? currentDataPoint.shadow.length.toFixed(2) : '--'} m
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 md:gap-3 text-sm">
+                <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">일출</div>
+                  <div className="font-semibold text-gray-900 dark:text-white">{sunriseStr}</div>
+                </div>
+                <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">일몰</div>
+                  <div className="font-semibold text-gray-900 dark:text-white">{sunsetStr}</div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <SolarChart solarData={solarData} currentTime={currentTime} />
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <OptimizationPanel solarData={solarData} />
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
 }
