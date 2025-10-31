@@ -31,7 +31,11 @@ export default function StructuredData() {
       "건축 설계",
       "조경 설계",
       "태양광",
-      "실시간 시뮬레이션"
+      "실시간 시뮬레이션",
+      "solar path",
+      "shadow length",
+      "solar irradiance",
+      "sun altitude azimuth"
     ],
     "featureList": [
       "실시간 태양 경로 시각화",
@@ -42,6 +46,15 @@ export default function StructuredData() {
       "데이터 내보내기 (CSV/JSON)"
     ],
     "screenshot": "https://sunpathshadowsimulator.vercel.app/og-image.png",
+    "inLanguage": "ko-KR",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://sunpathshadowsimulator.vercel.app/?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    },
     "browserRequirements": "Requires JavaScript. Requires HTML5.",
     "softwareVersion": "1.0.0",
     "datePublished": "2025-01-21",

@@ -42,6 +42,10 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://sunpathshadowsimulator.vercel.app'),
   alternates: {
     canonical: '/',
+    languages: {
+      'ko-KR': '/',
+      'en-US': '/'
+    }
   },
   openGraph: {
     title: "SunPath & Shadow Simulator | 태양 경로 그림자 시뮬레이터",

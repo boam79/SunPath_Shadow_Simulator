@@ -278,7 +278,9 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
             <span>현재 그림자</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-0.5 bg-orange-500 border-dashed border-t border-orange-500" />
+            <svg className="w-4 h-1" viewBox="0 0 16 2" preserveAspectRatio="none">
+              <line x1="0" y1="1" x2="16" y2="1" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="2 2" strokeOpacity="0.7" />
+            </svg>
             <span>하루 그림자 궤적</span>
           </div>
         </div>
