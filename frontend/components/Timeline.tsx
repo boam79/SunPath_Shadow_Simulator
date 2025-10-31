@@ -42,35 +42,6 @@ export default function Timeline({
   const accumulatedMinutesRef = useRef<number>(0);
   const endMinutesRef = useRef(0);
 
-  // playSpeed가 변경될 때 ref 업데이트
-  useEffect(() => {
-    playSpeedRef.current = playSpeed;
-  }, [playSpeed]);
-
-  const playing = isPlaying !== undefined ? isPlaying : internalPlaying;
-
-  // currentTime이 변경될 때 ref 업데이트
-  useEffect(() => {
-    currentTimeRef.current = currentTime;
-    const currentMinutes = timeToMinutes(currentTime);
-    const accumulatedMinutes = accumulatedMinutesRef.current;
-    
-    // Only sync accumulator if change is significant (more than 1 minute difference)
-    // This prevents resetting accumulator during animation when time hasn't changed by a full minute yet
-    // For external changes (user interaction, prop changes), sync immediately
-    if (Math.abs(currentMinutes - accumulatedMinutes) >= 1 || !playing) {
-      devLog('[Timeline] Syncing accumulator from', accumulatedMinutes, 'to', currentMinutes, '(external change or not playing)');
-      accumulatedMinutesRef.current = currentMinutes;
-    } else {
-      devLog('[Timeline] Skipping accumulator sync (animation in progress, diff:', Math.abs(currentMinutes - accumulatedMinutes), 'minutes)');
-    }
-  }, [currentTime, playing]);
-
-  // Debug: Log playing state changes (development only)
-  useEffect(() => {
-    devLog('[Timeline] playing state changed:', { isPlaying, internalPlaying, playing });
-  }, [isPlaying, internalPlaying, playing]);
-
   // Convert time string to minutes with improved error handling
   const timeToMinutes = useCallback((time: string): number => {
     if (!time || typeof time !== 'string') {
@@ -116,6 +87,37 @@ export default function Timeline({
     const mins = clampedMinutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   }, []);
+
+  // playSpeed가 변경될 때 ref 업데이트
+  useEffect(() => {
+    playSpeedRef.current = playSpeed;
+  }, [playSpeed]);
+
+  const playing = isPlaying !== undefined ? isPlaying : internalPlaying;
+
+  // currentTime이 변경될 때 ref 업데이트
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+    const currentMinutes = timeToMinutes(currentTime);
+    const accumulatedMinutes = accumulatedMinutesRef.current;
+    
+    // Only sync accumulator if change is significant (more than 1 minute difference)
+    // This prevents resetting accumulator during animation when time hasn't changed by a full minute yet
+    // For external changes (user interaction, prop changes), sync immediately
+    if (Math.abs(currentMinutes - accumulatedMinutes) >= 1 || !playing) {
+      devLog('[Timeline] Syncing accumulator from', accumulatedMinutes, 'to', currentMinutes, '(external change or not playing)');
+      accumulatedMinutesRef.current = currentMinutes;
+    } else {
+      devLog('[Timeline] Skipping accumulator sync (animation in progress, diff:', Math.abs(currentMinutes - accumulatedMinutes), 'minutes)');
+    }
+  }, [currentTime, playing, timeToMinutes]);
+
+  // Debug: Log playing state changes (development only)
+  useEffect(() => {
+    devLog('[Timeline] playing state changed:', { isPlaying, internalPlaying, playing });
+  }, [isPlaying, internalPlaying, playing]);
+
+  
 
   const currentMinutes = timeToMinutes(currentTime);
   const startMinutes = timeToMinutes(startTime);
@@ -197,7 +199,7 @@ export default function Timeline({
       devLog('[Timeline] Cleaning up animation interval');
       clearInterval(interval);
     };
-  }, [playing, onTimeChange, onPlayPause, isPlaying, endTime]);
+  }, [playing, onTimeChange, onPlayPause, isPlaying, endTime, minutesToTime]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const minutes = parseInt(e.target.value);

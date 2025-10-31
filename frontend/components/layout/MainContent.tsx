@@ -195,6 +195,18 @@ export default function MainContent({
         </div>
     </div>
 
+      {/* Error banner and retry */}
+      {error && (
+        <div className="w-full md:max-w-6xl mx-auto px-4 mt-3">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-center justify-between">
+            <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+            {onRetry && (
+              <button onClick={onRetry} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md">다시 시도</button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Scrollable Content: Data Display (safe minimal) */}
       <div className="flex-1 overflow-y-auto w-full md:max-w-6xl mx-auto px-4">
         <div className="bg-white dark:bg-gray-800 pt-4 pb-4">

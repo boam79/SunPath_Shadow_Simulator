@@ -174,18 +174,18 @@ export async function calculateSolar(
 
 // 더미 데이터 생성 함수
 function generateDemoData(request: SolarCalculationRequest): SolarCalculationResponse {
-  const { location, datetime, object } = request;
+  const { datetime, object } = request;
   const date = new Date(datetime.date);
   const startTime = datetime.start_time || '05:00';
   const endTime = datetime.end_time || '20:00';
-  const interval = datetime.interval || 60;
+  const _interval = datetime.interval || 60; // reserved for future use
+  void _interval;
   
   const series: SolarDataPoint[] = [];
   const startHour = parseInt(startTime.split(':')[0]);
   const endHour = parseInt(endTime.split(':')[0]);
   
   for (let hour = startHour; hour <= endHour; hour++) {
-    const time = `${hour.toString().padStart(2, '0')}:00`;
     const timestamp = new Date(date);
     timestamp.setHours(hour, 0, 0, 0);
     
