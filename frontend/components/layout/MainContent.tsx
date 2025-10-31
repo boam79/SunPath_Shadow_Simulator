@@ -183,7 +183,7 @@ export default function MainContent({
     <div className="flex-1 overflow-hidden flex flex-col">
       <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="w-full md:max-w-6xl mx-auto px-4 pt-4 pb-2">
-          <div className="bg-gray-100 dark:bg-gray-800 relative h-[30vh] md:h-[40vh] flex-none rounded-lg overflow-hidden">
+          <div className="bg-gray-100 dark:bg-gray-800 relative h-[50vh] md:h-[60vh] flex-none rounded-lg overflow-hidden">
             <Map 
               location={location} 
               onLocationChange={handleLocationChange}
@@ -193,7 +193,7 @@ export default function MainContent({
             />
           </div>
         </div>
-    </div>
+      </div>
 
       {/* Error banner and retry */}
       {error && (
