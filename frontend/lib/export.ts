@@ -105,6 +105,31 @@ function formatDateTime(dateStr: string | null | undefined): string {
  * Export summary as text
  */
 export function exportSummary(data: SolarCalculationResponse, filename?: string): void {
+  // Derive key metrics from actual series
+  const series = data.series || [];
+  const byValid = series.filter(p => typeof p.sun?.altitude === 'number');
+  const fmtTime = (iso: string) => {
+    try { return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }); } catch { return 'N/A'; }
+  };
+  const maxAltitude = byValid.reduce<{v:number; t:string} | null>((acc, p) => {
+    const v = p.sun.altitude;
+    if (!isFinite(v)) return acc;
+    if (!acc || v > acc.v) return { v, t: p.timestamp };
+    return acc;
+  }, null);
+  const maxGHI = series.reduce<{v:number; t:string} | null>((acc, p) => {
+    const v = p.irradiance?.ghi ?? -Infinity;
+    if (!isFinite(v)) return acc;
+    if (!acc || v > acc.v) return { v, t: p.timestamp };
+    return acc;
+  }, null);
+  const minShadow = series.reduce<{v:number; t:string} | null>((acc, p) => {
+    const v = p.shadow?.length ?? Infinity;
+    if (!isFinite(v as number)) return acc;
+    if (!acc || (v as number) < acc.v) return { v: v as number, t: p.timestamp };
+    return acc;
+  }, null);
+
   const summary = `
 SunPath & Shadow Simulator - 계산 결과
 =======================================
@@ -116,6 +141,11 @@ SunPath & Shadow Simulator - 계산 결과
 일조 시간: ${data.summary.day_length.toFixed(2)}시간
 최대 태양 고도: ${data.summary.max_altitude.toFixed(2)}°
 총 일사량: ${data.summary.total_irradiance?.toFixed(2) || 'N/A'} kWh/m²
+
+[실데이터 기반 요약]
+- 최댓 고도 시각: ${maxAltitude ? fmtTime(maxAltitude.t) : 'N/A'} (고도 ${maxAltitude ? maxAltitude.v.toFixed(2) : 'N/A'}°)
+- 최댓 GHI 시각: ${maxGHI ? fmtTime(maxGHI.t) : 'N/A'} (GHI ${maxGHI ? maxGHI.v.toFixed(0) : 'N/A'} W/m²)
+- 최소 그림자 길이 시각: ${minShadow ? fmtTime(minShadow.t) : 'N/A'} (길이 ${minShadow ? (minShadow.v === Infinity ? '무한대' : (minShadow.v.toFixed(2) + ' m')) : 'N/A'})
 
 데이터 포인트: ${data.series.length}개
 계산 시각: ${data.metadata.timestamp}
