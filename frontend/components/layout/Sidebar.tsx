@@ -96,16 +96,29 @@ export default function Sidebar({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        // 좌표 유효성 검사
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          setIsGettingLocation(false);
+          alert('가져온 위치 값이 올바르지 않습니다. 다시 시도해 주세요.');
+          return;
+        }
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+          setIsGettingLocation(false);
+          alert('가져온 위치 범위가 유효하지 않습니다.');
+          return;
+        }
         setLocation({ lat: latitude, lon: longitude });
         setIsGettingLocation(false);
         // Reverse geocode to get address name
-        reverseGeocode(latitude, longitude).then((address) => {
-          if (address) {
-            setSearchQuery(address);
-          }
-        }).catch(() => {
-          // Ignore geocoding errors
-        });
+        reverseGeocode(latitude, longitude)
+          .then((address) => {
+            if (address) {
+              setSearchQuery(address);
+            }
+          })
+          .catch(() => {
+            // 지오코딩 실패는 무시
+          });
       },
       (error) => {
         setIsGettingLocation(false);

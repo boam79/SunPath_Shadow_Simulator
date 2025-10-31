@@ -156,7 +156,14 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
           position="top-right"
           trackUserLocation
           onGeolocate={(e) => {
-            onLocationChange(e.coords.latitude, e.coords.longitude);
+            const { latitude, longitude } = e.coords;
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+              return;
+            }
+            if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+              return;
+            }
+            onLocationChange(latitude, longitude);
           }}
         />
 
