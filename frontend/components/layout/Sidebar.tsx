@@ -45,7 +45,18 @@ export default function Sidebar({
   const [showResults, setShowResults] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 모바일 디바이스 감지
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Debounced search effect
   useEffect(() => {
@@ -153,9 +164,12 @@ export default function Sidebar({
             href="https://qr.kakaopay.com/Ej8dj4X39"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center space-x-2 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm"
+            className="flex flex-col items-center justify-center space-y-1 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm"
           >
             <span className="text-sm font-medium">☕ 카카오페이로 후원하기</span>
+            {!isMobile && (
+              <span className="text-xs text-gray-700">(모바일 또는 QR 코드 스캔)</span>
+            )}
           </a>
         </div>
 
@@ -469,9 +483,12 @@ export default function Sidebar({
             href="https://qr.kakaopay.com/Ej8dj4X39"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center space-x-2 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium"
+            className="flex flex-col items-center justify-center space-y-1 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium"
           >
             <span>☕ 카카오페이로 후원하기</span>
+            {!isMobile && (
+              <span className="text-xs text-gray-700">(모바일 또는 QR 코드 스캔)</span>
+            )}
           </a>
         </div>
       </div>

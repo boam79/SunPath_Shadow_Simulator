@@ -18,6 +18,17 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 모바일 디바이스 감지
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const fetchSolarData = useCallback(async () => {
     if (!location) return;
@@ -184,9 +195,13 @@ export default function Home() {
               href="https://qr.kakaopay.com/Ej8dj4X39"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium"
+              className="flex flex-col md:flex-row items-center justify-center space-y-0.5 md:space-y-0 md:space-x-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium"
+              title={!isMobile ? "데스크톱에서는 QR 코드가 표시됩니다. 모바일 카카오페이 앱으로 스캔하세요." : undefined}
             >
               <span>☕ 카카오페이로 후원하기</span>
+              {!isMobile && (
+                <span className="text-xs text-gray-700 md:hidden">(QR 코드 스캔)</span>
+              )}
             </a>
             <span className="hidden md:inline">•</span>
             <span>문의사항:</span>
