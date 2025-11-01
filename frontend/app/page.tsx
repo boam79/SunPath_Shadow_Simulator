@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import MainContent from '@/components/layout/MainContent';
 import StructuredData from '@/components/StructuredData';
+import KakaoPayDonation from '@/components/KakaoPayDonation';
 import { calculateSolar, type SolarCalculationResponse } from '@/lib/api';
 
 export default function Home() {
@@ -191,18 +192,11 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-4 flex-wrap justify-center">
             {/* 카카오페이 기부 링크 */}
-            <a
-              href="https://qr.kakaopay.com/Ej8dj4X39"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col md:flex-row items-center justify-center space-y-0.5 md:space-y-0 md:space-x-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium"
-              title={!isMobile ? "데스크톱에서는 QR 코드가 표시됩니다. 모바일 카카오페이 앱으로 스캔하세요." : undefined}
-            >
-              <span>☕ 카카오페이로 후원하기</span>
-              {!isMobile && (
-                <span className="text-xs text-gray-700 md:hidden">(QR 코드 스캔)</span>
-              )}
-            </a>
+            <KakaoPayDonation
+              isMobile={isMobile}
+              className="flex flex-col md:flex-row items-center justify-center space-y-0.5 md:space-y-0 md:space-x-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium cursor-pointer"
+              variant="link"
+            />
             <span className="hidden md:inline">•</span>
             <span>문의사항:</span>
             <a 

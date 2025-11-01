@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { searchAddress, reverseGeocode, type GeocodeResult } from '@/lib/geocoding';
 import { exportToCSV, exportToJSON, exportSummary, copyToClipboard } from '@/lib/export';
 import Timeline from '@/components/Timeline';
+import KakaoPayDonation from '@/components/KakaoPayDonation';
 import type { SolarCalculationResponse } from '@/lib/api';
 
 interface SidebarProps {
@@ -160,17 +161,11 @@ export default function Sidebar({
       <div className="p-3 md:p-4 space-y-4">
         {/* 카카오페이 기부 링크 - 최상단 */}
         <div className="mb-2">
-          <a
-            href="https://qr.kakaopay.com/Ej8dj4X39"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center justify-center space-y-1 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm"
-          >
-            <span className="text-sm font-medium">☕ 카카오페이로 후원하기</span>
-            {!isMobile && (
-              <span className="text-xs text-gray-700">(모바일 또는 QR 코드 스캔)</span>
-            )}
-          </a>
+          <KakaoPayDonation
+            isMobile={isMobile}
+            className="flex flex-col items-center justify-center space-y-1 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm cursor-pointer"
+            variant="button"
+          />
         </div>
 
         {/* Location Input */}
@@ -479,17 +474,11 @@ export default function Sidebar({
 
         {/* 카카오페이 기부 링크 - 하단 */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-          <a
-            href="https://qr.kakaopay.com/Ej8dj4X39"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center justify-center space-y-1 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium"
-          >
-            <span>☕ 카카오페이로 후원하기</span>
-            {!isMobile && (
-              <span className="text-xs text-gray-700">(모바일 또는 QR 코드 스캔)</span>
-            )}
-          </a>
+          <KakaoPayDonation
+            isMobile={isMobile}
+            className="flex flex-col items-center justify-center space-y-1 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium cursor-pointer"
+            variant="button"
+          />
         </div>
       </div>
     </aside>
