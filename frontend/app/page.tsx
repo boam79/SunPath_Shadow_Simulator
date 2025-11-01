@@ -172,13 +172,23 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400 gap-4">
           <div className="flex items-center space-x-4 mb-2 md:mb-0">
             <span>© 2025 SunPath & Shadow Simulator</span>
             <span className="hidden md:inline">•</span>
             <span>제작자: <strong className="text-gray-800 dark:text-gray-200">boam79</strong></span>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-wrap justify-center">
+            {/* 카카오페이 기부 링크 */}
+            <a
+              href="https://qr.kakaopay.com/Ej8dj4X39"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium"
+            >
+              <span>☕ 카카오페이로 후원하기</span>
+            </a>
+            <span className="hidden md:inline">•</span>
             <span>문의사항:</span>
             <a 
               href="mailto:ckadltmfxhrxhrxhr@gmail.com"

@@ -147,6 +147,18 @@ export default function Sidebar({
   return (
     <aside className="w-full md:w-64 bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
       <div className="p-3 md:p-4 space-y-4">
+        {/* 카카오페이 기부 링크 - 최상단 */}
+        <div className="mb-2">
+          <a
+            href="https://qr.kakaopay.com/Ej8dj4X39"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center space-x-2 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm"
+          >
+            <span className="text-sm font-medium">☕ 카카오페이로 후원하기</span>
+          </a>
+        </div>
+
         {/* Location Input */}
         <div className="space-y-2">
           <label className="flex items-center space-x-2 text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -450,6 +462,18 @@ export default function Sidebar({
             </p>
           </div>
         )}
+
+        {/* 카카오페이 기부 링크 - 하단 */}
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <a
+            href="https://qr.kakaopay.com/Ej8dj4X39"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center space-x-2 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium"
+          >
+            <span>☕ 카카오페이로 후원하기</span>
+          </a>
+        </div>
       </div>
     </aside>
   );
