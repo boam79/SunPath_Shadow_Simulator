@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useMemo } from 'react';
 import SolarChart from '@/components/Chart';
 import OptimizationPanel from '@/components/OptimizationPanel';
 import { useI18n } from '@/lib/i18n-context';
@@ -74,7 +75,8 @@ export default function MainContent({
   }
 
   // Interpolate data point at selected time for smooth animation
-  const getCurrentDataPoint = (): SolarDataPoint | null => {
+  // Use useMemo to prevent recalculating on every render
+  const currentDataPoint = useMemo((): SolarDataPoint | null => {
     if (!solarData) return null;
     // Use explicit timezone to avoid parsing issues
     // Format: YYYY-MM-DDTHH:mm:ss (local timezone)
@@ -160,10 +162,9 @@ export default function MainContent({
       } : null,
       shadow: interpolatedShadow
     };
-  };
+  }, [solarData, date, currentTime, location]);
 
-  const currentDataPoint = getCurrentDataPoint();
-  const sunriseStr = (() => {
+  const sunriseStr = useMemo(() => {
     const s = solarData?.summary?.sunrise;
     if (typeof s === 'string' && s !== 'N/A') {
       const d = new Date(s);
@@ -171,8 +172,9 @@ export default function MainContent({
       return s;
     }
     return s || '--';
-  })();
-  const sunsetStr = (() => {
+  }, [solarData?.summary?.sunrise, locale]);
+
+  const sunsetStr = useMemo(() => {
     const s = solarData?.summary?.sunset;
     if (typeof s === 'string' && s !== 'N/A') {
       const d = new Date(s);
@@ -180,7 +182,7 @@ export default function MainContent({
       return s;
     }
     return s || '--';
-  })();
+  }, [solarData?.summary?.sunset, locale]);
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col">

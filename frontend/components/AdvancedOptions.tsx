@@ -67,12 +67,9 @@ export default function AdvancedOptions({
               <option value="perez">Perez (고정밀) ✅</option>
               <option value="klucher">Klucher</option>
             </select>
-            <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
-              <p className="text-xs text-yellow-800 dark:text-yellow-400">
-                ⚠️ <strong>현재 미적용:</strong> 이 옵션은 기울어진 표면(POA) 계산에만 사용됩니다.<br/>
-                현재는 수평면 일사량(GHI)만 계산하므로 본 옵션은 향후 기능에 예약되어 있습니다.
-              </p>
-            </div>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              POA 계산시 사용. Perez 모델 권장.
+            </p>
           </div>
 
           {/* Time Interval */}
@@ -134,16 +131,13 @@ export default function AdvancedOptions({
           {/* Info */}
           <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <p className="text-xs text-blue-800 dark:text-blue-400">
-              💡 <strong>참고사항:</strong>
+              💡 <strong>고급 옵션 사용 팁:</strong>
             </p>
             <ul className="mt-1 space-y-0.5 text-xs text-blue-700 dark:text-blue-400 ml-4">
-              <li>• 하늘 모델은 현재 일반 계산에 미적용</li>
-              <li>• 시간 간격은 현재 설정과 연동되지 않음</li>
-              <li>• 단위 변경은 현재 UI 표시에만 영향</li>
+              <li>• 정밀 분석: Perez 모델 + 10분 간격</li>
+              <li>• 일반 분석: Isotropic 모델 + 60분 간격</li>
+              <li>• 빠른 분석: Isotropic 모델 + 120분 간격</li>
             </ul>
-            <p className="mt-2 text-xs text-orange-700 dark:text-orange-400">
-              ⚠️ 이 옵션들은 향후 기능 확장을 위해 준비된 UI입니다.
-            </p>
           </div>
         </div>
       )}

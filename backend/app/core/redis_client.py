@@ -97,15 +97,15 @@ class CacheManager:
         Returns:
             Cache key string
         """
-        # Round coordinates to 2 decimal places for cache efficiency
-        lat_rounded = round(lat, 2)
-        lon_rounded = round(lon, 2)
+        # Use full precision coordinates for accuracy (up to 6 decimal places ≈ 0.1m)
+        lat_str = f"{lat:.6f}".rstrip('0').rstrip('.')
+        lon_str = f"{lon:.6f}".rstrip('0').rstrip('.')
         
         # Build key components
         key_parts = [
             prefix,
-            f"lat:{lat_rounded}",
-            f"lon:{lon_rounded}",
+            f"lat:{lat_str}",
+            f"lon:{lon_str}",
             f"date:{date}"
         ]
         

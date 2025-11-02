@@ -24,7 +24,7 @@ async def calculate_irradiance(
     include_par: bool = Query(False, description="Include PAR calculation"),
     surface_tilt: Optional[float] = Query(None, ge=0, le=90, description="Surface tilt angle (degrees)"),
     surface_azimuth: Optional[float] = Query(None, ge=0, lt=360, description="Surface azimuth (degrees)"),
-    sky_model: str = Query("isotropic", description="Sky diffuse model for POA (isotropic, perez, klucher)")
+    sky_model: str = Query("perez", description="Sky diffuse model for POA (isotropic, perez, klucher)")
 ) -> Dict[str, Any]:
     """
     Calculate solar irradiance for a given location and time range
@@ -41,8 +41,8 @@ async def calculate_irradiance(
     - **simplified_solis**: 중간 정확도
     
     **Sky Diffuse Models** (for POA calculations):
-    - **isotropic**: 등방성 하늘 모델 (기본값)
-    - **perez**: Perez Sky Model ✅ (고정밀 산란 복사 계산)
+    - **perez**: Perez Sky Model ✅ (고정밀 산란 복사 계산, 기본값)
+    - **isotropic**: 등방성 하늘 모델
     - **klucher**: Klucher 모델
     
     **예시:**
