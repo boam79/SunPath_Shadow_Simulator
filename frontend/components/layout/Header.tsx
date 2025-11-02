@@ -61,7 +61,7 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
             </button>
 
             {/* Language Selector */}
-            <div className="relative">
+            <div className="relative z-50">
               <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
                 className="flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm"
@@ -74,10 +74,10 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
               {showLangMenu && (
                 <>
                   <div 
-                    className="fixed inset-0 z-10"
+                    className="fixed inset-0 z-40"
                     onClick={() => setShowLangMenu(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden">
                     {locales.map((loc) => (
                       <button
                         key={loc}
