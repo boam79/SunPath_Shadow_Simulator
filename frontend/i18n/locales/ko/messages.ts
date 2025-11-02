@@ -1,4 +1,10 @@
 export default {
+  // SEO
+  seo: {
+    title: 'SunPath & Shadow Simulator | 태양 경로 그림자 시뮬레이터',
+    description: '위치와 날짜를 입력하면 정확한 태양 경로, 일조량, 그림자 방향을 실시간으로 시각화하는 웹 기반 시뮬레이터입니다. 건축, 조경, 태양광 설계에 활용하세요.',
+    keywords: '태양 경로,그림자 시뮬레이터,일조량 계산,태양 위치,건축 설계,조경 설계,태양광,실시간 시뮬레이션,지오코딩,NREL SPA',
+  },
   // Header
   header: {
     title: 'SunPath & Shadow Simulator',

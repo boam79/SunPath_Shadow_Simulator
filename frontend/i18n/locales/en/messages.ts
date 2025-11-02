@@ -1,4 +1,10 @@
 export default {
+  // SEO
+  seo: {
+    title: 'SunPath & Shadow Simulator | Solar Path Shadow Simulator',
+    description: 'Visualize accurate solar path, irradiance, and shadow direction in real-time based on location and date. Perfect for architecture, landscape, and solar panel design.',
+    keywords: 'solar path,shadow simulator,irradiance calculator,sun position,architecture design,landscape design,solar energy,real-time simulation,geocoding,NREL SPA',
+  },
   // Header
   header: {
     title: 'SunPath & Shadow Simulator',

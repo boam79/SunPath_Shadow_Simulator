@@ -49,9 +49,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const initialLocale = getInitialLocale();
     setLocaleState(initialLocale);
     
+    // HTML lang 속성 초기 설정
+    document.documentElement.lang = initialLocale === 'ko' ? 'ko' : 'en';
+    
     // 초기 메시지 로드
     loadMessages(initialLocale).then((msg) => {
       setMessages(msg.default);
+      
+      // 페이지 제목 동적으로 업데이트 (클라이언트 전용)
+      if (msg.default.seo) {
+        document.title = msg.default.seo.title;
+      }
     });
   }, []);
 
@@ -59,9 +67,19 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLocaleState(newLocale);
     setStoredLocale(newLocale);
     
+    // HTML lang 속성 동적으로 변경 (클라이언트 전용)
+    if (typeof window !== 'undefined') {
+      document.documentElement.lang = newLocale === 'ko' ? 'ko' : 'en';
+    }
+    
     // 새 언어의 메시지 로드
     loadMessages(newLocale).then((msg) => {
       setMessages(msg.default);
+      
+      // 페이지 제목 동적으로 업데이트 (클라이언트 전용)
+      if (typeof window !== 'undefined' && msg.default.seo) {
+        document.title = msg.default.seo.title;
+      }
     });
   };
 
