@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Loader2, BarChart3, Calendar } from 'lucide-react';
 import { calculateBatch, type SolarCalculationRequest, type SolarSummary } from '@/lib/api';
+import { useI18n } from '@/lib/i18n-context';
 
 interface SeasonComparisonProps {
   location?: { lat: number; lon: number } | null;
@@ -13,15 +14,16 @@ export default function SeasonComparison({
   location,
   objectHeight
 }: SeasonComparisonProps) {
+  const { t } = useI18n();
   const [isCalculating, setIsCalculating] = useState(false);
   const [results, setResults] = useState<Array<{season: {name: string; date: string; emoji: string}; summary: SolarSummary; maxAltitude: number; dayLength: number}>>([]);
   const [error, setError] = useState<string | null>(null);
 
   const seasons = [
-    { name: '봄', date: '2025-03-20', emoji: '🌸' },
-    { name: '여름', date: '2025-06-21', emoji: '☀️' },
-    { name: '가을', date: '2025-09-23', emoji: '🍂' },
-    { name: '겨울', date: '2025-12-21', emoji: '❄️' }
+    { name: t('seasonComparison.seasons.spring'), date: '2025-03-20', emoji: t('seasonComparison.seasonEmojis.spring') },
+    { name: t('seasonComparison.seasons.summer'), date: '2025-06-21', emoji: t('seasonComparison.seasonEmojis.summer') },
+    { name: t('seasonComparison.seasons.autumn'), date: '2025-09-23', emoji: t('seasonComparison.seasonEmojis.autumn') },
+    { name: t('seasonComparison.seasons.winter'), date: '2025-12-21', emoji: t('seasonComparison.seasonEmojis.winter') }
   ];
 
   const handleCompare = async () => {
@@ -66,7 +68,7 @@ export default function SeasonComparison({
 
       setResults(seasonResults);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '계절 비교 실패');
+      setError(err instanceof Error ? err.message : t('errors.loadDataError'));
     } finally {
       setIsCalculating(false);
     }
@@ -78,14 +80,14 @@ export default function SeasonComparison({
       <div className="flex items-center space-x-2">
         <BarChart3 className="w-4 h-4 text-blue-600" />
         <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-          계절별 비교
+          {t('seasonComparison.title')}
         </h3>
       </div>
 
       {/* Info */}
       <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <p className="text-xs text-blue-800 dark:text-blue-400">
-          🌍 춘분, 하지, 추분, 동지의 일조량을 한 번에 비교합니다.
+          {t('seasonComparison.description')}
         </p>
       </div>
 
@@ -98,12 +100,12 @@ export default function SeasonComparison({
         {isCalculating ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>계산 중... (4개 계절)</span>
+            <span>{t('seasonComparison.calculating')}</span>
           </>
         ) : (
           <>
             <Calendar className="w-4 h-4" />
-            <span>계절 비교 시작</span>
+            <span>{t('seasonComparison.calculateStart')}</span>
           </>
         )}
       </button>
@@ -119,13 +121,13 @@ export default function SeasonComparison({
       {results.length > 0 && (
         <div className="space-y-3">
           <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-            비교 결과
+            {t('seasonComparison.results')}
           </div>
           
           {/* Max Altitude Comparison */}
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-              최대 태양 고도
+              {t('seasonComparison.maxAltitude')}
             </div>
             <div className="space-y-2">
               {results.map((item, idx) => {
@@ -157,7 +159,7 @@ export default function SeasonComparison({
           {/* Day Length Comparison */}
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-              일조 시간
+              {t('seasonComparison.dayLength')}
             </div>
             <div className="space-y-2">
               {results.map((item, idx) => {
@@ -196,4 +198,3 @@ export default function SeasonComparison({
     </div>
   );
 }
-

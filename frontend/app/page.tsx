@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import MainContent from '@/components/layout/MainContent';
@@ -84,18 +84,22 @@ export default function Home() {
   }, [location, date, objectHeight]);
 
   // 초기 진입 시 기본 위치를 서울 시청으로 설정하여 빈 화면 방지
+  const isInitialMount = useRef(true);
   useEffect(() => {
-    if (!location) {
+    if (isInitialMount.current && !location) {
       setLocation({ lat: 37.5665, lon: 126.9780 });
+      isInitialMount.current = false;
     }
-    // mount 한 번만 실행
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-calculate when parameters change
   useEffect(() => {
-    if (location && date) {
+    if (location && date && !isInitialMount.current) {
       fetchSolarData();
+    }
+    if (isInitialMount.current && location) {
+      isInitialMount.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, date, objectHeight]);
@@ -120,12 +124,13 @@ export default function Home() {
       <StructuredData />
       {/* Header */}
       <Header onReset={() => {
-        setLocation(null);
+        setLocation({ lat: 37.5665, lon: 126.9780 });
         setDate(new Date().toISOString().split('T')[0]);
         setObjectHeight(10);
         setCurrentTime('12:00');
         setIsPlaying(false);
         setSolarData(null);
+        isInitialMount.current = false;
       }} onToggleSidebar={() => setSidebarOpen(v => !v)} />
       
       {/* Main Content */}

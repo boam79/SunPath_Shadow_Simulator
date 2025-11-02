@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Save, FolderOpen, Trash2, Star, StarOff } from 'lucide-react';
+import { useI18n } from '@/lib/i18n-context';
 
 interface Preset {
   id: string;
@@ -28,6 +29,8 @@ export default function PresetManager({
   onLoadPreset,
   onSavePreset
 }: PresetManagerProps) {
+  const { t, locale } = useI18n();
+  const isDevelopment = process.env.NODE_ENV === 'development';
   const [presets, setPresets] = useState<Preset[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
@@ -41,8 +44,11 @@ export default function PresetManager({
         setPresets(JSON.parse(stored));
       }
     } catch (error) {
-      console.error('Failed to load presets:', error);
+      if (isDevelopment) {
+        console.error('Failed to load presets:', error);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save presets to localStorage whenever they change
@@ -50,8 +56,11 @@ export default function PresetManager({
     try {
       localStorage.setItem('solar_presets', JSON.stringify(presets));
     } catch (error) {
-      console.error('Failed to save presets:', error);
+      if (isDevelopment) {
+        console.error('Failed to save presets:', error);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presets]);
 
   const handleSavePreset = () => {
@@ -86,7 +95,7 @@ export default function PresetManager({
 
   const handleDeletePreset = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('프리셋을 삭제하시겠습니까?')) {
+    if (confirm(t('presetManager.deleteConfirm'))) {
       setPresets(presets.filter(p => p.id !== id));
     }
   };
@@ -110,7 +119,7 @@ export default function PresetManager({
           className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors"
         >
           <FolderOpen className="w-4 h-4" />
-          <span>프리셋 열기 ({presets.length})</span>
+          <span>{t('presetManager.open')} ({presets.length})</span>
         </button>
         <button
           onClick={() => setShowSaveDialog(true)}
@@ -125,14 +134,14 @@ export default function PresetManager({
       {showSaveDialog && (
         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-            프리셋 이름
+            {t('presetManager.nameLabel')}
           </label>
           <div className="flex space-x-2">
             <input
               type="text"
               value={saveName}
               onChange={(e) => setSaveName(e.target.value)}
-              placeholder="예: 서울 태양광 설계"
+              placeholder={t('presetManager.namePlaceholder')}
               className="flex-1 px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               autoFocus
               onKeyDown={(e) => {
@@ -145,13 +154,13 @@ export default function PresetManager({
               disabled={!saveName.trim()}
               className="px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-xs rounded-lg transition-colors"
             >
-              저장
+              {t('presetManager.saveButton')}
             </button>
             <button
               onClick={() => setShowSaveDialog(false)}
               className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded-lg transition-colors"
             >
-              취소
+              {t('presetManager.cancelButton')}
             </button>
           </div>
         </div>
@@ -162,9 +171,9 @@ export default function PresetManager({
         <div className="max-h-96 overflow-y-auto space-y-2">
           {presets.length === 0 ? (
             <div className="p-4 text-center text-xs text-gray-500 dark:text-gray-400">
-              저장된 프리셋이 없습니다.
+              {t('presetManager.noPresets')}
               <br />
-              저장 버튼으로 현재 설정을 저장하세요.
+              {t('presetManager.save')} {t('presetManager.saveButton')}로 현재 설정을 저장하세요.
             </div>
           ) : (
             <>
@@ -172,7 +181,7 @@ export default function PresetManager({
               {favoritePresets.length > 0 && (
                 <>
                   <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2">
-                    즐겨찾기 ⭐
+                    {t('presetManager.favoritePresets')} ⭐
                   </div>
                   {favoritePresets.map(preset => (
                     <div
@@ -218,7 +227,7 @@ export default function PresetManager({
                 <>
                   {favoritePresets.length > 0 && (
                     <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 pt-2">
-                      모든 프리셋
+                      {t('presetManager.regularPresets')}
                     </div>
                   )}
                   {regularPresets.map(preset => (
@@ -263,4 +272,3 @@ export default function PresetManager({
     </div>
   );
 }
-

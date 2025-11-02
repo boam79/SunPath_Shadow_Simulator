@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Settings } from 'lucide-react';
+import { useI18n } from '@/lib/i18n-context';
 
 interface AdvancedOptionsProps {
   onSkyModelChange?: (model: 'isotropic' | 'perez' | 'klucher') => void;
@@ -14,6 +15,7 @@ export default function AdvancedOptions({
   onIntervalChange,
   onUnitsChange
 }: AdvancedOptionsProps) {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [skyModel, setSkyModel] = useState<'isotropic' | 'perez' | 'klucher'>('isotropic');
   const [interval, setInterval] = useState(60);
@@ -44,7 +46,7 @@ export default function AdvancedOptions({
         <div className="flex items-center space-x-2">
           <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-            고급 옵션
+            {t('advancedOptions.title')}
           </span>
         </div>
         <span className={`text-xs transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
@@ -56,26 +58,26 @@ export default function AdvancedOptions({
           {/* Sky Model */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-              하늘 모델 (Sky Diffuse Model)
+              {t('advancedOptions.skyModelLabel')}
             </label>
             <select
               value={skyModel}
               onChange={(e) => handleSkyModelChange(e.target.value as 'isotropic' | 'perez' | 'klucher')}
               className="w-full px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             >
-              <option value="isotropic">Isotropic (등방성)</option>
-              <option value="perez">Perez (고정밀) ✅</option>
-              <option value="klucher">Klucher</option>
+              <option value="isotropic">{t('advancedOptions.skyModels.isotropic')}</option>
+              <option value="perez">{t('advancedOptions.skyModels.perez')}</option>
+              <option value="klucher">{t('advancedOptions.skyModels.klucher')}</option>
             </select>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              POA 계산시 사용. Perez 모델 권장.
+              {t('advancedOptions.skyModelDescription')}
             </p>
           </div>
 
           {/* Time Interval */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-              시간 간격: {interval}분
+              {t('advancedOptions.intervalLabel')}: {interval}{t('advancedOptions.intervalMin')}
             </label>
             <input
               type="range"
@@ -87,19 +89,19 @@ export default function AdvancedOptions({
               className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
             />
             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-              <span>10분</span>
-              <span>60분</span>
-              <span>120분</span>
+              <span>{t('advancedOptions.intervalLabels.min')}</span>
+              <span>{t('advancedOptions.intervalLabels.mid')}</span>
+              <span>{t('advancedOptions.intervalLabels.max')}</span>
             </div>
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              📊 데이터 포인트 간격. 작을수록 정밀하지만 계산 시간 증가.
+              {t('advancedOptions.intervalDescription')}
             </p>
           </div>
 
           {/* Units */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-              측정 단위
+              {t('advancedOptions.unitsLabel')}
             </label>
             <div className="flex space-x-2">
               <button
@@ -110,7 +112,7 @@ export default function AdvancedOptions({
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
-                미터법 (m, km)
+                {t('advancedOptions.unitsMetric')}
               </button>
               <button
                 onClick={() => handleUnitsChange('imperial')}
@@ -120,23 +122,23 @@ export default function AdvancedOptions({
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
-                야드법 (ft, mi)
+                {t('advancedOptions.unitsImperial')}
               </button>
             </div>
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              📏 거리, 높이, 그림자 길이 표시 단위 선택.
+              {t('advancedOptions.unitsDescription')}
             </p>
           </div>
 
           {/* Info */}
           <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <p className="text-xs text-blue-800 dark:text-blue-400">
-              💡 <strong>고급 옵션 사용 팁:</strong>
+              {t('advancedOptions.tips.title')}
             </p>
             <ul className="mt-1 space-y-0.5 text-xs text-blue-700 dark:text-blue-400 ml-4">
-              <li>• 정밀 분석: Perez 모델 + 10분 간격</li>
-              <li>• 일반 분석: Isotropic 모델 + 60분 간격</li>
-              <li>• 빠른 분석: Isotropic 모델 + 120분 간격</li>
+              <li>• {t('advancedOptions.tips.precision')}</li>
+              <li>• {t('advancedOptions.tips.standard')}</li>
+              <li>• {t('advancedOptions.tips.quick')}</li>
             </ul>
           </div>
         </div>
@@ -144,4 +146,3 @@ export default function AdvancedOptions({
     </div>
   );
 }
-
