@@ -43,10 +43,6 @@ export async function exportToPDF(solarData: SolarCalculationResponse): Promise<
     ];
 
     summaryItems.forEach(item => {
-      if (yPos > pageHeight - 20) {
-        doc.addPage();
-        yPos = 15;
-      }
       doc.text(`• ${item}`, margin + 5, yPos);
       yPos += 6;
     });
