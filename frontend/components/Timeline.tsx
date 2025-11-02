@@ -2,6 +2,7 @@
 
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n-context';
 
 // Development mode check
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -32,6 +33,7 @@ export default function Timeline({
   onPlayPause,
   variant = 'default'
 }: TimelineProps) {
+  const { t } = useI18n();
   const [playSpeed, setPlaySpeed] = useState<number>(1);
   const [internalPlaying, setInternalPlaying] = useState(false);
   
@@ -314,7 +316,7 @@ export default function Timeline({
             {currentTime}
           </div>
           <div className={`${isSidebar ? 'text-[11px]' : 'text-sm'} text-gray-500 dark:text-gray-400`}>
-            현재 시각
+            {t('timeline.currentTime')}
           </div>
         </div>
 
@@ -324,7 +326,7 @@ export default function Timeline({
           <button
             onClick={handleReset}
             className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
-            title="처음으로"
+            title={t('timeline.first')}
           >
             <SkipBack className={`${isSidebar ? 'w-3.5 h-3.5' : 'w-4 h-4 md:w-5 md:h-5'} text-gray-700 dark:text-gray-300`} />
           </button>
@@ -333,7 +335,7 @@ export default function Timeline({
           <button
             onClick={handleStepBackward}
             className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
-            title="1시간 뒤로"
+            title={t('timeline.hourBack')}
           >
             <span className={`${isSidebar ? 'text-sm' : 'text-lg md:text-xl'} font-bold text-gray-700 dark:text-gray-300`}>-1h</span>
           </button>
@@ -346,7 +348,7 @@ export default function Timeline({
               handlePlayPause();
             }}
             className={`${isSidebar ? 'p-2.5' : 'p-3 md:p-4'} bg-blue-600 hover:bg-blue-700 rounded-full transition-colors`}
-            title={playing ? "일시정지" : "재생"}
+            title={playing ? t('timeline.pause') : t('timeline.play')}
             aria-pressed={playing}
           >
             {playing ? (
@@ -360,7 +362,7 @@ export default function Timeline({
           <button
             onClick={handleStepForward}
             className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
-            title="1시간 앞으로"
+            title={t('timeline.hourForward')}
           >
             <span className={`${isSidebar ? 'text-sm' : 'text-lg md:text-xl'} font-bold text-gray-700 dark:text-gray-300`}>+1h</span>
           </button>
@@ -369,7 +371,7 @@ export default function Timeline({
           <button
             onClick={() => onTimeChange(endTime)}
             className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
-            title="마지막으로"
+            title={t('timeline.last')}
           >
             <SkipForward className={`${isSidebar ? 'w-3.5 h-3.5' : 'w-4 h-4 md:w-5 md:h-5'} text-gray-700 dark:text-gray-300`} />
           </button>
@@ -377,7 +379,7 @@ export default function Timeline({
 
         {/* Speed Control */}
         <div className={`flex items-center justify-center ${isSidebar ? 'space-x-1' : 'space-x-1.5 md:space-x-2'}`}>
-          <span className={`${isSidebar ? 'text-[10px]' : 'text-xs'} text-gray-500 dark:text-gray-400`}>재생 속도:</span>
+          <span className={`${isSidebar ? 'text-[10px]' : 'text-xs'} text-gray-500 dark:text-gray-400`}>{t('timeline.playbackSpeed')}:</span>
           {[0.5, 1, 2, 5].map((speed) => (
             <button
               key={speed}

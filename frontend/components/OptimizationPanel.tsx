@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Lightbulb, TrendingUp, Sun, Moon, AlertTriangle } from 'lucide-react';
+import { useI18n } from '@/lib/i18n-context';
 import { optimizePeriods, type SolarCalculationResponse, type OptimizationResult } from '@/lib/api';
 
 interface OptimizationPanelProps {
@@ -9,6 +10,7 @@ interface OptimizationPanelProps {
 }
 
 export default function OptimizationPanel({ solarData }: OptimizationPanelProps) {
+  const { t } = useI18n();
   const [optimization, setOptimization] = useState<OptimizationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [useBackend, setUseBackend] = useState(true);
@@ -29,7 +31,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
 
     series.forEach((point) => {
       const time = new Date(point.timestamp);
-      const timeStr = time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
       // Max irradiance
       if (point.irradiance?.ghi && point.irradiance.ghi > maxGhi) {
@@ -192,7 +194,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
       <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
         <div className="flex items-center space-x-3">
           <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-pulse" />
-          <span className="text-sm text-gray-700 dark:text-gray-300">최적화 분석 중...</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">{t('optimization.analysis')}</span>
         </div>
       </div>
     );
@@ -209,7 +211,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
       <div className="flex items-center space-x-2 mb-4">
         <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-          최적 시간대 추천
+          {t('optimization.recommendations')}
         </h3>
       </div>
 
@@ -220,14 +222,14 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
             <div className="flex items-center space-x-2 mb-2">
               <TrendingUp className="w-4 h-4 text-orange-600 dark:text-orange-400" />
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                최대 일사량 시간
+                {t('optimization.maxIrradiance')}
               </span>
             </div>
             <div className="text-lg font-bold text-orange-900 dark:text-orange-300">
               {opt.max_irradiance_period.time}
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              {Math.round(opt.max_irradiance_period.ghi)} W/m² · 고도 {opt.max_irradiance_period.altitude.toFixed(1)}°
+              {Math.round(opt.max_irradiance_period.ghi)} W/m² {t('optimization.at')} {t('optimization.altitudeUnit')} {opt.max_irradiance_period.altitude.toFixed(1)}°
             </div>
           </div>
         )}
@@ -238,14 +240,14 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
             <div className="flex items-center space-x-2 mb-2">
               <Sun className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                최대 태양 고도
+                {t('optimization.maxSolarAltitude')}
               </span>
             </div>
             <div className="text-lg font-bold text-yellow-900 dark:text-yellow-300">
               {opt.max_altitude_period.time}
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              {opt.max_altitude_period.altitude.toFixed(1)}° · {Math.round(opt.max_altitude_period.ghi)} W/m²
+              {opt.max_altitude_period.altitude.toFixed(1)}° {t('optimization.at')} {Math.round(opt.max_altitude_period.ghi)} W/m²
             </div>
           </div>
         )}
@@ -256,14 +258,14 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
             <div className="flex items-center space-x-2 mb-2">
               <Moon className="w-4 h-4 text-green-600 dark:text-green-400" />
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                최소 그림자 시간
+                {t('optimization.minShadow')}
               </span>
             </div>
             <div className="text-lg font-bold text-green-900 dark:text-green-300">
               {opt.min_shadow_period.time}
             </div>
             <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              {opt.min_shadow_period.shadow_length.toFixed(2)} m · {Math.round(opt.min_shadow_period.ghi)} W/m²
+              {opt.min_shadow_period.shadow_length.toFixed(2)} m {t('optimization.at')} {Math.round(opt.min_shadow_period.ghi)} W/m²
             </div>
           </div>
         )}
@@ -272,7 +274,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
         {opt.optimal_solar_collection_periods.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
             <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              최적 태양광 수집 시간대
+              {t('optimization.optimalCollection')}
             </div>
             <div className="space-y-2">
               {opt.optimal_solar_collection_periods.map((period, idx) => (
@@ -281,7 +283,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
                     {period.start} ~ {period.end}
                   </span>
                   <span className="text-gray-600 dark:text-gray-400 ml-2">
-                    ({period.duration_hours.toFixed(1)}시간, 평균 {Math.round(period.average_ghi)} W/m²)
+                    ({period.duration_hours.toFixed(1)}{t('optimization.hours')}, {t('optimization.average')} {Math.round(period.average_ghi)} W/m²)
                   </span>
                 </div>
               ))}
@@ -295,7 +297,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
             <div className="flex items-center space-x-2 mb-2">
               <AlertTriangle className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                그림자 간섭 시간대
+                {t('optimization.shadowInterference')}
               </span>
             </div>
             <div className="space-y-2">
@@ -305,7 +307,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
                     {period.start} ~ {period.end}
                   </span>
                   <span className="text-gray-600 dark:text-gray-400 ml-2">
-                    ({period.duration_hours.toFixed(1)}시간)
+                    ({period.duration_hours.toFixed(1)}{t('optimization.hours')})
                   </span>
                 </div>
               ))}

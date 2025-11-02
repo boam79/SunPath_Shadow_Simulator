@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Map, { Marker, NavigationControl, GeolocateControl, Source, Layer } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { MapPin, Sun } from 'lucide-react';
+import { useI18n } from '@/lib/i18n-context';
 import { reverseGeocode } from '@/lib/geocoding';
 import type { SolarDataPoint } from '@/lib/api';
 
@@ -16,6 +17,7 @@ interface MapComponentProps {
 }
 
 export default function MapComponent({ location, onLocationChange, currentDataPoint, solarSeries, currentTime }: MapComponentProps) {
+  const { t } = useI18n();
   const [viewState, setViewState] = useState({
     longitude: location?.lon || 126.9780,
     latitude: location?.lat || 37.5665,
@@ -263,25 +265,25 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
 
       {/* Map Legend */}
       <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg text-xs z-10">
-        <div className="font-semibold text-gray-900 dark:text-white mb-2 text-center">범례</div>
+        <div className="font-semibold text-gray-900 dark:text-white mb-2 text-center">{t('map.legend')}</div>
         <div className="space-y-1.5 text-gray-700 dark:text-gray-300">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-red-500" fill="red" />
-            <span>기준점 (위치)</span>
+            <span>{t('map.referencePoint')}</span>
           </div>
           <div className="flex items-center gap-2">
             <Sun className="w-4 h-4 text-yellow-500" />
-            <span>태양 위치</span>
+            <span>{t('map.sunPosition')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-0.5 bg-purple-600" />
-            <span>현재 그림자</span>
+            <span>{t('map.currentShadow')}</span>
           </div>
           <div className="flex items-center gap-2">
             <svg className="w-4 h-1" viewBox="0 0 16 2" preserveAspectRatio="none">
               <line x1="0" y1="1" x2="16" y2="1" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="2 2" strokeOpacity="0.7" />
             </svg>
-            <span>하루 그림자 궤적</span>
+            <span>{t('map.shadowTrajectory')}</span>
           </div>
         </div>
       </div>
@@ -292,12 +294,12 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
           {location ? (
             <>
               <div>
-                <span className="font-semibold">📍 좌표:</span>{' '}
+                <span className="font-semibold">📍 {t('map.coordinates')}:</span>{' '}
                 {location.lat.toFixed(6)}°N, {location.lon.toFixed(6)}°E
               </div>
               {addressName && (
                 <div className="text-gray-600 dark:text-gray-400 truncate">
-                  <span className="font-semibold">🏠 주소:</span>{' '}
+                  <span className="font-semibold">🏠 {t('map.address')}:</span>{' '}
                   {addressName}
                 </div>
               )}
@@ -305,16 +307,16 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
                 <>
                   <div className="border-t border-gray-300 dark:border-gray-600 my-2 pt-2">
                     <div className="text-yellow-700 dark:text-yellow-400">
-                      <span className="font-semibold">☀️ 태양:</span>{' '}
-                      고도 {currentDataPoint.sun.altitude.toFixed(1)}° / 
-                      방위 {currentDataPoint.sun.azimuth.toFixed(1)}°
+                      <span className="font-semibold">☀️ {t('map.sun')}:</span>{' '}
+                      {t('map.altitude')} {currentDataPoint.sun.altitude.toFixed(1)}° / 
+                      {t('map.direction')} {currentDataPoint.sun.azimuth.toFixed(1)}°
                     </div>
                     {currentDataPoint.shadow && (
                       <div className="text-purple-700 dark:text-purple-400 mt-1">
-                        <span className="font-semibold">🌒 그림자:</span>{' '}
+                        <span className="font-semibold">🌒 {t('map.shadow')}:</span>{' '}
                         {typeof currentDataPoint.shadow.length === 'number' 
                         ? (currentDataPoint.shadow.length === Infinity 
-                            ? '무한대' 
+                            ? t('map.infinite')
                             : `${currentDataPoint.shadow.length.toFixed(2)}m`)
                         : 'N/A'}
                     {typeof currentDataPoint.shadow.direction === 'number' && 
@@ -326,7 +328,7 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
               )}
             </>
           ) : (
-            <span className="text-gray-500">지도를 클릭하여 위치를 선택하세요</span>
+            <span className="text-gray-500">{t('map.clickToSelect')}</span>
           )}
         </div>
       </div>

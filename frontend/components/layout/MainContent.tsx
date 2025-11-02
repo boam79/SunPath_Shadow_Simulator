@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import SolarChart from '@/components/Chart';
 import OptimizationPanel from '@/components/OptimizationPanel';
+import { useI18n } from '@/lib/i18n-context';
 import type { SolarCalculationResponse, SolarDataPoint } from '@/lib/api';
 
 // Dynamically import Map to avoid SSR issues
@@ -32,6 +33,8 @@ export default function MainContent({
   error,
   onRetry
 }: MainContentProps) {
+  const { t, locale } = useI18n();
+
   const handleLocationChange = (lat: number, lon: number) => {
     if (onLocationChange) {
       onLocationChange({lat, lon});
@@ -164,7 +167,7 @@ export default function MainContent({
     const s = solarData?.summary?.sunrise;
     if (typeof s === 'string' && s !== 'N/A') {
       const d = new Date(s);
-      if (!isNaN(d.getTime())) return d.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+      if (!isNaN(d.getTime())) return d.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', {hour: '2-digit', minute: '2-digit'});
       return s;
     }
     return s || '--';
@@ -173,7 +176,7 @@ export default function MainContent({
     const s = solarData?.summary?.sunset;
     if (typeof s === 'string' && s !== 'N/A') {
       const d = new Date(s);
-      if (!isNaN(d.getTime())) return d.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+      if (!isNaN(d.getTime())) return d.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', {hour: '2-digit', minute: '2-digit'});
       return s;
     }
     return s || '--';
@@ -201,7 +204,7 @@ export default function MainContent({
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-center justify-between">
             <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             {onRetry && (
-              <button onClick={onRetry} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md">다시 시도</button>
+              <button onClick={onRetry} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md">{t('optimization.retry')}</button>
             )}
           </div>
         </div>
@@ -214,19 +217,19 @@ export default function MainContent({
             <div className="space-y-4 p-3 md:p-4">
               <div className="grid grid-cols-3 gap-2 md:gap-3">
                 <div className="p-2 md:p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <div className="text-xs text-yellow-700 dark:text-yellow-400 mb-1">태양 고도</div>
+                  <div className="text-xs text-yellow-700 dark:text-yellow-400 mb-1">{t('map.solarAltitude')}</div>
                   <div className="text-xl font-bold text-yellow-900 dark:text-yellow-300">
                     {currentDataPoint ? currentDataPoint.sun.altitude.toFixed(1) : solarData.summary.max_altitude.toFixed(1)}°
                   </div>
                 </div>
                 <div className="p-2 md:p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                  <div className="text-xs text-orange-700 dark:text-orange-400 mb-1">일사량 (GHI)</div>
+                  <div className="text-xs text-orange-700 dark:text-orange-400 mb-1">{t('map.irradiance')} (GHI)</div>
                   <div className="text-xl font-bold text-orange-900 dark:text-orange-300">
                     {currentDataPoint?.irradiance ? Math.round(currentDataPoint.irradiance.ghi) : '--'} W/m²
                   </div>
                 </div>
                 <div className="p-2 md:p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                  <div className="text-xs text-purple-700 dark:text-purple-400 mb-1">그림자 길이</div>
+                  <div className="text-xs text-purple-700 dark:text-purple-400 mb-1">{t('map.shadowLength')}</div>
                   <div className="text-xl font-bold text-purple-900 dark:text-purple-300">
                     {typeof currentDataPoint?.shadow?.length === 'number' ? currentDataPoint.shadow.length.toFixed(2) : '--'} m
                   </div>
@@ -235,11 +238,11 @@ export default function MainContent({
 
               <div className="grid grid-cols-2 gap-2 md:gap-3 text-sm">
                 <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">일출</div>
+                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">{t('optimization.sunrise')}</div>
                   <div className="font-semibold text-gray-900 dark:text-white">{sunriseStr}</div>
                 </div>
                 <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">일몰</div>
+                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">{t('optimization.sunset')}</div>
                   <div className="font-semibold text-gray-900 dark:text-white">{sunsetStr}</div>
                 </div>
               </div>

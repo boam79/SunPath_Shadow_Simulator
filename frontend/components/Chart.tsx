@@ -3,6 +3,7 @@
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { SolarCalculationResponse } from '@/lib/api';
 import { useMemo } from 'react';
+import { useI18n } from '@/lib/i18n-context';
 
 interface SolarChartProps {
   solarData: SolarCalculationResponse | null;
@@ -10,13 +11,15 @@ interface SolarChartProps {
 }
 
 export default function SolarChart({ solarData, currentTime }: SolarChartProps) {
+  const { t, locale } = useI18n();
+  
   // Transform data for charts
   const chartData = useMemo(() => {
     if (!solarData) return [];
 
     return solarData.series.map(point => {
       const time = new Date(point.timestamp);
-      const timeStr = time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = time.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
       
       return {
         time: timeStr,
@@ -31,7 +34,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
           : null
       };
     });
-  }, [solarData]);
+  }, [solarData, locale]);
 
   // Find current time index for reference line
   const currentTimeIndex = useMemo(() => {
@@ -73,7 +76,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
       {/* Sun Altitude & Azimuth Chart */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          태양 고도 및 방위각
+          {t('chart.altitudeAzimuth')}
         </h3>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -86,14 +89,14 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
             />
             <YAxis 
               yAxisId="left"
-              label={{ value: '고도 (°)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+              label={{ value: `${t('chart.altitude')} (°)`, angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
               stroke="#f59e0b"
               fontSize={12}
             />
             <YAxis 
               yAxisId="right"
               orientation="right"
-              label={{ value: '방위각 (°)', angle: 90, position: 'insideRight', style: { textAnchor: 'middle' } }}
+              label={{ value: `${t('chart.azimuth')} (°)`, angle: 90, position: 'insideRight', style: { textAnchor: 'middle' } }}
               stroke="#3b82f6"
               fontSize={12}
             />
@@ -112,7 +115,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               stroke="#f59e0b" 
               strokeWidth={2}
               dot={false}
-              name="고도"
+              name={t('chart.altitude')}
               isAnimationActive={false}
             />
             <Line 
@@ -122,7 +125,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               stroke="#3b82f6" 
               strokeWidth={2}
               dot={false}
-              name="방위각"
+              name={t('chart.azimuth')}
               isAnimationActive={false}
             />
             {currentTimeIndex >= 0 && currentTimeIndex < chartData.length && (
@@ -131,7 +134,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
                 stroke="#ef4444" 
                 strokeWidth={2}
                 strokeDasharray="3 3"
-                label={{ value: '현재', position: 'top', fill: '#ef4444' }}
+                label={{ value: t('chart.current'), position: 'top', fill: '#ef4444' }}
               />
             )}
           </LineChart>
@@ -141,7 +144,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
       {/* Irradiance Area Chart */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          일사량 (누적 영역)
+          {t('chart.ghiArea')}
         </h3>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -167,7 +170,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               interval="preserveStartEnd"
             />
             <YAxis 
-              label={{ value: '일사량 (W/m²)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+              label={{ value: t('chart.irradiance'), angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
               stroke="#f97316"
               fontSize={12}
             />
@@ -185,7 +188,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               stroke="#f97316" 
               strokeWidth={2}
               fill="url(#ghiGradient)"
-              name="GHI"
+              name={t('chart.ghi')}
               isAnimationActive={false}
             />
             <Area 
@@ -194,7 +197,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               stroke="#ea580c" 
               strokeWidth={2}
               fill="url(#dniGradient)"
-              name="DNI"
+              name={t('chart.dni')}
               isAnimationActive={false}
             />
             <Area 
@@ -203,7 +206,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               stroke="#fb923c" 
               strokeWidth={2}
               fill="url(#dhiGradient)"
-              name="DHI"
+              name={t('chart.dhi')}
               isAnimationActive={false}
             />
             {currentTimeIndex >= 0 && currentTimeIndex < chartData.length && (
@@ -212,7 +215,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
                 stroke="#ef4444" 
                 strokeWidth={2}
                 strokeDasharray="3 3"
-                label={{ value: '현재', position: 'top', fill: '#ef4444' }}
+                label={{ value: t('chart.current'), position: 'top', fill: '#ef4444' }}
               />
             )}
           </AreaChart>
@@ -223,7 +226,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
       {chartData.some(d => d.shadowLength !== null) && (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-            그림자 길이 변화
+            {t('chart.shadowVariation')}
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData.filter(d => d.shadowLength !== null)} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -235,7 +238,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
                 interval="preserveStartEnd"
               />
               <YAxis 
-                label={{ value: '길이 (m)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+                label={{ value: `${t('chart.length')} (m)`, angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
                 stroke="#6b21a8"
                 fontSize={12}
               />
@@ -250,7 +253,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
               <Bar 
                 dataKey="shadowLength" 
                 fill="#6b21a8" 
-                name="그림자 길이"
+                name={t('chart.shadowLength').replace(' (m)', '')}
                 radius={[4, 4, 0, 0]}
                 isAnimationActive={false}
               />
@@ -260,7 +263,7 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
                   stroke="#ef4444" 
                   strokeWidth={2}
                   strokeDasharray="3 3"
-                  label={{ value: '현재', position: 'top', fill: '#ef4444' }}
+                  label={{ value: t('chart.current'), position: 'top', fill: '#ef4444' }}
                 />
               )}
             </BarChart>
