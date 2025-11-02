@@ -46,6 +46,7 @@ export default function Sidebar({
   timeline
 }: SidebarProps) {
   const { t } = useI18n();
+  const isDevelopment = process.env.NODE_ENV === 'development';
   const [tab, setTab] = useState<'single' | 'batch' | 'season' | 'tools'>('single');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<GeocodeResult[]>([]);
@@ -74,6 +75,22 @@ export default function Sidebar({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Update searchQuery when location changes from parent (e.g., reset or map click)
+  useEffect(() => {
+    if (location) {
+      reverseGeocode(location.lat, location.lon)
+        .then((address) => {
+          if (address && address !== searchQuery) {
+            setSearchQuery(address);
+          }
+        })
+        .catch(() => {
+          // Silently ignore geocoding failures
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location?.lat, location?.lon]);
+
   // Debounced search effect
   useEffect(() => {
     if (searchTimeoutRef.current) {
@@ -92,7 +109,9 @@ export default function Sidebar({
         setSearchResults(results);
         setShowResults(true);
       } catch (error) {
-        console.error('Search error:', error);
+        if (isDevelopment) {
+          console.error('Search error:', error);
+        }
         setSearchResults([]);
       } finally {
         setIsSearching(false);
