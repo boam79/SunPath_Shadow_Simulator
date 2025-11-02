@@ -23,7 +23,8 @@ async def calculate_irradiance(
     model: str = Query("ineichen", description="Clear sky model (ineichen, haurwitz, simplified_solis)"),
     include_par: bool = Query(False, description="Include PAR calculation"),
     surface_tilt: Optional[float] = Query(None, ge=0, le=90, description="Surface tilt angle (degrees)"),
-    surface_azimuth: Optional[float] = Query(None, ge=0, lt=360, description="Surface azimuth (degrees)")
+    surface_azimuth: Optional[float] = Query(None, ge=0, lt=360, description="Surface azimuth (degrees)"),
+    sky_model: str = Query("isotropic", description="Sky diffuse model for POA (isotropic, perez, klucher)")
 ) -> Dict[str, Any]:
     """
     Calculate solar irradiance for a given location and time range
@@ -39,8 +40,13 @@ async def calculate_irradiance(
     - **haurwitz**: 빠른 계산
     - **simplified_solis**: 중간 정확도
     
+    **Sky Diffuse Models** (for POA calculations):
+    - **isotropic**: 등방성 하늘 모델 (기본값)
+    - **perez**: Perez Sky Model ✅ (고정밀 산란 복사 계산)
+    - **klucher**: Klucher 모델
+    
     **예시:**
-    `/api/irradiance/calculate?lat=37.5665&lon=126.9780&date=2025-06-21&interval=60&model=ineichen`
+    `/api/irradiance/calculate?lat=37.5665&lon=126.9780&date=2025-06-21&interval=60&model=ineichen&sky_model=perez`
     """
     try:
         # Calculate irradiance
@@ -69,7 +75,8 @@ async def calculate_irradiance(
             irradiance_data=irradiance_data,
             include_par=include_par,
             surface_tilt=surface_tilt,
-            surface_azimuth=surface_azimuth
+            surface_azimuth=surface_azimuth,
+            sky_model=sky_model
         )
         
         return {
@@ -87,6 +94,7 @@ async def calculate_irradiance(
                 'interval': interval
             },
             'model': model,
+            'sky_model': sky_model if surface_tilt is not None else None,
             'daily_totals': daily_totals,
             'statistics': statistics,
             'data_points': len(series_data),

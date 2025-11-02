@@ -1,0 +1,38 @@
+{
+  "requests": [
+    {
+      "location": {
+        "lat": 37.5665,
+        "lon": 126.9780,
+        "altitude": 38
+      },
+      "datetime": {
+        "date": "2025-06-21",
+        "start_time": "05:00",
+        "end_time": "20:00",
+        "interval": 60
+      },
+      "object": {
+        "height": 10
+      }
+    },
+    {
+      "location": {
+        "lat": 35.1796,
+        "lon": 129.0756,
+        "altitude": 30
+      },
+      "datetime": {
+        "date": "2025-06-21",
+        "start_time": "05:00",
+        "end_time": "20:00",
+        "interval": 60
+      },
+      "object": {
+        "height": 10
+      }
+    }
+  ],
+  "parallel": true
+}
+

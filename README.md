@@ -135,7 +135,7 @@ npm test
 
 ## 📊 API 엔드포인트
 
-### ✅ 구현 완료 (16개 엔드포인트)
+### ✅ 구현 완료 (17개 엔드포인트)
 
 **Core:**
 - `GET /` - Root endpoint
@@ -152,12 +152,13 @@ npm test
 - `GET /api/shadow/validate` - 검증
 
 **Irradiance:**
-- `GET /api/irradiance/calculate` - 일사량 계산
+- `GET /api/irradiance/calculate` - 일사량 계산 (Perez Sky Model 지원 ✅ NEW)
 - `GET /api/irradiance/test` - 테스트
 - `GET /api/irradiance/sunrise-sunset-irradiance` - 일출/일몰 일사량
 
 **Integrated:**
 - `POST /api/integrated/calculate` - 통합 계산 ⭐ (프론트엔드 사용)
+- `POST /api/integrated/batch` - 배치 계산 (여러 위치/날짜 동시 처리) ✅ NEW
 
 **Cache:**
 - `GET /api/cache/stats` - 캐시 통계
@@ -282,10 +283,10 @@ vercel
 - [x] 최적 시간대 추천 분석 - ✅ v0.1.6 완료
 - [x] 시간 기반 컬러 그라데이션 - ✅ v0.1.6 완료
 - [x] UI/UX 레이아웃 최적화 - ✅ v0.1.6 완료
+- [x] Perez Sky Model - ✅ 완료
+- [x] 배치 계산 API - ✅ 완료
 - [ ] 네이버 지도(Naver Maps JS v3) 통합 및 기본 지도 엔진 전환 예정
-- [ ] Perez Sky Model
 - [ ] 사용자 프리셋
-- [ ] 배치 계산 API
 - [ ] 성능 최적화 추가
 
 ### Phase 3: 엔터프라이즈

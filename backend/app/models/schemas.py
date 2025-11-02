@@ -101,3 +101,24 @@ class SolarCalculationResponse(BaseModel):
     metadata: Metadata
     summary: SolarSummary
     series: List[SolarDataPoint]
+
+# Batch calculation models
+class BatchCalculationRequest(BaseModel):
+    """Batch calculation request for multiple scenarios"""
+    requests: List[SolarCalculationRequest] = Field(..., min_length=1, max_length=100, description="Array of calculation requests (max 100)")
+    parallel: bool = Field(True, description="Process requests in parallel for better performance")
+
+class BatchCalculationResponseItem(BaseModel):
+    """Individual response item in batch"""
+    index: int = Field(..., description="Original request index")
+    success: bool = Field(..., description="Whether calculation succeeded")
+    result: Optional[SolarCalculationResponse] = Field(None, description="Calculation result (if successful)")
+    error: Optional[str] = Field(None, description="Error message (if failed)")
+
+class BatchCalculationResponse(BaseModel):
+    """Batch calculation response"""
+    total_requests: int = Field(..., description="Total number of requests")
+    successful: int = Field(..., description="Number of successful calculations")
+    failed: int = Field(..., description="Number of failed calculations")
+    processing_time_ms: float = Field(..., description="Total processing time in milliseconds")
+    results: List[BatchCalculationResponseItem] = Field(..., description="Individual results")

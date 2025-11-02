@@ -113,7 +113,8 @@ class IrradianceCalculator:
         solar_azimuth: float,
         surface_tilt: float,
         surface_azimuth: float,
-        albedo: float = 0.2
+        albedo: float = 0.2,
+        sky_model: str = 'isotropic'
     ) -> Dict[str, float]:
         """
         Calculate Plane of Array (POA) irradiance for tilted surfaces
@@ -127,6 +128,7 @@ class IrradianceCalculator:
             surface_tilt: Surface tilt from horizontal (degrees)
             surface_azimuth: Surface azimuth (degrees)
             albedo: Ground reflectance (0-1)
+            sky_model: Sky diffuse model ('isotropic', 'perez', 'klucher')
             
         Returns:
             Dictionary with POA components
@@ -139,7 +141,7 @@ class IrradianceCalculator:
             solar_azimuth=solar_azimuth
         )
         
-        # Calculate POA components
+        # Calculate POA components with specified sky model
         poa_components = irradiance.get_total_irradiance(
             surface_tilt=surface_tilt,
             surface_azimuth=surface_azimuth,
@@ -149,7 +151,7 @@ class IrradianceCalculator:
             ghi=ghi,
             dhi=dhi,
             albedo=albedo,
-            model='isotropic'
+            model=sky_model
         )
         
         return {
@@ -158,7 +160,8 @@ class IrradianceCalculator:
             'poa_diffuse': float(poa_components['poa_diffuse']),
             'poa_sky_diffuse': float(poa_components['poa_sky_diffuse']),
             'poa_ground_diffuse': float(poa_components['poa_ground_diffuse']),
-            'aoi': float(aoi)
+            'aoi': float(aoi),
+            'sky_model': sky_model
         }
     
     def calculate_par(
@@ -185,7 +188,8 @@ class IrradianceCalculator:
         include_par: bool = False,
         surface_tilt: float = None,
         surface_azimuth: float = None,
-        albedo: float = 0.2
+        albedo: float = 0.2,
+        sky_model: str = 'isotropic'
     ) -> List[Dict[str, Any]]:
         """
         Format irradiance data into list of dictionaries
@@ -196,6 +200,7 @@ class IrradianceCalculator:
             surface_tilt: Surface tilt for POA calculation (optional)
             surface_azimuth: Surface azimuth for POA calculation (optional)
             albedo: Ground reflectance for POA calculation
+            sky_model: Sky diffuse model for POA ('isotropic', 'perez', 'klucher')
             
         Returns:
             List of irradiance data points
@@ -224,7 +229,8 @@ class IrradianceCalculator:
                     solar_azimuth=row['azimuth'],
                     surface_tilt=surface_tilt,
                     surface_azimuth=surface_azimuth,
-                    albedo=albedo
+                    albedo=albedo,
+                    sky_model=sky_model
                 )
                 data_point['poa'] = poa
             
