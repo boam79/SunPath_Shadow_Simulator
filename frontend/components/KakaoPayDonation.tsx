@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { X } from 'lucide-react';
+import { useI18n } from '@/lib/i18n-context';
 
 interface KakaoPayDonationProps {
   isMobile: boolean;
@@ -15,6 +16,7 @@ export default function KakaoPayDonation({
   className = '',
   variant = 'button'
 }: KakaoPayDonationProps) {
+  const { t } = useI18n();
   const [showModal, setShowModal] = useState(false);
   const kakaopayUrl = 'https://qr.kakaopay.com/Ej8dj4X39';
 
@@ -37,20 +39,20 @@ export default function KakaoPayDonation({
         target={isMobile ? '_blank' : undefined}
         rel="noopener noreferrer"
         className={className}
-        title={!isMobile ? "데스크톱에서는 QR 코드가 표시됩니다. 모바일 카카오페이 앱으로 스캔하세요." : undefined}
+        title={!isMobile ? t('donationModal.instruction').replace('\n', ' ') : undefined}
       >
         {variant === 'button' ? (
           <div className="flex flex-col items-center justify-center space-y-1">
-            <span className="text-sm font-medium">☕ 카카오페이로 후원하기</span>
+            <span className="text-sm font-medium">☕ {t('donation.title')}</span>
             {!isMobile && (
-              <span className="text-xs text-gray-700">(QR 코드 표시)</span>
+              <span className="text-xs text-gray-700">({t('donation.desktopHint')})</span>
             )}
           </div>
         ) : (
           <>
-            <span>☕ 카카오페이로 후원하기</span>
+            <span>☕ {t('donation.title')}</span>
             {!isMobile && (
-              <span className="text-xs text-gray-700 md:hidden">(QR 코드 표시)</span>
+              <span className="text-xs text-gray-700 md:hidden">({t('donation.desktopHint')})</span>
             )}
           </>
         )}
@@ -68,12 +70,12 @@ export default function KakaoPayDonation({
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                카카오페이 후원
+                {t('donationModal.title')}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                aria-label="닫기"
+                aria-label="Close"
               >
                 <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               </button>
@@ -90,9 +92,8 @@ export default function KakaoPayDonation({
               </div>
               
               <div className="text-center space-y-2">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  모바일 카카오페이 앱에서<br />
-                  QR 코드를 스캔해주세요
+                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                  {t('donationModal.instruction')}
                 </p>
                 <a
                   href={kakaopayUrl}
@@ -100,7 +101,7 @@ export default function KakaoPayDonation({
                   rel="noopener noreferrer"
                   className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                 >
-                  링크로 열기 →
+                  {t('donationModal.openLink')} →
                 </a>
               </div>
             </div>

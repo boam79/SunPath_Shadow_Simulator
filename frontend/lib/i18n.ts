@@ -14,7 +14,7 @@ export const localeNames: Record<Locale, string> = {
 export type Messages = typeof import('../i18n/locales/ko/messages').default;
 
 // 번역 메시지 로드
-export function loadMessages(locale: Locale): Promise<Messages> {
+export function loadMessages(locale: Locale): Promise<{ default: Messages }> {
   return import(`../i18n/locales/${locale}/messages`);
 }
 

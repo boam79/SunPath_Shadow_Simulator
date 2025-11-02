@@ -6,6 +6,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import MainContent from '@/components/layout/MainContent';
 import StructuredData from '@/components/StructuredData';
 import KakaoPayDonation from '@/components/KakaoPayDonation';
+import { useI18n } from '@/lib/i18n-context';
 import { calculateSolar, type SolarCalculationResponse } from '@/lib/api';
 
 export default function Home() {
@@ -20,6 +21,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const { t } = useI18n();
 
   // 모바일 디바이스 감지
   useEffect(() => {
@@ -186,9 +188,9 @@ export default function Home() {
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400 gap-4">
           <div className="flex items-center space-x-4 mb-2 md:mb-0">
-            <span>© 2025 SunPath & Shadow Simulator</span>
+            <span>{t('footer.copyright')}</span>
             <span className="hidden md:inline">•</span>
-            <span>제작자: <strong className="text-gray-800 dark:text-gray-200">boam79</strong></span>
+            <span>{t('footer.createdBy')}: <strong className="text-gray-800 dark:text-gray-200">boam79</strong></span>
           </div>
           <div className="flex items-center space-x-4 flex-wrap justify-center">
             {/* 카카오페이 기부 링크 */}
@@ -198,7 +200,7 @@ export default function Home() {
               variant="link"
             />
             <span className="hidden md:inline">•</span>
-            <span>문의사항:</span>
+            <span>{t('footer.contact')}:</span>
             <a 
               href="mailto:ckadltmfxhrxhrxhr@gmail.com"
               className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"

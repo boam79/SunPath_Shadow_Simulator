@@ -6,6 +6,7 @@ import { searchAddress, reverseGeocode, type GeocodeResult } from '@/lib/geocodi
 import { exportToCSV, exportToJSON, exportSummary, copyToClipboard } from '@/lib/export';
 import Timeline from '@/components/Timeline';
 import KakaoPayDonation from '@/components/KakaoPayDonation';
+import { useI18n } from '@/lib/i18n-context';
 import type { SolarCalculationResponse } from '@/lib/api';
 
 interface SidebarProps {
@@ -40,6 +41,7 @@ export default function Sidebar({
   solarData,
   timeline
 }: SidebarProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<GeocodeResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -99,7 +101,7 @@ export default function Sidebar({
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
+      alert(t('errors.locationNotSupported'));
       return;
     }
 
@@ -111,12 +113,12 @@ export default function Sidebar({
         // 좌표 유효성 검사
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
           setIsGettingLocation(false);
-          alert('가져온 위치 값이 올바르지 않습니다. 다시 시도해 주세요.');
+          alert(t('errors.invalidLocation'));
           return;
         }
         if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
           setIsGettingLocation(false);
-          alert('가져온 위치 범위가 유효하지 않습니다.');
+          alert(t('errors.invalidLocationRange'));
           return;
         }
         setLocation({ lat: latitude, lon: longitude });
@@ -134,16 +136,16 @@ export default function Sidebar({
       },
       (error) => {
         setIsGettingLocation(false);
-        let errorMessage = '위치를 가져올 수 없습니다.';
+        let errorMessage = t('errors.locationFailed');
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.';
+            errorMessage = t('errors.locationDenied');
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = '위치 정보를 사용할 수 없습니다.';
+            errorMessage = t('errors.locationUnavailable');
             break;
           case error.TIMEOUT:
-            errorMessage = '위치 요청 시간이 초과되었습니다.';
+            errorMessage = t('errors.locationTimeout');
             break;
         }
         alert(errorMessage);
@@ -172,7 +174,7 @@ export default function Sidebar({
         <div className="space-y-2">
           <label className="flex items-center space-x-2 text-xs font-medium text-gray-700 dark:text-gray-300">
             <MapPin className="w-4 h-4" />
-            <span>위치</span>
+            <span>{t('sidebar.location')}</span>
           </label>
           
           {/* Address Search */}
@@ -183,7 +185,7 @@ export default function Sidebar({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchResults.length > 0 && setShowResults(true)}
-                placeholder="주소 검색 (예: 서울특별시 중구)"
+                placeholder={t('sidebar.addressSearchPlaceholder')}
                 className="w-full pl-9 pr-9 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
               />
               <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
@@ -217,7 +219,7 @@ export default function Sidebar({
           <div className="grid grid-cols-2 gap-2">
             <input
               type="number"
-              placeholder="위도 (Latitude)"
+              placeholder={t('sidebar.latitude')}
               value={location?.lat || ''}
               onChange={(e) => {
                 const lat = parseFloat(e.target.value);
@@ -232,7 +234,7 @@ export default function Sidebar({
             />
             <input
               type="number"
-              placeholder="경도 (Longitude)"
+              placeholder={t('sidebar.longitude')}
               value={location?.lon || ''}
               onChange={(e) => {
                 const lon = parseFloat(e.target.value);
@@ -256,12 +258,12 @@ export default function Sidebar({
             {isGettingLocation ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>위치 가져오는 중...</span>
+                <span>{t('sidebar.gettingLocation')}</span>
               </>
             ) : (
               <>
                 <Navigation className="w-4 h-4" />
-                <span>현재 위치 사용</span>
+                <span>{t('sidebar.useCurrentLocation')}</span>
               </>
             )}
           </button>
@@ -272,19 +274,19 @@ export default function Sidebar({
               onClick={() => setLocation({lat: 37.5665, lon: 126.9780})}
               className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             >
-              서울
+              {t('sidebar.quickLocations.seoul')}
             </button>
             <button
               onClick={() => setLocation({lat: 35.1796, lon: 129.0756})}
               className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             >
-              부산
+              {t('sidebar.quickLocations.busan')}
             </button>
             <button
               onClick={() => setLocation({lat: 33.4996, lon: 126.5312})}
               className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             >
-              제주
+              {t('sidebar.quickLocations.jeju')}
             </button>
           </div>
         </div>
@@ -293,7 +295,7 @@ export default function Sidebar({
         <div className="space-y-2">
           <label className="flex items-center space-x-2 text-xs font-medium text-gray-700 dark:text-gray-300">
             <Calendar className="w-4 h-4" />
-            <span>날짜</span>
+            <span>{t('sidebar.date')}</span>
           </label>
           <input
             type="date"
@@ -308,25 +310,25 @@ export default function Sidebar({
               onClick={() => setDate(new Date().toISOString().split('T')[0])}
               className="px-3 py-1.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
             >
-              오늘
+              {t('sidebar.quickDates.today')}
             </button>
             <button
               onClick={() => setDate('2025-06-21')}
               className="px-3 py-1.5 text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors"
             >
-              하지 (6/21)
+              {t('sidebar.quickDates.solstice')}
             </button>
             <button
               onClick={() => setDate('2025-12-21')}
               className="px-3 py-1.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             >
-              동지 (12/21)
+              {t('sidebar.quickDates.winter')}
             </button>
             <button
               onClick={() => setDate('2025-03-20')}
               className="px-3 py-1.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
             >
-              춘분 (3/20)
+              {t('sidebar.quickDates.spring')}
             </button>
           </div>
         </div>
@@ -335,7 +337,7 @@ export default function Sidebar({
         {timeline && (
           <div className="space-y-2">
             <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-              타임라인
+              {t('sidebar.timeline')}
             </h3>
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
               <Timeline
@@ -355,7 +357,7 @@ export default function Sidebar({
         <div className="space-y-2">
           <label className="flex items-center space-x-2 text-xs font-medium text-gray-700 dark:text-gray-300">
             <Ruler className="w-4 h-4" />
-            <span>물체 높이</span>
+            <span>{t('sidebar.objectHeight')}</span>
           </label>
           
           {/* Slider */}
@@ -390,7 +392,7 @@ export default function Sidebar({
         {/* Time Input */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-            시각
+            {t('sidebar.time')}
           </label>
           <input
             type="time"
@@ -404,13 +406,13 @@ export default function Sidebar({
         {location && (
           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <h3 className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1.5">
-              현재 설정
+              {t('sidebar.currentSettings')}
             </h3>
             <div className="space-y-1 text-xs text-blue-800 dark:text-blue-400">
-              <p>📍 위치: {location.lat.toFixed(4)}°N, {location.lon.toFixed(4)}°E</p>
-              <p>📅 날짜: {date}</p>
-              <p>🕐 시각: {currentTime}</p>
-              <p>📏 높이: {objectHeight}m</p>
+              <p>📍 {t('sidebar.locationLabel')}: {location.lat.toFixed(4)}°N, {location.lon.toFixed(4)}°E</p>
+              <p>📅 {t('sidebar.dateLabel')}: {date}</p>
+              <p>🕐 {t('sidebar.timeLabel')}: {currentTime}</p>
+              <p>📏 {t('sidebar.heightLabel')}: {objectHeight}m</p>
             </div>
           </div>
         )}
@@ -419,7 +421,7 @@ export default function Sidebar({
         {solarData && (
           <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-              데이터 내보내기
+              {t('sidebar.exportTitle')}
             </h3>
             
             <div className="grid grid-cols-2 gap-2">
@@ -428,7 +430,7 @@ export default function Sidebar({
                 className="flex items-center justify-center space-x-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
               >
                 <Download className="w-4 h-4" />
-                <span>CSV</span>
+                <span>{t('sidebar.exportCSV')}</span>
               </button>
               
               <button
@@ -436,7 +438,7 @@ export default function Sidebar({
                 className="flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
               >
                 <FileJson className="w-4 h-4" />
-                <span>JSON</span>
+                <span>{t('sidebar.exportJSON')}</span>
               </button>
               
               <button
@@ -444,7 +446,7 @@ export default function Sidebar({
                 className="flex items-center justify-center space-x-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
               >
                 <FileText className="w-4 h-4" />
-                <span>요약</span>
+                <span>{t('sidebar.exportSummary')}</span>
               </button>
               
               <button
@@ -462,12 +464,12 @@ export default function Sidebar({
                 }`}
               >
                 <Copy className="w-4 h-4" />
-                <span>{copySuccess ? '복사됨!' : '복사'}</span>
+                <span>{copySuccess ? t('sidebar.exportCopied') : t('sidebar.exportCopy')}</span>
               </button>
             </div>
             
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {solarData.series.length}개 데이터 포인트
+              {solarData.series.length}{t('sidebar.dataPoints')}
             </p>
           </div>
         )}

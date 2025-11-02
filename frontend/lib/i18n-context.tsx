@@ -9,30 +9,42 @@ interface I18nContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   messages: Messages;
-  t: typeof translate;
+  t: (path: string) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);
 
 // 간단한 번역 함수
-function translate(obj: any, path: string): string {
+function translate(obj: Record<string, unknown>, path: string): string {
   const keys = path.split('.');
-  let value: any = obj;
+  let value: unknown = obj;
   
   for (const key of keys) {
-    if (value == null) return path;
-    value = value[key];
+    if (value == null || typeof value !== 'object') return path;
+    if (!(key in value)) return path;
+    value = (value as Record<string, unknown>)[key];
   }
   
   return typeof value === 'string' ? value : path;
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('ko');
+  // SSR 호환: 초기값을 기본 언어로 설정
+  const [locale, setLocaleState] = useState<Locale>(() => {
+    if (typeof window !== 'undefined') {
+      return getInitialLocale();
+    }
+    return 'ko';
+  });
+  
   const [messages, setMessages] = useState<Messages>({} as Messages);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // 클라이언트에서만 실행
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     // 초기 언어 설정
     const initialLocale = getInitialLocale();
     setLocaleState(initialLocale);
@@ -40,7 +52,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     // 초기 메시지 로드
     loadMessages(initialLocale).then((msg) => {
       setMessages(msg.default);
-      setIsLoading(false);
     });
   }, []);
 
@@ -54,15 +65,19 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  if (isLoading) {
-    return <>{children}</>; // 로딩 중에는 기본 렌더링
-  }
+  // 로딩 중이거나 메시지가 없을 때 기본 동작
+  const t = (path: string): string => {
+    if (Object.keys(messages).length === 0) {
+      return path; // 메시지가 없으면 경로 반환
+    }
+    return translate(messages, path);
+  };
 
   const value: I18nContextValue = {
     locale,
     setLocale,
     messages,
-    t: (path: string) => translate(messages, path),
+    t,
   };
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
