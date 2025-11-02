@@ -75,21 +75,11 @@ export default function Sidebar({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Update searchQuery when location changes from parent (e.g., reset or map click)
-  useEffect(() => {
-    if (location) {
-      reverseGeocode(location.lat, location.lon)
-        .then((address) => {
-          if (address && address !== searchQuery) {
-            setSearchQuery(address);
-          }
-        })
-        .catch(() => {
-          // Silently ignore geocoding failures
-        });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location?.lat, location?.lon]);
+  // Note: searchQuery is NOT auto-updated when location changes from parent
+  // This is intentional to avoid overwriting the search field on reset/map click
+  // Address auto-update only happens when:
+  // 1. User clicks "Use Current Location" button (in handleGetCurrentLocation)
+  // 2. User selects from search results (in handleSelectResult)
 
   // Debounced search effect
   useEffect(() => {
@@ -123,6 +113,7 @@ export default function Sidebar({
         clearTimeout(searchTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   const handleSelectResult = (result: GeocodeResult) => {

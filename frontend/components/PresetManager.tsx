@@ -29,7 +29,7 @@ export default function PresetManager({
   onLoadPreset,
   onSavePreset
 }: PresetManagerProps) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const isDevelopment = process.env.NODE_ENV === 'development';
   const [presets, setPresets] = useState<Preset[]>([]);
   const [isOpen, setIsOpen] = useState(false);
