@@ -63,19 +63,14 @@ export default function AdvancedOptions({
               onChange={(e) => handleSkyModelChange(e.target.value as 'isotropic' | 'perez' | 'klucher')}
               className="w-full px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             >
-              <option value="isotropic">Isotropic (등방성 - 기본, 빠름)</option>
-              <option value="perez">Perez (고정밀 산란 복사) ✅ 정확함</option>
-              <option value="klucher">Klucher (중간 정확도)</option>
+              <option value="isotropic">Isotropic (등방성)</option>
+              <option value="perez">Perez (고정밀) ✅</option>
+              <option value="klucher">Klucher</option>
             </select>
-            <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs space-y-1">
-              <p className="text-gray-600 dark:text-gray-400">
-                <strong>Isotropic:</strong> 가장 간단한 모델. 빠른 계산, 정확도 낮음.
-              </p>
-              <p className="text-gray-600 dark:text-gray-400">
-                <strong>Perez:</strong> 안개, 구름 등 대기 조건 고려. 태양광 설계에 권장. ✅
-              </p>
-              <p className="text-gray-600 dark:text-gray-400">
-                <strong>Klucher:</strong> 시간대별 방위각 고려. 중간 정확도.
+            <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+              <p className="text-xs text-yellow-800 dark:text-yellow-400">
+                ⚠️ <strong>현재 미적용:</strong> 이 옵션은 기울어진 표면(POA) 계산에만 사용됩니다.<br/>
+                현재는 수평면 일사량(GHI)만 계산하므로 본 옵션은 향후 기능에 예약되어 있습니다.
               </p>
             </div>
           </div>
@@ -139,13 +134,16 @@ export default function AdvancedOptions({
           {/* Info */}
           <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <p className="text-xs text-blue-800 dark:text-blue-400">
-              💡 <strong>고급 옵션 사용 팁:</strong>
+              💡 <strong>참고사항:</strong>
             </p>
             <ul className="mt-1 space-y-0.5 text-xs text-blue-700 dark:text-blue-400 ml-4">
-              <li>• 정밀 분석: Perez 모델 + 10분 간격</li>
-              <li>• 일반 분석: Isotropic 모델 + 60분 간격 (기본)</li>
-              <li>• 빠른 분석: Isotropic 모델 + 120분 간격</li>
+              <li>• 하늘 모델은 현재 일반 계산에 미적용</li>
+              <li>• 시간 간격은 현재 설정과 연동되지 않음</li>
+              <li>• 단위 변경은 현재 UI 표시에만 영향</li>
             </ul>
+            <p className="mt-2 text-xs text-orange-700 dark:text-orange-400">
+              ⚠️ 이 옵션들은 향후 기능 확장을 위해 준비된 UI입니다.
+            </p>
           </div>
         </div>
       )}
