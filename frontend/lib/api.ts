@@ -86,6 +86,27 @@ export interface SolarCalculationRequest {
   };
 }
 
+// Batch calculation interfaces
+export interface BatchCalculationRequest {
+  requests: SolarCalculationRequest[];
+  parallel?: boolean;
+}
+
+export interface BatchCalculationResponseItem {
+  index: number;
+  success: boolean;
+  result?: SolarCalculationResponse;
+  error?: string;
+}
+
+export interface BatchCalculationResponse {
+  total_requests: number;
+  successful: number;
+  failed: number;
+  processing_time_ms: number;
+  results: BatchCalculationResponseItem[];
+}
+
 export interface SunPosition {
   altitude: number;
   azimuth: number;
@@ -308,6 +329,40 @@ export async function optimizePeriods(
     return await response.json();
   } catch (error) {
     console.error('Optimization error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Batch calculation: process multiple scenarios in a single request
+ */
+export async function calculateBatch(
+  requests: SolarCalculationRequest[],
+  parallel: boolean = true
+): Promise<BatchCalculationResponse> {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/integrated/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requests,
+        parallel
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      const errorMessage = typeof error.detail === 'string'
+        ? error.detail
+        : error.message || error.detail?.message || 'Batch calculation failed';
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Batch calculation error:', error);
     throw error;
   }
 }

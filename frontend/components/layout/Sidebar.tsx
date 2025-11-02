@@ -1,11 +1,12 @@
 'use client';
 
-import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy, Navigation } from 'lucide-react';
+import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy, Navigation, Layers } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { searchAddress, reverseGeocode, type GeocodeResult } from '@/lib/geocoding';
 import { exportToCSV, exportToJSON, exportSummary, copyToClipboard } from '@/lib/export';
 import Timeline from '@/components/Timeline';
 import KakaoPayDonation from '@/components/KakaoPayDonation';
+import BatchCalculator from '@/components/BatchCalculator';
 import { useI18n } from '@/lib/i18n-context';
 import type { SolarCalculationResponse } from '@/lib/api';
 
@@ -42,6 +43,7 @@ export default function Sidebar({
   timeline
 }: SidebarProps) {
   const { t } = useI18n();
+  const [tab, setTab] = useState<'single' | 'batch'>('single');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<GeocodeResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -170,6 +172,34 @@ export default function Sidebar({
           />
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex space-x-2 mb-2">
+          <button
+            onClick={() => setTab('single')}
+            className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+              tab === 'single'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            단일 계산
+          </button>
+          <button
+            onClick={() => setTab('batch')}
+            className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+              tab === 'batch'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            <Layers className="w-3 h-3 inline mr-1" />
+            배치
+          </button>
+        </div>
+
+        {/* Single Calculation Tab */}
+        {tab === 'single' && (
+          <>
         {/* Location Input */}
         <div className="space-y-2">
           <label className="flex items-center space-x-2 text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -472,6 +502,13 @@ export default function Sidebar({
               {solarData.series.length}{t('sidebar.dataPoints')}
             </p>
           </div>
+        )}
+          </>
+        )}
+
+        {/* Batch Calculation Tab */}
+        {tab === 'batch' && (
+          <BatchCalculator />
         )}
 
         {/* 카카오페이 기부 링크 - 하단 */}
