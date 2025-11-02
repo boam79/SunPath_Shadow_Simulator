@@ -50,6 +50,12 @@ export default {
     exportCopy: '복사',
     exportCopied: '복사됨!',
     dataPoints: '개 데이터 포인트',
+    tabs: {
+      single: '단일 계산',
+      batch: '배치',
+      season: '계절 비교',
+      tools: '도구',
+    },
   },
 
   // Donation
@@ -154,6 +160,95 @@ export default {
     title: '카카오페이 후원',
     instruction: '모바일 카카오페이 앱에서\nQR 코드를 스캔해주세요',
     openLink: '링크로 열기',
+  },
+
+  // Batch Calculator
+  batchCalculator: {
+    title: '배치 계산',
+    add: '추가',
+    location: '위치',
+    latitude: '위도',
+    longitude: '경도',
+    date: '날짜',
+    height: '높이 (m)',
+    parallelProcessing: '병렬 처리 (빠름)',
+    calculating: '계산 중...',
+    calculateStart: '계산 시작',
+    locations: '개',
+    remove: '삭제',
+    addRequest: '요청 추가',
+    errorTitle: '계산 실패',
+    errorMessage: '배치 계산 중 오류가 발생했습니다',
+    noResults: '결과가 없습니다',
+    requestLabel: '위치',
+  },
+
+  // Advanced Options
+  advancedOptions: {
+    title: '고급 옵션',
+    skyModelLabel: '하늘 모델 (Sky Diffuse Model)',
+    skyModelDescription: 'POA 계산시 사용. Perez 모델 권장.',
+    skyModels: {
+      isotropic: 'Isotropic (등방성)',
+      perez: 'Perez (고정밀) ✅',
+      klucher: 'Klucher',
+    },
+    intervalLabel: '시간 간격',
+    intervalMin: '분',
+    intervalDescription: '📊 데이터 포인트 간격. 작을수록 정밀하지만 계산 시간 증가.',
+    intervalLabels: {
+      min: '10분',
+      mid: '60분',
+      max: '120분',
+    },
+    unitsLabel: '측정 단위',
+    unitsMetric: '미터법 (m, km)',
+    unitsImperial: '야드법 (ft, mi)',
+    unitsDescription: '📏 거리, 높이, 그림자 길이 표시 단위 선택.',
+    tips: {
+      title: '💡 고급 옵션 사용 팁:',
+      precision: '정밀 분석: Perez 모델 + 10분 간격',
+      standard: '일반 분석: Isotropic 모델 + 60분 간격',
+      quick: '빠른 분석: Isotropic 모델 + 120분 간격',
+    },
+  },
+
+  // Preset Manager
+  presetManager: {
+    open: '프리셋 열기',
+    save: '저장',
+    nameLabel: '프리셋 이름',
+    namePlaceholder: '예: 서울 태양광 설계',
+    saveButton: '저장',
+    cancelButton: '취소',
+    deleteConfirm: '프리셋을 삭제하시겠습니까?',
+    noPresets: '저장된 프리셋이 없습니다',
+    favoritePresets: '즐겨찾기',
+    regularPresets: '일반 프리셋',
+    createdAt: '생성일',
+  },
+
+  // Season Comparison
+  seasonComparison: {
+    title: '계절별 비교',
+    description: '🌍 춘분, 하지, 추분, 동지의 일조량을 한 번에 비교합니다.',
+    calculating: '계산 중... (4개 계절)',
+    calculateStart: '계절 비교 시작',
+    results: '비교 결과',
+    maxAltitude: '최대 태양 고도',
+    dayLength: '일조 시간',
+    seasons: {
+      spring: '봄',
+      summer: '여름',
+      autumn: '가을',
+      winter: '겨울',
+    },
+    seasonEmojis: {
+      spring: '🌸',
+      summer: '☀️',
+      autumn: '🍂',
+      winter: '❄️',
+    },
   },
 };
 

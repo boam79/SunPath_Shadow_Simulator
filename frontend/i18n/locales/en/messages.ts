@@ -50,6 +50,12 @@ export default {
     exportCopy: 'Copy',
     exportCopied: 'Copied!',
     dataPoints: ' data points',
+    tabs: {
+      single: 'Single',
+      batch: 'Batch',
+      season: 'Season',
+      tools: 'Tools',
+    },
   },
 
   // Donation
@@ -154,6 +160,95 @@ export default {
     title: 'KakaoPay Donation',
     instruction: 'Scan QR code with\nmobile KakaoPay app',
     openLink: 'Open link',
+  },
+
+  // Batch Calculator
+  batchCalculator: {
+    title: 'Batch Calculator',
+    add: 'Add',
+    location: 'Location',
+    latitude: 'Latitude',
+    longitude: 'Longitude',
+    date: 'Date',
+    height: 'Height (m)',
+    parallelProcessing: 'Parallel Processing (Fast)',
+    calculating: 'Calculating...',
+    calculateStart: 'Start Calculation',
+    locations: '',
+    remove: 'Remove',
+    addRequest: 'Add Request',
+    errorTitle: 'Calculation Failed',
+    errorMessage: 'An error occurred during batch calculation',
+    noResults: 'No results',
+    requestLabel: 'Location',
+  },
+
+  // Advanced Options
+  advancedOptions: {
+    title: 'Advanced Options',
+    skyModelLabel: 'Sky Diffuse Model',
+    skyModelDescription: 'Used for POA calculations. Perez model recommended.',
+    skyModels: {
+      isotropic: 'Isotropic',
+      perez: 'Perez (High Precision) ✅',
+      klucher: 'Klucher',
+    },
+    intervalLabel: 'Time Interval',
+    intervalMin: ' min',
+    intervalDescription: '📊 Data point spacing. Smaller = more precise but longer calculation time.',
+    intervalLabels: {
+      min: '10 min',
+      mid: '60 min',
+      max: '120 min',
+    },
+    unitsLabel: 'Units',
+    unitsMetric: 'Metric (m, km)',
+    unitsImperial: 'Imperial (ft, mi)',
+    unitsDescription: '📏 Display units for distance, height, and shadow length.',
+    tips: {
+      title: '💡 Advanced Options Tips:',
+      precision: 'Precision: Perez model + 10 min interval',
+      standard: 'Standard: Isotropic model + 60 min interval',
+      quick: 'Quick: Isotropic model + 120 min interval',
+    },
+  },
+
+  // Preset Manager
+  presetManager: {
+    open: 'Open Presets',
+    save: 'Save',
+    nameLabel: 'Preset Name',
+    namePlaceholder: 'e.g., Seoul Solar Design',
+    saveButton: 'Save',
+    cancelButton: 'Cancel',
+    deleteConfirm: 'Delete this preset?',
+    noPresets: 'No saved presets',
+    favoritePresets: 'Favorites',
+    regularPresets: 'Presets',
+    createdAt: 'Created',
+  },
+
+  // Season Comparison
+  seasonComparison: {
+    title: 'Season Comparison',
+    description: '🌍 Compare solar irradiance across Spring, Summer, Autumn, and Winter.',
+    calculating: 'Calculating... (4 seasons)',
+    calculateStart: 'Start Season Comparison',
+    results: 'Comparison Results',
+    maxAltitude: 'Max Solar Altitude',
+    dayLength: 'Day Length',
+    seasons: {
+      spring: 'Spring',
+      summer: 'Summer',
+      autumn: 'Autumn',
+      winter: 'Winter',
+    },
+    seasonEmojis: {
+      spring: '🌸',
+      summer: '☀️',
+      autumn: '🍂',
+      winter: '❄️',
+    },
   },
 };
 

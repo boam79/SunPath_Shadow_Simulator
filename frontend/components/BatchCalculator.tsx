@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { Loader2, Plus, Trash2, Play, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { calculateBatch, type SolarCalculationRequest, type BatchCalculationResponse } from '@/lib/api';
+import { useI18n } from '@/lib/i18n-context';
 
 interface BatchCalculatorProps {
   onBatchComplete?: (results: BatchCalculationResponse) => void;
 }
 
 export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProps) {
+  const { t } = useI18n();
   const [requests, setRequests] = useState<SolarCalculationRequest[]>([
     {
       location: { lat: 37.5665, lon: 126.9780 },
@@ -75,14 +77,14 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-          배치 계산
+          {t('batchCalculator.title')}
         </h3>
         <button
           onClick={addRequest}
           className="flex items-center space-x-1 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
         >
           <Plus className="w-3 h-3" />
-          <span>추가</span>
+          <span>{t('batchCalculator.add')}</span>
         </button>
       </div>
 
@@ -92,7 +94,7 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
           <div key={index} className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                위치 {index + 1}
+                {t('batchCalculator.requestLabel')} {index + 1}
               </span>
               {requests.length > 1 && (
                 <button
@@ -106,7 +108,7 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
             
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <label className="text-gray-600 dark:text-gray-400">위도</label>
+                <label className="text-gray-600 dark:text-gray-400">{t('batchCalculator.latitude')}</label>
                 <input
                   type="number"
                   value={req.location.lat}
@@ -116,7 +118,7 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
                 />
               </div>
               <div>
-                <label className="text-gray-600 dark:text-gray-400">경도</label>
+                <label className="text-gray-600 dark:text-gray-400">{t('batchCalculator.longitude')}</label>
                 <input
                   type="number"
                   value={req.location.lon}
@@ -126,7 +128,7 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
                 />
               </div>
               <div>
-                <label className="text-gray-600 dark:text-gray-400">날짜</label>
+                <label className="text-gray-600 dark:text-gray-400">{t('batchCalculator.date')}</label>
                 <input
                   type="date"
                   value={req.datetime.date}
@@ -135,7 +137,7 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
                 />
               </div>
               <div>
-                <label className="text-gray-600 dark:text-gray-400">높이 (m)</label>
+                <label className="text-gray-600 dark:text-gray-400">{t('batchCalculator.height')}</label>
                 <input
                   type="number"
                   value={req.object?.height || 10}
@@ -161,7 +163,7 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
           className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
         />
         <label htmlFor="parallel" className="text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
-          병렬 처리 (빠름)
+          {t('batchCalculator.parallelProcessing')}
         </label>
       </div>
 
@@ -174,12 +176,12 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
         {isCalculating ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>계산 중...</span>
+            <span>{t('batchCalculator.calculating')}</span>
           </>
         ) : (
           <>
             <Play className="w-4 h-4" />
-            <span>계산 시작 ({requests.length}개)</span>
+            <span>{t('batchCalculator.calculateStart')} ({requests.length}{t('batchCalculator.locations')})</span>
           </>
         )}
       </button>
@@ -189,7 +191,7 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
         <div className="flex items-start space-x-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5" />
           <div className="flex-1">
-            <p className="text-xs font-medium text-red-800 dark:text-red-300">오류</p>
+            <p className="text-xs font-medium text-red-800 dark:text-red-300">{t('batchCalculator.errorTitle')}</p>
             <p className="text-xs text-red-700 dark:text-red-400">{error}</p>
           </div>
           <button onClick={() => setError(null)}>

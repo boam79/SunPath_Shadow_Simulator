@@ -193,7 +193,7 @@ export default function Sidebar({
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
-            단일 계산
+            {t('sidebar.tabs.single')}
           </button>
           <button
             onClick={() => setTab('batch')}
@@ -204,7 +204,7 @@ export default function Sidebar({
             }`}
           >
             <Layers className="w-3 h-3 inline mr-1" />
-            배치
+            {t('sidebar.tabs.batch')}
           </button>
           <button
             onClick={() => setTab('season')}
@@ -214,7 +214,7 @@ export default function Sidebar({
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
-            계절 비교
+            {t('sidebar.tabs.season')}
           </button>
           <button
             onClick={() => setTab('tools')}
@@ -224,7 +224,7 @@ export default function Sidebar({
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
-            도구
+            {t('sidebar.tabs.tools')}
           </button>
         </div>
 
