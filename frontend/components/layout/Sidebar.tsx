@@ -1,12 +1,16 @@
 'use client';
 
-import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy, Navigation, Layers } from 'lucide-react';
+import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy, Navigation, Layers, Settings, FolderOpen, FileDown } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { searchAddress, reverseGeocode, type GeocodeResult } from '@/lib/geocoding';
 import { exportToCSV, exportToJSON, exportSummary, copyToClipboard } from '@/lib/export';
 import Timeline from '@/components/Timeline';
 import KakaoPayDonation from '@/components/KakaoPayDonation';
 import BatchCalculator from '@/components/BatchCalculator';
+import AdvancedOptions from '@/components/AdvancedOptions';
+import PresetManager from '@/components/PresetManager';
+import SeasonComparison from '@/components/SeasonComparison';
+import PDFExport from '@/components/PDFExport';
 import { useI18n } from '@/lib/i18n-context';
 import type { SolarCalculationResponse } from '@/lib/api';
 
@@ -43,7 +47,7 @@ export default function Sidebar({
   timeline
 }: SidebarProps) {
   const { t } = useI18n();
-  const [tab, setTab] = useState<'single' | 'batch'>('single');
+  const [tab, setTab] = useState<'single' | 'batch' | 'season' | 'tools'>('single');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<GeocodeResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -52,6 +56,14 @@ export default function Sidebar({
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle preset loading
+  const handleLoadPreset = (preset: { name: string; location: { lat: number; lon: number }; date: string; objectHeight: number }) => {
+    setLocation(preset.location);
+    setDate(preset.date);
+    setObjectHeight(preset.objectHeight);
+    setTab('single');
+  };
 
   // 모바일 디바이스 감지
   useEffect(() => {
@@ -173,10 +185,10 @@ export default function Sidebar({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex space-x-2 mb-2">
+        <div className="grid grid-cols-2 gap-2 mb-2">
           <button
             onClick={() => setTab('single')}
-            className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+            className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
               tab === 'single'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -186,7 +198,7 @@ export default function Sidebar({
           </button>
           <button
             onClick={() => setTab('batch')}
-            className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+            className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
               tab === 'batch'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -194,6 +206,26 @@ export default function Sidebar({
           >
             <Layers className="w-3 h-3 inline mr-1" />
             배치
+          </button>
+          <button
+            onClick={() => setTab('season')}
+            className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+              tab === 'season'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            계절 비교
+          </button>
+          <button
+            onClick={() => setTab('tools')}
+            className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+              tab === 'tools'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            도구
           </button>
         </div>
 
@@ -509,6 +541,28 @@ export default function Sidebar({
         {/* Batch Calculation Tab */}
         {tab === 'batch' && (
           <BatchCalculator />
+        )}
+
+        {/* Season Comparison Tab */}
+        {tab === 'season' && (
+          <SeasonComparison
+            location={location}
+            objectHeight={objectHeight}
+          />
+        )}
+
+        {/* Tools Tab */}
+        {tab === 'tools' && (
+          <div className="space-y-4">
+            <PresetManager
+              currentLocation={location}
+              currentDate={date}
+              currentObjectHeight={objectHeight}
+              onLoadPreset={handleLoadPreset}
+            />
+            <PDFExport solarData={solarData || undefined} />
+            <AdvancedOptions />
+          </div>
         )}
 
         {/* 카카오페이 기부 링크 - 하단 */}
