@@ -25,6 +25,26 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
   });
 
   const [addressName, setAddressName] = useState<string | null>(null);
+  
+  // MapLibre 스타일을 state로 관리하여 불필요한 재렌더링 방지
+  const [mapStyle] = useState({
+    version: 8 as const,
+    sources: {
+      'osm': {
+        type: 'raster' as const,
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: '© OpenStreetMap contributors'
+      }
+    },
+    layers: [
+      {
+        id: 'osm',
+        type: 'raster' as const,
+        source: 'osm'
+      }
+    ]
+  });
 
   // Calculate color based on time of day (matches timeline gradient)
   const getTimeBasedColor = (timeString: string): string => {
@@ -130,24 +150,7 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
         {...viewState}
         onMove={(evt) => setViewState(evt.viewState)}
         onClick={handleMapClick}
-        mapStyle={{
-          version: 8,
-          sources: {
-            'osm': {
-              type: 'raster',
-              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-              tileSize: 256,
-              attribution: '© OpenStreetMap contributors'
-            }
-          },
-          layers: [
-            {
-              id: 'osm',
-              type: 'raster',
-              source: 'osm'
-            }
-          ]
-        }}
+        mapStyle={mapStyle}
         style={{ width: '100%', height: '100%' }}
       >
         {/* Navigation Controls */}
@@ -156,7 +159,7 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
         {/* Geolocate Control */}
         <GeolocateControl
           position="top-right"
-          trackUserLocation
+          trackUserLocation={false}
           onGeolocate={(e) => {
             const { latitude, longitude } = e.coords;
             if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
@@ -166,6 +169,12 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
               return;
             }
             onLocationChange(latitude, longitude);
+          }}
+          onError={(e) => {
+            // CoreLocation 에러를 조용히 무시 (사이드바의 현재 위치 버튼 사용)
+            if (process.env.NODE_ENV === 'development') {
+              console.debug('GeolocateControl error:', e);
+            }
           }}
         />
 

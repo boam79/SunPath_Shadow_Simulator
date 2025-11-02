@@ -9,6 +9,16 @@ import KakaoPayDonation from '@/components/KakaoPayDonation';
 import { useI18n } from '@/lib/i18n-context';
 import { calculateSolar, type SolarCalculationResponse } from '@/lib/api';
 
+// Development mode check
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// Helper function for development-only logging
+const devLog = (...args: unknown[]) => {
+  if (isDevelopment) {
+    console.log(...args);
+  }
+};
+
 export default function Home() {
   const [location, setLocation] = useState<{lat: number; lon: number} | null>(null);
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -62,10 +72,12 @@ export default function Home() {
       });
 
       setSolarData(response);
-      console.log('✅ Solar data fetched:', response.series.length, 'data points');
+      devLog('✅ Solar data fetched:', response.series.length, 'data points');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
-      console.error('❌ Error fetching solar data:', err);
+      if (isDevelopment) {
+        console.error('❌ Error fetching solar data:', err);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -92,14 +104,14 @@ export default function Home() {
   const handlePlayPause = useCallback(() => {
     setIsPlaying(prev => {
       const next = !prev;
-      try { console.log(`[Timeline] onPlayPause clicked -> ${next ? 'PLAY' : 'PAUSE'}`); } catch {}
+      devLog(`[Timeline] onPlayPause clicked -> ${next ? 'PLAY' : 'PAUSE'}`);
       return next;
     });
   }, []);
 
   // Memoize time change handler to prevent unnecessary re-renders
   const handleTimeChange = useCallback((time: string) => {
-    console.log('[Timeline] handleTimeChange called with:', time);
+    devLog('[Timeline] handleTimeChange called with:', time);
     setCurrentTime(time);
   }, []);
 
