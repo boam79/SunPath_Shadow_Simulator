@@ -10,7 +10,6 @@ import BatchCalculator from '@/components/BatchCalculator';
 import AdvancedOptions from '@/components/AdvancedOptions';
 import PresetManager from '@/components/PresetManager';
 import SeasonComparison from '@/components/SeasonComparison';
-import PDFExport from '@/components/PDFExport';
 import { useI18n } from '@/lib/i18n-context';
 import type { SolarCalculationResponse } from '@/lib/api';
 
@@ -560,7 +559,6 @@ export default function Sidebar({
               currentObjectHeight={objectHeight}
               onLoadPreset={handleLoadPreset}
             />
-            <PDFExport solarData={solarData || undefined} />
             <AdvancedOptions />
           </div>
         )}
