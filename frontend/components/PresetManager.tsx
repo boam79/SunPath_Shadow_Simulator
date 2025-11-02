@@ -29,7 +29,6 @@ export default function PresetManager({
   onLoadPreset,
   onSavePreset
 }: PresetManagerProps) {
-  const { t } = useI18n();
   const [presets, setPresets] = useState<Preset[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [saveName, setSaveName] = useState('');

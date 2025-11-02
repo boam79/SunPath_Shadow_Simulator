@@ -8,14 +8,9 @@ import type { SolarCalculationResponse } from './api';
 export async function exportToPDF(solarData: SolarCalculationResponse): Promise<void> {
   try {
     // Dynamic import for PDF libraries (optional, only load when needed)
-    const [jsPDF, html2canvas] = await Promise.all([
-      import('jspdf'),
-      import('html2canvas')
-    ]);
+    const jsPDF = await import('jspdf');
 
     const doc = new jsPDF.default('p', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 15;
 
     // Header
@@ -143,7 +138,7 @@ export async function exportToPDFSimple(solarData: SolarCalculationResponse): Pr
 
     // Sample data (first 20 points)
     const sampleData = solarData.series.slice(0, 20);
-    sampleData.forEach((point, idx) => {
+    sampleData.forEach((point, _idx) => {
       if (yPos > 270) { // Approx page height
         doc.addPage();
         yPos = 15;
@@ -152,7 +147,7 @@ export async function exportToPDFSimple(solarData: SolarCalculationResponse): Pr
       const time = point.timestamp.split('T')[1].substring(0, 5);
       const alt = point.sun.altitude.toFixed(1);
       const azi = point.sun.azimuth.toFixed(1);
-      const ghi = point.irradiance.ghi.toFixed(0);
+      const ghi = point.irradiance?.ghi?.toFixed(0) || 'N/A';
 
       doc.text(`${time} | ${alt}° | ${azi}° | ${ghi} W/m²`, margin, yPos);
       yPos += 5;

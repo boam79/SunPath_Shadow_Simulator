@@ -11,7 +11,6 @@ interface PDFExportProps {
 }
 
 export default function PDFExport({ solarData }: PDFExportProps) {
-  const { t } = useI18n();
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

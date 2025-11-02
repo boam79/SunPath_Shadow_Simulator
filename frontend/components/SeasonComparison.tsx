@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Loader2, BarChart3, Calendar } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
-import { calculateBatch, type SolarCalculationRequest } from '@/lib/api';
+import { calculateBatch, type SolarCalculationRequest, type SolarSummary } from '@/lib/api';
 
 interface SeasonComparisonProps {
   location?: { lat: number; lon: number } | null;
@@ -14,9 +14,8 @@ export default function SeasonComparison({
   location,
   objectHeight
 }: SeasonComparisonProps) {
-  const { t } = useI18n();
   const [isCalculating, setIsCalculating] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Array<{season: {name: string; date: string; emoji: string}; summary: SolarSummary; maxAltitude: number; dayLength: string}>>([]);
   const [error, setError] = useState<string | null>(null);
 
   const seasons = [

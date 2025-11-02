@@ -1,6 +1,6 @@
 'use client';
 
-import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy, Navigation, Layers, Settings, FolderOpen, FileDown } from 'lucide-react';
+import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy, Navigation, Layers } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { searchAddress, reverseGeocode, type GeocodeResult } from '@/lib/geocoding';
 import { exportToCSV, exportToJSON, exportSummary, copyToClipboard } from '@/lib/export';

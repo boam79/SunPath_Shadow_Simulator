@@ -15,7 +15,6 @@ export default function AdvancedOptions({
   onIntervalChange,
   onUnitsChange
 }: AdvancedOptionsProps) {
-  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [skyModel, setSkyModel] = useState<'isotropic' | 'perez' | 'klucher'>('isotropic');
   const [interval, setInterval] = useState(60);
@@ -62,7 +61,7 @@ export default function AdvancedOptions({
             </label>
             <select
               value={skyModel}
-              onChange={(e) => handleSkyModelChange(e.target.value as any)}
+              onChange={(e) => handleSkyModelChange(e.target.value as 'isotropic' | 'perez' | 'klucher')}
               className="w-full px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             >
               <option value="isotropic">Isotropic (등방성 - 기본)</option>

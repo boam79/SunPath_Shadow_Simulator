@@ -10,7 +10,6 @@ interface BatchCalculatorProps {
 }
 
 export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProps) {
-  const { t } = useI18n();
   const [requests, setRequests] = useState<SolarCalculationRequest[]>([
     {
       location: { lat: 37.5665, lon: 126.9780 },
@@ -37,14 +36,16 @@ export default function BatchCalculator({ onBatchComplete }: BatchCalculatorProp
     }
   };
 
-  const updateRequest = (index: number, field: string, value: any) => {
+  const updateRequest = (index: number, field: string, value: string | number) => {
     const newRequests = [...requests];
     const request = { ...newRequests[index] };
     
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (request as any)[parent] = { ...(request as any)[parent], [child]: value };
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (request as any)[field] = value;
     }
     
