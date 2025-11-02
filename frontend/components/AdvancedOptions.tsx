@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Settings } from 'lucide-react';
-import { useI18n } from '@/lib/i18n-context';
 
 interface AdvancedOptionsProps {
   onSkyModelChange?: (model: 'isotropic' | 'perez' | 'klucher') => void;

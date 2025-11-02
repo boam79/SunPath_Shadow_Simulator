@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Loader2, BarChart3, Calendar } from 'lucide-react';
-import { useI18n } from '@/lib/i18n-context';
 import { calculateBatch, type SolarCalculationRequest, type SolarSummary } from '@/lib/api';
 
 interface SeasonComparisonProps {
@@ -15,7 +14,7 @@ export default function SeasonComparison({
   objectHeight
 }: SeasonComparisonProps) {
   const [isCalculating, setIsCalculating] = useState(false);
-  const [results, setResults] = useState<Array<{season: {name: string; date: string; emoji: string}; summary: SolarSummary; maxAltitude: number; dayLength: string}>>([]);
+  const [results, setResults] = useState<Array<{season: {name: string; date: string; emoji: string}; summary: SolarSummary; maxAltitude: number; dayLength: number}>>([]);
   const [error, setError] = useState<string | null>(null);
 
   const seasons = [
@@ -162,15 +161,14 @@ export default function SeasonComparison({
             </div>
             <div className="space-y-2">
               {results.map((item, idx) => {
-                const hours = item.dayLength.match(/(\d+):/)?.[1] || '0';
-                const minutes = item.dayLength.match(/:(\d+)/)?.[1] || '0';
-                const totalMinutes = parseInt(hours) * 60 + parseInt(minutes);
-                const maxMinutes = Math.max(...results.map(r => {
-                  const h = r.dayLength.match(/(\d+):/)?.[1] || '0';
-                  const m = r.dayLength.match(/:(\d+)/)?.[1] || '0';
-                  return parseInt(h) * 60 + parseInt(m);
-                }));
+                const totalMinutes = item.dayLength * 60; // Convert hours to minutes
+                const maxMinutes = Math.max(...results.map(r => r.dayLength * 60));
                 const percentage = (totalMinutes / maxMinutes) * 100;
+                
+                // Format hours as HH:MM
+                const hours = Math.floor(item.dayLength);
+                const minutes = Math.floor((item.dayLength - hours) * 60);
+                const formattedTime = `${hours}:${minutes.toString().padStart(2, '0')}`;
                 
                 return (
                   <div key={idx} className="space-y-1">
@@ -179,7 +177,7 @@ export default function SeasonComparison({
                         {item.season.emoji} {item.season.name}
                       </span>
                       <span className="font-medium text-gray-900 dark:text-white">
-                        {item.dayLength}
+                        {formattedTime}
                       </span>
                     </div>
                     <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">

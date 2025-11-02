@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { FileDown, AlertCircle } from 'lucide-react';
-import { useI18n } from '@/lib/i18n-context';
 import { exportToPDFSimple } from '@/lib/pdfExport';
 import type { SolarCalculationResponse } from '@/lib/api';
 

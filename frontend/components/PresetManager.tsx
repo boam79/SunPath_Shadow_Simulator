@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Save, FolderOpen, Trash2, Star, StarOff } from 'lucide-react';
-import { useI18n } from '@/lib/i18n-context';
 
 interface Preset {
   id: string;

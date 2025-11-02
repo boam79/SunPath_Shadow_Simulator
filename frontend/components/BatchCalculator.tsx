@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Loader2, Plus, Trash2, Play, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { calculateBatch, type SolarCalculationRequest, type BatchCalculationResponse } from '@/lib/api';
-import { useI18n } from '@/lib/i18n-context';
 
 interface BatchCalculatorProps {
   onBatchComplete?: (results: BatchCalculationResponse) => void;
