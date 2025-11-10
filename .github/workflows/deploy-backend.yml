@@ -21,24 +21,19 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          python <<'PY'
-import os
-from pathlib import Path
-
-key = os.environ["SSH_KEY"].replace("\r", "")
-if not key.endswith("\n"):
-    key += "\n"
-path = Path.home() / ".ssh" / "id_aws"
-path.write_text(key, encoding="utf-8")
-path.chmod(0o600)
-PY
+          python << 'PYEOF'
+          import os
+          from pathlib import Path
+          key = os.environ["SSH_KEY"].replace("\r", "")
+          if not key.endswith("\n"):
+              key += "\n"
+          path = Path.home() / ".ssh" / "id_aws"
+          path.write_text(key, encoding="utf-8")
+          path.chmod(0o600)
+          PYEOF
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Start ssh-agent and add key
-        run: |
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/id_aws
       - name: Start ssh-agent and add key
         run: |
           eval "$(ssh-agent -s)"
