@@ -22,15 +22,15 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           python - <<'PY'
-import os
-key = os.environ["SSH_KEY"].replace("\r", "")
-if not key.endswith("\n"):
-    key += "\n"
-path = os.path.expanduser("~/.ssh/id_aws")
-with open(path, "w", encoding="utf-8") as f:
-    f.write(key)
-os.chmod(path, 0o600)
-PY
+            import os
+            key = os.environ["SSH_KEY"].replace("\r", "")
+            if not key.endswith("\n"):
+                key += "\n"
+            path = os.path.expanduser("~/.ssh/id_aws")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(key)
+            os.chmod(path, 0o600)
+          PY
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
