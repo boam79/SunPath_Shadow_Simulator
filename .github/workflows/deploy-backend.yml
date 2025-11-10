@@ -24,13 +24,26 @@ jobs:
           python << 'PYEOF'
           import os
           from pathlib import Path
-          key = os.environ["SSH_KEY"].replace("\r", "")
-          if not key.endswith("\n"):
-              key += "\n"
+          
+          key = os.environ["SSH_KEY"]
+          # Remove carriage returns and normalize line endings
+          key = key.replace("\r\n", "\n").replace("\r", "\n")
+          # Remove only leading/trailing newlines, preserve key content
+          key = key.strip("\n")
+          # Ensure key ends with exactly one newline
+          key += "\n"
+          
+          # Write key file
           path = Path.home() / ".ssh" / "id_aws"
           path.write_text(key, encoding="utf-8")
           path.chmod(0o600)
+          
+          # Verify key file is readable
+          if not path.exists() or path.stat().st_size == 0:
+              raise ValueError("SSH key file was not created properly")
           PYEOF
+          # Verify the key file format
+          ssh-keygen -l -f ~/.ssh/id_aws || (echo "Invalid SSH key format" && exit 1)
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
