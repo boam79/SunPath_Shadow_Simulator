@@ -28,6 +28,12 @@ jobs:
           from pathlib import Path
           
           key = os.environ["SSH_KEY"]
+          # If key uses escaped newline characters, convert them first
+          if "\\n" in key:
+              key = key.replace("\\n", "\n")
+          if "\\r" in key:
+              key = key.replace("\\r", "\r")
+
           if "BEGIN" not in key:
               try:
                   decoded = base64.b64decode(key)
@@ -36,15 +42,23 @@ jobs:
                       key = text
               except (binascii.Error, UnicodeDecodeError):
                   pass
-          # Guard against accidental Windows-style quoting that wraps the key in quotes
-          if key.startswith('"') and key.endswith('"'):
+          # Guard against accidental quoting that wraps the key in quotes
+          if (key.startswith('"') and key.endswith('"')) or (key.startswith("'") and key.endswith("'")):
               key = key[1:-1]
           # Remove carriage returns and normalize line endings
           key = key.replace("\r\n", "\n").replace("\r", "\n")
           # Remove only leading/trailing newlines, preserve key content
           key = key.strip("\n")
-          # Ensure key ends with exactly one newline
-          key += "\n"
+          
+          stripped = key.strip()
+          begin_index = stripped.find("-----BEGIN")
+          if begin_index == -1:
+              raise ValueError("SSH key does not contain BEGIN marker. Please verify the EC2_SSH_KEY secret.")
+          if begin_index > 0:
+              stripped = stripped[begin_index:]
+          key = stripped
+          if not key.endswith("\n"):
+              key += "\n"
           
           # Write key file
           path = Path.home() / ".ssh" / "id_aws"
@@ -54,9 +68,6 @@ jobs:
           # Verify key file is readable
           if not path.exists() or path.stat().st_size == 0:
               raise ValueError("SSH key file was not created properly")
-          # Check if key starts with BEGIN marker
-          if not key.strip().startswith("-----BEGIN"):
-              raise ValueError("SSH key does not start with BEGIN marker")
           PYEOF
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
