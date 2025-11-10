@@ -18,16 +18,11 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          python - <<PY
-import os
-key = r\"\"\"${{ secrets.EC2_SSH_KEY }}\"\"\".replace(\"\\r\", \"\")
-if not key.endswith(\"\\n\"):
-    key += \"\\n\"
-path = os.path.expanduser(\"~/.ssh/id_aws\")
-with open(path, \"w\", encoding=\"utf-8\") as f:
-    f.write(key)
-os.chmod(path, 0o600)
-PY
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_aws
+          chmod 600 ~/.ssh/id_aws
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
