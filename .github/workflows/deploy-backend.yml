@@ -47,16 +47,9 @@ jobs:
               key = key[1:-1]
           # Remove carriage returns and normalize line endings
           key = key.replace("\r\n", "\n").replace("\r", "\n")
-          # Remove only leading/trailing newlines, preserve key content
-          key = key.strip("\n")
-          
-          stripped = key.strip()
-          begin_index = stripped.find("-----BEGIN")
-          if begin_index == -1:
-              raise ValueError("SSH key does not contain BEGIN marker. Please verify the EC2_SSH_KEY secret.")
-          if begin_index > 0:
-              stripped = stripped[begin_index:]
-          key = stripped
+          # Remove only leading/trailing whitespace/newlines, preserve key content
+          key = key.strip()
+          # Ensure key ends with exactly one newline
           if not key.endswith("\n"):
               key += "\n"
           
@@ -68,6 +61,10 @@ jobs:
           # Verify key file is readable
           if not path.exists() or path.stat().st_size == 0:
               raise ValueError("SSH key file was not created properly")
+          
+          # Debug: show first 50 characters (without newlines) to help diagnose issues
+          preview = key[:50].replace("\n", "\\n")
+          print(f"Key file written. First 50 chars: {preview}...")
           PYEOF
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
