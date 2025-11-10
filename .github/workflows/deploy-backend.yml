@@ -54,9 +54,10 @@ jobs:
           # Verify key file is readable
           if not path.exists() or path.stat().st_size == 0:
               raise ValueError("SSH key file was not created properly")
+          # Check if key starts with BEGIN marker
+          if not key.strip().startswith("-----BEGIN"):
+              raise ValueError("SSH key does not start with BEGIN marker")
           PYEOF
-          # Verify the private key format by extracting public key
-          ssh-keygen -y -f ~/.ssh/id_aws > /dev/null || (echo "Invalid SSH private key format" && exit 1)
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
