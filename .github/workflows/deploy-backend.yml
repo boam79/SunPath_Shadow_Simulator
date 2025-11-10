@@ -18,7 +18,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          cat <<'EOF' > ~/.ssh/id_aws
+          cat <<EOF > ~/.ssh/id_aws
 ${{ secrets.EC2_SSH_KEY }}
 EOF
           chmod 600 ~/.ssh/id_aws
