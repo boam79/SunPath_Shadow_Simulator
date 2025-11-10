@@ -22,10 +22,23 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           python << 'PYEOF'
+          import base64
+          import binascii
           import os
           from pathlib import Path
           
           key = os.environ["SSH_KEY"]
+          if "BEGIN" not in key:
+              try:
+                  decoded = base64.b64decode(key)
+                  text = decoded.decode("utf-8")
+                  if "BEGIN" in text:
+                      key = text
+              except (binascii.Error, UnicodeDecodeError):
+                  pass
+          # Guard against accidental Windows-style quoting that wraps the key in quotes
+          if key.startswith('"') and key.endswith('"'):
+              key = key[1:-1]
           # Remove carriage returns and normalize line endings
           key = key.replace("\r\n", "\n").replace("\r", "\n")
           # Remove only leading/trailing newlines, preserve key content
