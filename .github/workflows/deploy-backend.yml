@@ -18,9 +18,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          cat <<EOF > ~/.ssh/id_aws
-${{ secrets.EC2_SSH_KEY }}
-EOF
+          printf '%s' "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_aws
           chmod 600 ~/.ssh/id_aws
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
