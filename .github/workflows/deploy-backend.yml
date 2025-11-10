@@ -18,13 +18,13 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          python - <<'PY'
+          python - <<PY
 import os
-key = """${{ secrets.EC2_SSH_KEY }}""".replace("\r", "")
-if not key.endswith("\n"):
-    key += "\n"
-path = os.path.expanduser("~/.ssh/id_aws")
-with open(path, "w", encoding="utf-8") as f:
+key = r\"\"\"${{ secrets.EC2_SSH_KEY }}\"\"\".replace(\"\\r\", \"\")
+if not key.endswith(\"\\n\"):
+    key += \"\\n\"
+path = os.path.expanduser(\"~/.ssh/id_aws\")
+with open(path, \"w\", encoding=\"utf-8\") as f:
     f.write(key)
 os.chmod(path, 0o600)
 PY
