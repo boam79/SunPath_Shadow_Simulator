@@ -17,6 +17,7 @@
 2. **고정밀 계산**: NREL SPA 알고리즘 기반 ±0.05° 정확도
 3. **실시간 시각화**: 30fps 애니메이션으로 하루 동안의 태양 움직임 표현
 4. **다목적 활용**: 건축, 태양광, 농업, 사진 등 다양한 분야 지원
+5. **안정적인 인프라**: Render에 올라간 백엔드 서비스를 AWS 인프라로 이전해 가용성과 확장성 확보
 
 ### 기술 스택 선택 이유
 - **Next.js 14**: SSR/SSG를 통한 SEO 최적화 및 성능
@@ -91,6 +92,20 @@
 - 인기 도시 좌표 사전 캐싱
 - 사용자 입력 디바운싱
 - 지도 클릭으로 직접 좌표 선택 옵션 제공
+
+#### 6. 인프라 마이그레이션 (Render → AWS)
+**도전과제:**
+- Render에서 사용 중인 빌드/실행 설정과 환경 변수를 완전하게 파악해야 함
+- AWS 인스턴스(예: EC2) 네트워크/보안/저장소 구성 차이로 인한 서비스 중단 위험
+- 비밀 관리 전략(환경 변수, 키 관리) 재정립 필요
+- 전환 중 다운타임 최소화 및 롤백 전략 부재
+
+**해결 방안:**
+- Render 대시보드에서 서비스 설정, 빌드 커맨드, 헬스체크 구성 등 전체 인벤토리 작성
+- AWS 상에서 동일 또는 개선된 런타임(EC2 + Docker Compose 등) 설계 및 테스트
+- AWS Systems Manager Parameter Store 또는 Secrets Manager를 활용한 비밀 관리
+- GitHub Actions 기반 CI/CD 파이프라인을 AWS용으로 재구성하고 블루/그린 또는 카나리 전환 시나리오 준비
+- Cutover 전에 스테이징 환경에서 부하 테스트 및 헬스체크 자동화
 
 ---
 
@@ -434,15 +449,105 @@
 
 ---
 
+### Phase 2: 인프라 전환 (Render → AWS)
+
+#### **Task 16: Render 배포 환경 인벤토리 작성**
+**우선순위:** P0  
+**예상 소요:** 0.5일  
+**담당:** Planner → Executor
+
+**세부 작업:**
+16.1. Render 서비스 유형, 인스턴스 스펙, 빌드/런타임 커맨드 확인  
+16.2. 환경 변수/Secret 목록 추출 (API 키, DB 연결 등)  
+16.3. 외부 의존성(스토리지, 캐시, 모니터링) 파악  
+16.4. 배포 파이프라인/자동화 여부, 헬스체크 설정 문서화  
+16.5. Render 로그 패턴 및 알림 설정 수집
+
+**성공 기준:**
+- [ ] Render 대시보드 기준으로 필요한 설정들이 모두 목록화되어 문서화됨
+- [ ] 환경 변수/Secret이 안전한 보관소로 옮겨지고 누락 없음이 검증됨
+- [ ] 빌드 및 실행 절차가 텍스트로 정리되어 AWS에서 재현 가능
+
+**의존성:** 없음
+
+---
+
+#### **Task 17: AWS 배포 타깃 환경 준비**
+**우선순위:** P0  
+**예상 소요:** 1일  
+**담당:** Executor
+
+**세부 작업:**
+17.1. 준비된 AWS 서버(예: EC2)의 OS/패키지 업데이트  
+17.2. Docker 및 Docker Compose 또는 Python 런타임 설치  
+17.3. 보안 그룹/방화벽에 HTTP(80)/HTTPS(443)/API 포트(예: 8000) 개방  
+17.4. 애플리케이션 배포용 디렉토리/계정 생성 및 권한 설정  
+17.5. 환경 변수 관리 전략 수립 (Parameter Store/Secrets Manager 혹은 .env)  
+17.6. 헬스체크 스크립트와 모니터링(CloudWatch 에이전트 등) 설치
+
+**성공 기준:**
+- [ ] AWS 서버에서 필요한 런타임이 정상 동작 (`docker --version` 등 확인)  
+- [ ] SSH 접속과 필요한 포트 접근이 모두 허용  
+- [ ] 배포 디렉토리 구조와 권한이 정의됨  
+- [ ] 환경 변수 주입 방식이 테스트로 검증됨
+
+**의존성:** Task 16
+
+---
+
+#### **Task 18: 배포 파이프라인 및 애플리케이션 배포**
+**우선순위:** P0  
+**예상 소요:** 1일  
+**담당:** Executor
+
+**세부 작업:**
+18.1. 기존 Dockerfile/uvicorn 실행 설정 검토 및 AWS 환경에 맞게 조정  
+18.2. GitHub Actions 또는 수동 스크립트 기반 배포 자동화 구성  
+18.3. 애플리케이션 코드와 환경 변수를 AWS 서버에 배포 (예: `docker compose up -d`)  
+18.4. 헬스체크 엔드포인트(`/health` 등) 호출로 서비스 정상 동작 확인  
+18.5. 로그 및 모니터링 경로 정의 (CloudWatch, Loki, journald 등)
+
+**성공 기준:**
+- [ ] AWS 서버에서 FastAPI 백엔드가 정상 기동 (`curl localhost:8000/health` 성공)  
+- [ ] 재배포 자동화 스크립트가 동작해 반복 배포가 가능  
+- [ ] 로그/모니터링 경로가 문서화되고 접근 가능
+
+**의존성:** Task 17
+
+---
+
+#### **Task 19: DNS/SSL 및 전환 계획 수립**
+**우선순위:** P0  
+**예상 소요:** 0.5일  
+**담당:** Executor
+
+**세부 작업:**
+19.1. DNS 레코드 계획 수립 (Route53/Cloudflare 등)  
+19.2. HTTPS 인증서 발급 및 설치 (ACM 또는 Let's Encrypt)  
+19.3. 전환(Cutover) 체크리스트 및 롤백 전략 작성  
+19.4. 전환 전 최종 검증 (부하 테스트, 기능 테스트)  
+19.5. 전환 후 모니터링 및 장애 대응 지침 정리
+
+**성공 기준:**
+- [ ] 테스트 도메인에서 HTTPS 접속이 가능  
+- [ ] Cutover 체크리스트와 롤백 전략이 문서화  
+- [ ] 전환 후 24시간 모니터링 계획이 수립되고 담당자가 지정됨
+
+**의존성:** Task 18
+
+---
+
 ## 📊 Project Status Board
 
 ### 🔵 To Do (대기 중)
 - [ ] Task 12: 프론트엔드 - 차트 및 데이터 표시 (선택적)
 - [ ] Task 14: 테스트 작성 및 검증
 - [ ] Task 15: 배포 및 CI/CD 설정
+- [ ] Task 19: DNS/SSL 및 전환 계획 수립
 
 ### 🟡 In Progress (진행 중)
 - [x] Task 13: 프론트엔드 - 데이터 내보내기 기능 (완료!)
+- [ ] Task 18: 배포 파이프라인 및 애플리케이션 배포
 
 ### 🟢 Completed (완료)
 
@@ -602,6 +707,20 @@
 - ✅ Export 유틸리티 라이브러리 (lib/export.ts)
 - ✅ 모든 계산 결과 포함 (시간, 태양, 일사량, 그림자)
 - ✅ 브라우저 다운로드 폴더에 저장
+
+**Task 16: Render 배포 환경 인벤토리 작성 ✅**
+- ✅ Render Web Service(`sunpath-api`) 설정 확인: 리전 Singapore, Free 플랜(0.1 vCPU / 512MB), 브랜치 `master`, Auto Deploy On Commit, Deploy Hook 존재
+- ✅ Render Key Value(`sunpath_redis`) 설정 확인: Free 플랜(25MB / 50 connections), allkeys-lru, 내부 URL `redis://red-d3rluoc9c44c73aqq02u0:6379`
+- ✅ 환경 변수(`ALLOWED_ORIGINS`, `REDIS_URL`) 실운영 값 파악 및 AWS Parameter Store/Secrets Manager 이전 계획 수립
+- ✅ `docs/deployment/render_inventory.md` 문서화 완료
+
+**Task 17: AWS 배포 타깃 환경 준비 ✅**
+- ✅ EC2 SSH 접속 확인(키페어 `boam79-aws-key`, 사용자 `ubuntu`)
+- ✅ 시스템 패키지 업데이트 및 Docker 공식 리포지토리 등록
+- ✅ Docker CE, Buildx, Compose plugin 설치 완료 및 `docker run hello-world` 검증
+- ✅ `/opt/sunpath` 및 `/opt/sunpath/config` 디렉토리 생성, 권한 조정
+- ✅ 환경 변수 템플릿(`/opt/sunpath/config/backend.env`) 준비
+- ✅ UFW 및 보안 그룹 포트 전략 정의(22/80/443/8000)
 
 ### 🔴 Blocked (차단됨)
 *(현재 없음)*
@@ -1066,6 +1185,67 @@ Redis는 성능 최적화 목적이므로, 없어도 모든 기능이 작동합�
 - ✅ JSON 파일이 유효한 형식
 - ✅ 모든 계산 결과 포함
 - ✅ 브라우저 다운로드 폴더에 저장
+
+### 2025-11-10 - Task 16 진행 시작
+
+- Render 배포 가이드(README)와 코드베이스에서 기존 설정, 빌드/실행 커맨드, 환경변수 목록을 수집했습니다.
+- 백엔드 환경변수는 `ALLOWED_ORIGINS`, `REDIS_URL`, `.env` 기반 Redis 설정이 핵심임을 확인했습니다.
+- Render가 제공하는 자동 배포/로그/헬스체크 정보는 README 기준으로만 파악되어 실제 대시보드 세부값 확인이 필요합니다.
+- 실제 운영값(예: `ALLOWED_ORIGINS`, `REDIS_URL` 실주소)은 민감 정보라 사용자 확인이 필요합니다. AWS Parameter Store/Secrets Manager로 이전 예정이니 값 공유 방법을 논의해주세요.
+- 인벤토리 문서를 `docs/deployment/render_inventory.md`에 작성해 AWS 전환 시 참고할 수 있게 정리했습니다.
+
+### 2025-11-10 - Task 16 완료 보고
+
+- 사용자 제공 Render 대시보드 스크린샷을 기반으로 Web Service/Key Value 세부 설정(리전, 인스턴스 스펙, auto-deploy, deploy hook, 내부 Redis URL 등)을 모두 문서화했습니다.
+- `docs/deployment/render_inventory.md` 갱신으로 AWS 전환 시 필요한 체크리스트가 확정되었고, Task 16 성공 기준을 충족했습니다.
+- 다음 단계는 AWS 인스턴스 준비(Task 17)로 넘어갑니다. 추가로 공유할 Render 비밀 값이 있다면 Parameter Store/Secrets Manager에 직접 등록하거나 안전한 채널로 전달 부탁드립니다.
+
+### 2025-11-10 - Task 17 진행 준비
+
+- 사용자로부터 AWS 서버가 이미 생성되어 있다는 정보를 받았습니다. 세부 구성(OS, 퍼블릭 IP/호스트네임, SSH 포트, 보안 그룹 규칙 등)을 확인해야 설치 스크립트와 포트 오픈을 계획할 수 있습니다.
+- Task 17 세부 작업을 위해 필요한 정보:
+  1. **접속 방식**: SSH 사용자 계정명, 키 페어 경로 또는 비밀번호 방식 여부
+  2. **서버 사양**: OS 버전(예: Ubuntu 22.04), 인스턴스 타입, 퍼블릭 IP
+  3. **보안 그룹/방화벽**: 현재 허용된 포트 목록(22, 80, 443, 8000 등)과 추가 개방 필요 여부
+  4. **도메인 연계 예정 여부**: 추후 DNS/SSL 계획에 사용
+- 위 정보를 받는 즉시 Task 17의 실제 설치/설정 절차(Docker 설치, 디렉터리 구조 생성, 환경 변수 저장 방식 테스트)를 진행하겠습니다.
+
+### 2025-11-10 - Task 17 정보 업데이트
+
+- AWS EC2 인스턴스 요약 스크린샷 공유됨: `i-030a6f1fd19110d16`, 인스턴스명 `boam79-sever1`(typo 추정), 리전 `ap-northeast-2 (Seoul)`, 퍼블릭 IP `54.180.251.93`, 프라이빗 IP `172.31.9.180`, 인스턴스 타입 `t3.micro`.
+- VPC `vpc-0ab02b8bf93b52691`, 서브넷 `subnet-00759daaf62c8b593d`. EC2 상태는 실행 중.
+- 아직 필요한 추가 정보: OS/AMI 종류, SSH 사용자 계정/Key Pair 이름, 보안 그룹에서 허용된 포트 리스트(22,80,443,8000 등), 향후 사용할 도메인 여부. 확보되면 Docker 설치 및 포트 설정을 진행 예정.
+
+### 2025-11-10 - Task 17 세부 정보 수집 완료
+
+- AMI: `ami-001be25c3775061c9` (`ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20251015`), OS는 Ubuntu 22.04 LTS 가정.
+- 기본 SSH Key Pair: `boam79-aws-key`, SSH 기본 사용자 계정은 Ubuntu AMI 기준 `ubuntu`.
+- 보안 그룹: `sg-0a7525206e811277f8 (launch-wizard-1)`이 연결되어 있으며, 현재 인바운드 규칙은 22/TCP(0.0.0.0/0)만 허용. 아웃바운드는 전체 허용.
+- 아직 개방되지 않은 포트 80/443/8000 등을 AWS 보안 그룹과, 필요 시 OS 방화벽(ufw)에서 추가 오픈해야 함.
+- 다음 단계로, SSH 키를 이용한 접속 확인 → Docker & Docker Compose 설치 → 애플리케이션 배포 디렉토리 준비 → 환경 변수 저장 전략 테스트 순으로 진행 예정. 도메인 계획은 추후(Task 19)에서 다룰 예정.
+- SSH Key Pair(`boam79-aws-key`)의 개인키(.pem) 경로 혹은 전달 방식이 필요합니다. 존재 여부와 사용 가능한 로컬 경로를 알려주시면 접속 스크립트를 준비하겠습니다.
+- 사용자 응답 "@boam79-aws-key.pem (2-26)"는 키 위치로 추정되나 정확한 파일 경로나 접근 방법이 불명확합니다. 예: `C:\Users\{사용자}\.ssh\boam79-aws-key.pem` 형태로 명시가 필요. 확인해야 다음 단계 진행 가능.
+- 사용자 스크린샷 기준으로 프로젝트 루트에 `boam79-aws-key.pem` 파일이 존재함을 확인. (워크스페이스 싱크가 일부 도구에서 보이지 않았던 것으로 추정) 파일 경로: `C:\Users\gmhos\Desktop\pjm7908\Github\SunPath_Shadow_Simulator\boam79-aws-key.pem`.
+- Docker 설치 및 서버 초기 세팅 절차(apt update → Docker 저장소 등록 → docker-ce & compose 설치 → docker 그룹 추가 → `/opt/sunpath` 디렉터리 생성 → 환경 변수 파일 준비 → UFW 포트 개방)를 사용자에게 전달하여 실행 준비 완료 상태.
+
+### 2025-11-10 - Task 17 완료 보고
+
+- Docker/Compose 설치 및 `docker run --rm hello-world` 테스트 수행으로 컨테이너 런타임 정상 확인.
+- `/opt/sunpath` 및 `/opt/sunpath/config/backend.env` 준비 완료, 환경 변수 템플릿 작성.
+- UFW 포트 전략(22/80/443/8000) 확정, 보안 그룹과 일치 여부 확인 필요.
+- Task 17 성공 기준 충족 → 완료 처리, 다음 단계(Task 18) 준비.
+
+### 2025-11-10 - Task 18 착수
+
+- 배포 접근 방식 결정: EC2 인스턴스 내 `/opt/sunpath`에 Git 저장소를 직접 클론하여 수동 배포 파이프라인을 먼저 구축한 후, GitHub Actions 기반 SSH 자동화를 추가하는 단계적 전략으로 진행.
+- 1차 목표는 FastAPI 백엔드를 EC2에서 서비스하도록 구성(systemd 서비스, 환경 변수 로딩, 포트 설정). 이후 같은 절차를 CI/CD로 자동화.
+- 다음 액션: EC2에 Git/필요 패키지 설치 확인, `/opt/sunpath` 하위에 리포지토리 클론, 백엔드 실행 스크립트 및 systemd 서비스 정의.
+- 진행 상황 업데이트: Git 설치 확인(`git version 2.x` ) → `/opt/sunpath/app` 경로에 저장소 클론 완료.
+- FastAPI용 가상환경 생성, requirements 설치, systemd 서비스(`/etc/systemd/system/sunpath-backend.service`) 작성 및 `curl http://localhost:8000/health` 로 정상 동작 확인 완료.
+- Nginx 설치 및 커스텀 서버 블록 적용, 기본 사이트 비활성화 → `http://54.180.251.93/health` 외부에서도 JSON 응답 확인 완료.
+- 배포 전용 SSH 키(`sunpath-deploy`) 생성 및 EC2 `authorized_keys` 등록, 로컬에서 새 키로 접속 검증 완료 (Task 18 자동화 준비).
+- GitHub Actions Secrets(`EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`) 저장 완료 → 자동 배포 워크플로 작성 단계 진입.
+- `.github/workflows/deploy-backend.yml` 추가: master/main push 시 SSH로 EC2에 접속해 git pull·pip install·서비스 재시작 후 헬스체크 수행하는 CI/CD 파이프라인 구성.
 
 **다음 단계:**
 Task 12 (차트)를 건너뛰고 핵심 기능 테스트 후 최종 정리합니다.
