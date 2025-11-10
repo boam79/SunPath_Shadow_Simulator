@@ -21,9 +21,28 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          # Write SSH key directly to file
-          echo "$SSH_KEY" > ~/.ssh/id_aws
-          chmod 600 ~/.ssh/id_aws
+          # Write SSH key using Python to handle newlines properly
+          python3 << 'PYEOF'
+          import os
+          import sys
+          key = os.environ.get("SSH_KEY", "")
+          if not key:
+              print("Error: SSH_KEY environment variable is empty", file=sys.stderr)
+              sys.exit(1)
+          # Normalize line endings
+          key = key.replace("\r\n", "\n").replace("\r", "\n")
+          # Remove leading/trailing whitespace but preserve structure
+          key = key.strip()
+          # Ensure ends with newline
+          if not key.endswith("\n"):
+              key += "\n"
+          # Write to file
+          key_path = os.path.expanduser("~/.ssh/id_aws")
+          with open(key_path, "w", encoding="utf-8") as f:
+              f.write(key)
+          os.chmod(key_path, 0o600)
+          print(f"SSH key written successfully. Length: {len(key)} chars")
+          PYEOF
           # Add EC2 host to known_hosts
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
