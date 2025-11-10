@@ -14,16 +14,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Add SSH key to agent
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-
-      - name: Add EC2 host to known_hosts
+      - name: Setup SSH key
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          # Write SSH key directly to file
+          echo "$SSH_KEY" > ~/.ssh/id_aws
+          chmod 600 ~/.ssh/id_aws
+          # Add EC2 host to known_hosts
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+
+      - name: Add SSH key to agent
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_aws
 
       - name: Deploy to EC2
         run: |
