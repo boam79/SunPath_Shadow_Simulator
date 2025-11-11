@@ -7,130 +7,533 @@
 
 ---
 
-## ⚡ TL;DR (간결 요약)
-
-- **현황**: 핵심 기능 대부분 완료 (13/15). 프론트 차트, 테스트, 배포만 남음.
-- **완료 핵심**:
-  - 백엔드: 태양 위치, 그림자, 일사량, 통합 API, Redis 캐시(옵션)
-  - 프론트엔드: 레이아웃, 지도, 지오코딩, 타임라인, 시각화, 내보내기
-- **남은 작업(P1~P0)**:
-  1) Task 12: 차트/대시보드  2) Task 14: 테스트  3) Task 15: 배포/CI
-- **성능 목표**: 응답 < 3초, 애니메이션 ≥ 25~30fps, 차트 렌더 < 500ms
-- **배포 경로**: FE→Vercel, BE→AWS/Heroku, 도메인+SSL, CI/CD(GitHub Actions)
-
-### 바로 쓰는 API 요약
-- Solar: `POST /api/solar/position`, `GET /api/solar/sunrise-sunset`, `GET /api/solar/test`
-- Shadow: `GET /api/shadow/calculate`, `GET /api/shadow/test`, `GET /api/shadow/validate`
-- Irradiance: `GET /api/irradiance/calculate`, `GET /api/irradiance/test`, `GET /api/irradiance/sunrise-sunset-irradiance`
-- 통합: `POST /api/integrated/calculate`
-- 캐시: `GET /api/cache/stats`, `POST /api/cache/clear`, `GET /api/cache/test`
-
-### 다음 액션(우선순위 순)
-1. 차트 구현(Recharts): 고도/방위각, GHI/DNI/DHI, 그림자 길이 + 요약 카드
-2. 테스트: BE(pytest), FE(Jest), 통합/E2E(Playwright), 성능 검증
-3. 배포: Vercel+AWS/Heroku, 환경변수/도메인/SSL, Actions 파이프라인
-
-> 참고: 아래는 상세 기록(보존용)이며, 상단 요약만 빠르게 확인해도 충분합니다.
-
----
-
 ## 📌 Background and Motivation
 
-- **목적**: 위치/날짜 기반 태양 경로·일사량·그림자 시각화
-- **핵심 가치**: 쉬운 입력, 고정밀 계산, 실시간/모바일 친화적 UI
-- **스택**: Next.js 14, FastAPI, MapLibre, pvlib, (옵션) Redis
-- **차별화**: 동적 시뮬레이션과 프리셋 제공으로 실무 활용성 강화
-- **인프라 마이그레이션**: Render에서 AWS로 백엔드 서버 이전 (2025-01-XX)
-  - **현재 상태**: Render (https://sunpath-api.onrender.com)에서 배포 중
-  - **목표**: AWS로 마이그레이션하여 더 나은 성능, 확장성, 비용 효율성 확보
-  - **선택 이유**: 
-    - Render 무료 티어의 cold start 문제
-    - AWS의 더 나은 확장성 및 모니터링 도구
-    - 장기적인 비용 효율성
+### 프로젝트 개요
+**SunPath & Shadow Simulator**는 위치와 날짜를 기반으로 태양의 움직임, 일조량, 그림자를 실시간으로 시각화하는 웹 기반 시뮬레이터입니다.
+
+### 핵심 목표
+1. **사용자 친화적 인터페이스**: 주소 입력만으로 복잡한 태양 경로 계산 수행
+2. **고정밀 계산**: NREL SPA 알고리즘 기반 ±0.05° 정확도
+3. **실시간 시각화**: 30fps 애니메이션으로 하루 동안의 태양 움직임 표현
+4. **다목적 활용**: 건축, 태양광, 농업, 사진 등 다양한 분야 지원
+5. **안정적인 인프라**: Render에 올라간 백엔드 서비스를 AWS 인프라로 이전해 가용성과 확장성 확보
+
+### 기술 스택 선택 이유
+- **Next.js 14**: SSR/SSG를 통한 SEO 최적화 및 성능
+- **FastAPI**: 고성능 비동기 API 서버, 자동 문서화
+- **MapLibre GL JS**: 오픈소스 지도 라이브러리, 커스터마이징 용이
+- **pvlib-python**: NREL 검증된 태양 위치 계산 라이브러리
+- **Redis**: 계산 결과 캐싱으로 응답 시간 단축
+
+### 차별화 포인트
+- 기존 CAD/BIM 도구 대비 낮은 진입 장벽
+- 단순 일출/일몰 시간 제공 서비스를 넘어선 동적 시뮬레이션
+- 사용자 시나리오별 프리셋 제공 (태양광, 건축, 농업, 사진)
 
 ---
 
-## 🎯 Key Challenges and Analysis (요약)
+## 🎯 Key Challenges and Analysis
 
-- **정확도**: NREL SPA 기반, 극지방·대기 굴절 보정 → pvlib로 해결
-- **성능**: 1440 포인트/일, 30fps 렌더 → 사전계산·캐싱·rAF 활용
-- **일사량**: 맑음/흐림 오차 관리 → Ineichen, 향후 Perez/실시간 기상
-- **그림자**: 고도 0° 근처/경사/긴 그림자 → 예외 처리·구면기하 보정
-- **지오코딩**: 다국어·쿼터 제한 → 디바운스, 지도 클릭, 캐싱 전략
-- **AWS 마이그레이션**:
-  - **배포 옵션 선택**: ECS Fargate vs Elastic Beanstalk vs EC2
-  - **Redis 마이그레이션**: Render Redis → AWS ElastiCache
-  - **환경변수 관리**: AWS Systems Manager Parameter Store 또는 Secrets Manager
-  - **도메인/SSL**: Route 53 + ACM (AWS Certificate Manager)
-  - **CI/CD**: GitHub Actions → AWS 배포 파이프라인
-  - **모니터링**: CloudWatch 로그 및 메트릭
-  - **비용 최적화**: 최소 인스턴스 사양으로 시작, Auto Scaling 설정
+### 기술적 도전과제
+
+#### 1. 고정밀 태양 위치 계산
+**도전과제:**
+- NREL SPA 알고리즘의 복잡한 천문학적 계산 구현
+- 대기 굴절, 지구 장동, 세차운동 보정
+- 극지방 및 특수 위도에서의 edge case 처리
+
+**해결 방안:**
+- pvlib-python 라이브러리 활용 (검증된 구현)
+- 극한 조건(북극/남극, 백야/극야) 테스트 케이스 작성
+- NREL 공식 데이터와 교차 검증
+
+#### 2. 실시간 애니메이션 성능
+**도전과제:**
+- 1분 간격으로 하루치 데이터(1440개 포인트) 계산 및 렌더링
+- 30fps 유지하며 부드러운 애니메이션 구현
+- 모바일 기기에서의 성능 보장
+
+**해결 방안:**
+- 백엔드에서 사전 계산 후 일괄 전송
+- 프론트엔드에서 requestAnimationFrame 활용
+- Web Workers를 통한 계산 오프로딩
+- Redis 캐싱으로 재계산 최소화
+
+#### 3. 일사량 정확도
+**도전과제:**
+- 맑은 날 대비 흐린 날의 정확도 차이 (목표: ±15% 이내)
+- 대기 상태(에어로졸, 수증기) 실시간 반영
+- 지역별 기후 특성 고려
+
+**해결 방안:**
+- Perez Sky Model 구현 (Phase 2)
+- Open-Meteo API 통합으로 실시간 기상 데이터 반영
+- 과거 데이터 기반 보정 알고리즘
+
+#### 4. 그림자 계산의 복잡도
+**도전과제:**
+- 태양 고도 0° 근처에서 그림자 길이 무한대 처리
+- 지형 경사도 반영
+- 다중 물체 그림자 간섭 계산
+
+**해결 방안:**
+- 태양 고도 0.1° 이하는 특별 처리 (무한 그림자 표시)
+- 지형 경사는 선택적 옵션으로 제공
+- 다중 물체는 Phase 2로 이연
+
+#### 5. 지오코딩 및 지도 통합
+**도전과제:**
+- 다국어 주소 처리
+- Nominatim API 속도 제한
+- 정확한 좌표 추출
+
+**해결 방안:**
+- 인기 도시 좌표 사전 캐싱
+- 사용자 입력 디바운싱
+- 지도 클릭으로 직접 좌표 선택 옵션 제공
+
+#### 6. 인프라 마이그레이션 (Render → AWS)
+**도전과제:**
+- Render에서 사용 중인 빌드/실행 설정과 환경 변수를 완전하게 파악해야 함
+- AWS 인스턴스(예: EC2) 네트워크/보안/저장소 구성 차이로 인한 서비스 중단 위험
+- 비밀 관리 전략(환경 변수, 키 관리) 재정립 필요
+- 전환 중 다운타임 최소화 및 롤백 전략 부재
+
+**해결 방안:**
+- Render 대시보드에서 서비스 설정, 빌드 커맨드, 헬스체크 구성 등 전체 인벤토리 작성
+- AWS 상에서 동일 또는 개선된 런타임(EC2 + Docker Compose 등) 설계 및 테스트
+- AWS Systems Manager Parameter Store 또는 Secrets Manager를 활용한 비밀 관리
+- GitHub Actions 기반 CI/CD 파이프라인을 AWS용으로 재구성하고 블루/그린 또는 카나리 전환 시나리오 준비
+- Cutover 전에 스테이징 환경에서 부하 테스트 및 헬스체크 자동화
 
 ---
 
-## 📋 High-level Task Breakdown (요약)
+## 📋 High-level Task Breakdown
 
-- **Task 12: 차트/대시보드 (P0, 2일)**
-  - Recharts 기반 고도/방위각, GHI/DNI/DHI, 그림자 길이 + 요약 카드
-  - 성공: 실시간 동기화, 커서/툴팁, 렌더 < 500ms
-- **Task 14: 테스트/검증 (P1, 3일)**
-  - BE(pytest), FE(Jest), 통합/E2E(Playwright), 성능/극한조건
-  - 성공: BE>80%, FE>70%, E2E 전부 통과, 응답<3초/FPS>25
-- **Task 15: 배포/CI (P1, 2일)**
-  - FE(Vercel), BE(AWS/Heroku), Actions, 도메인/SSL, 모니터링
-  - 성공: 자동배포, 테스트 실패 시 중단, HTTPS/모니터링 활성
-- **Task 16: AWS 마이그레이션 (P1, 2-3일)** 🆕
-  - **16.1: EC2 인프라 확인 및 설정 (0.5일)** ✅ (이미 생성됨)
-    - ✅ EC2 인스턴스 생성 완료 (i-030a6f1fd19110d16)
-    - ✅ 키 페어 파일 확인 (boam79-aws-key.pem)
-    - 보안 그룹 규칙 검토 및 최적화 (포트 22 제한, HTTPS 추가)
-    - 성공: EC2 인스턴스 접속 확인, 보안 그룹 설정 완료
-  - **16.2: EC2 인스턴스 환경 설정 (0.5일)**
-    - EC2 인스턴스에 SSH 접속
-    - Docker 및 Docker Compose 설치
-    - Python 3.11 설치 및 의존성 확인
-    - 시스템 업데이트 및 보안 설정
-    - 성공: EC2 인스턴스에서 Docker 실행 확인
-  - **16.3: 프로덕션 Dockerfile 작성 (0.5일)**
-    - 프로덕션용 Dockerfile 작성 (Dockerfile.dev와 분리)
-    - 멀티 스테이지 빌드 최적화
-    - 환경변수 처리 확인
-    - 성공: Docker 이미지 빌드 및 로컬 테스트 완료
-  - **16.4: 백엔드 배포 및 설정 (1일)**
-    - EC2 인스턴스에 코드 배포 (Git clone 또는 SCP)
-    - 환경변수 설정 (.env 파일)
-    - Docker Compose로 백엔드 서비스 실행
-    - Systemd 서비스로 자동 시작 설정
-    - 성공: 백엔드 API 정상 작동 확인 (http://54.180.251.93:8000)
-  - **16.5: Nginx 역방향 프록시 및 SSL 설정 (1일)**
-    - Nginx 설치 및 설정
-    - 역방향 프록시 설정 (포트 80 → 8000)
-    - Let's Encrypt로 SSL 인증서 발급 (Certbot)
-    - HTTPS 리다이렉트 설정
-    - 성공: HTTPS 접근 가능 (https://도메인 또는 https://54.180.251.93)
-  - **16.6: ElastiCache Redis 설정 (0.5일)** (선택사항)
-    - ElastiCache for Redis 클러스터 생성
-    - 보안 그룹 규칙 설정 (EC2에서 접근 허용)
-    - Redis 연결 문자열 확인 및 환경변수 설정
-    - 성공: Redis 클러스터 생성, 백엔드에서 연결 테스트
-  - **16.7: 모니터링 및 알림 설정 (0.5일)**
-    - CloudWatch 에이전트 설치 (EC2)
-    - CloudWatch 로그 그룹 설정
-    - CloudWatch 메트릭 및 대시보드 생성
-    - 알람 설정 (CPU, 메모리, 디스크, 에러율)
-    - 성공: 로그 수집 확인, 메트릭 대시보드 작동
-  - **16.8: 프론트엔드 환경변수 업데이트 (0.5일)**
-    - Vercel 환경변수에 새로운 백엔드 URL 설정
-    - 프론트엔드에서 새 백엔드 API 호출 테스트
-    - CORS 설정 확인
-    - 성공: 프론트엔드에서 AWS 백엔드 정상 호출
-  - **16.9: 마이그레이션 검증 및 Rollback 계획 (0.5일)**
-    - AWS 배포 환경에서 모든 API 엔드포인트 테스트
-    - 성능 비교 (Render vs AWS)
-    - 부하 테스트 (선택사항)
-    - Rollback 절차 문서화
-    - Render 서비스 중지 (검증 완료 후)
-    - 성공: 모든 기능 정상 작동, 성능 목표 달성
+### Phase 1: MVP 개발 (목표: 4주)
+
+#### **Task 1: 프로젝트 초기 설정 및 환경 구성**
+**우선순위:** P0  
+**예상 소요:** 1일  
+**담당:** Executor
+
+**세부 작업:**
+1.1. Next.js 14 프로젝트 초기화 (App Router)
+1.2. Python FastAPI 프로젝트 구조 생성
+1.3. Docker Compose 설정 (frontend, backend, redis)
+1.4. 개발 환경 설정 (.env, .gitignore)
+1.5. 패키지 매니저 설정 (npm/pnpm, poetry/pip)
+
+**성공 기준:**
+- [ ] 로컬에서 `npm run dev` 실행 시 Next.js 서버 정상 구동
+- [ ] `docker-compose up` 실행 시 모든 서비스 정상 시작
+- [ ] FastAPI `/docs` 엔드포인트 접근 가능
+
+**의존성:** 없음
+
+---
+
+#### **Task 2: 백엔드 - 태양 위치 계산 API 구현**
+**우선순위:** P0  
+**예상 소요:** 3일  
+**담당:** Executor
+
+**세부 작업:**
+2.1. pvlib-python 설치 및 설정
+2.2. Solar Position API 엔드포인트 구현 (`POST /api/solar/position`)
+2.3. 입력 검증 (위도, 경도, 날짜 범위)
+2.4. NREL SPA 알고리즘 통합
+2.5. 시계열 데이터 일괄 계산 (벡터화)
+2.6. 응답 스키마 정의 (고도, 방위각, 시간)
+
+**성공 기준:**
+- [ ] 서울(37.5665°N, 126.9780°E) 하지(2025-06-21) 계산 시 정오 태양 고도 76° ± 0.1°
+- [ ] 1440개 시간대(1분 간격) 계산 완료 시간 < 2초
+- [ ] 극지방(위도 80°) 입력 시 에러 없이 처리
+- [ ] Swagger 문서에서 API 테스트 가능
+
+**의존성:** Task 1
+
+---
+
+#### **Task 3: 백엔드 - 그림자 계산 로직 구현**
+**우선순위:** P0  
+**예상 소요:** 2일  
+**담당:** Executor
+
+**세부 작업:**
+3.1. 그림자 길이 계산 함수 작성
+3.2. 그림자 방향(방위각) 계산
+3.3. 태양 고도 0° 근처 예외 처리
+3.4. 그림자 끝점 좌표 계산
+3.5. API 엔드포인트 추가 (`POST /api/shadow/calculate`)
+
+**성공 기준:**
+- [ ] 높이 10m 물체, 태양 고도 45° → 그림자 길이 10m ± 2%
+- [ ] 태양 고도 0.1° 이하 시 "무한 그림자" 응답
+- [ ] 그림자 방향이 태양 방위각 + 180° (반대편)
+- [ ] 단위 테스트 커버리지 > 90%
+
+**의존성:** Task 2
+
+---
+
+#### **Task 4: 백엔드 - 일사량 계산 기본 구현**
+**우선순위:** P0  
+**예상 소요:** 2일  
+**담당:** Executor
+
+**세부 작업:**
+4.1. Clear Sky Model 구현 (Ineichen 모델)
+4.2. GHI/DNI/DHI 계산
+4.3. 일출/일몰 시각 자동 산출
+4.4. 일일 총 일사량 적분
+4.5. API 엔드포인트 추가 (`POST /api/irradiance/calculate`)
+
+**성공 기준:**
+- [ ] 맑은 날 정오 GHI 값이 1000 W/m² ± 10%
+- [ ] 일출/일몰 시각이 기상청 데이터와 ±2분 이내
+- [ ] 하루 총 일사량 계산 (kWh/m²)
+- [ ] 음수 값 없음 (물리적 제약)
+
+**의존성:** Task 2
+
+---
+
+#### **Task 5: 백엔드 - Redis 캐싱 레이어 구축**
+**우선순위:** P1  
+**예상 소요:** 1일  
+**담당:** Executor
+
+**세부 작업:**
+5.1. Redis 연결 설정
+5.2. 캐시 키 전략 수립 (`{lat:2dp}_{lon:2dp}_{date}_{height}`)
+5.3. TTL 설정 (6시간)
+5.4. 캐시 히트/미스 로깅
+5.5. 캐시 무효화 전략
+
+**성공 기준:**
+- [ ] 동일 요청 2회 호출 시 두 번째 응답 < 100ms
+- [ ] 캐시 히트율 > 70% (시뮬레이션)
+- [ ] Redis 장애 시 계산 로직으로 폴백
+
+**의존성:** Task 2, 3, 4
+
+---
+
+#### **Task 6: 프론트엔드 - UI 기본 레이아웃 구축**
+**우선순위:** P0  
+**예상 소요:** 2일  
+**담당:** Executor
+
+**세부 작업:**
+6.1. Tailwind CSS 설정
+6.2. 반응형 레이아웃 설계 (헤더, 사이드바, 메인, 푸터)
+6.3. 다크 모드 지원
+6.4. 위치 입력 컴포넌트 (주소 검색창)
+6.5. 날짜 선택 컴포넌트 (DatePicker)
+6.6. 물체 높이 입력 (Slider + Input)
+
+**성공 기준:**
+- [ ] 모바일(375px), 태블릿(768px), 데스크톱(1440px) 모두 정상 표시
+- [ ] 다크 모드 토글 작동
+- [ ] 모든 입력 필드 접근성(ARIA) 준수
+- [ ] Lighthouse 접근성 점수 > 90
+
+**의존성:** Task 1
+
+---
+
+#### **Task 7: 프론트엔드 - 지도 통합 (MapLibre GL JS)**
+**우선순위:** P0  
+**예상 소요:** 2일  
+**담당:** Executor
+
+**세부 작업:**
+7.1. MapLibre GL JS 라이브러리 설치
+7.2. OpenStreetMap 타일 서버 연결
+7.3. 지도 컴포넌트 생성 (React 래퍼)
+7.4. 마커 표시 및 위치 업데이트
+7.5. 지도 클릭 이벤트 처리 (좌표 추출)
+7.6. 줌/패닝 컨트롤
+
+**성공 기준:**
+- [ ] 지도 로드 시간 < 2초
+- [ ] 마커 드래그로 위치 변경 가능
+- [ ] 클릭한 좌표 주소 역지오코딩 표시
+- [ ] 모바일 터치 제스처 지원
+
+**의존성:** Task 6
+
+---
+
+#### **Task 8: 프론트엔드 - 지오코딩 기능 구현**
+**우선순위:** P0  
+**예상 소요:** 1일  
+**담당:** Executor
+
+**세부 작업:**
+8.1. Nominatim API 연동
+8.2. 주소 자동완성 (디바운싱 500ms)
+8.3. 검색 결과 드롭다운
+8.4. 오류 처리 (주소 없음, API 타임아웃)
+8.5. 로딩 상태 표시
+
+**성공 기준:**
+- [ ] "서울특별시 중구" 검색 → 정확한 좌표 반환
+- [ ] 영문 주소("Seoul, South Korea") 지원
+- [ ] API 호출 디바운싱으로 과다 요청 방지
+- [ ] 네트워크 오류 시 사용자 친화적 메시지
+
+**의존성:** Task 7
+
+---
+
+#### **Task 9: 프론트엔드 - 백엔드 API 통합**
+**우선순위:** P0  
+**예상 소요:** 2일  
+**담당:** Executor
+
+**세부 작업:**
+9.1. Axios/Fetch 클라이언트 설정
+9.2. API 엔드포인트 함수 작성 (`/api/solar`, `/api/shadow`, `/api/irradiance`)
+9.3. 에러 핸들링 (429, 500, 네트워크 오류)
+9.4. 로딩 상태 관리 (React Query/SWR)
+9.5. 응답 데이터 타입 정의 (TypeScript)
+
+**성공 기준:**
+- [ ] 위치/날짜 변경 시 자동으로 API 호출
+- [ ] 로딩 중 스피너 표시
+- [ ] API 오류 시 에러 메시지 표시
+- [ ] 타입 안정성 (TypeScript 에러 없음)
+
+**의존성:** Task 2, 3, 4, 6
+
+---
+
+#### **Task 10: 프론트엔드 - 타임라인 슬라이더 구현**
+**우선순위:** P0  
+**예상 소요:** 2일  
+**담당:** Executor
+
+**세부 작업:**
+10.1. 커스텀 슬라이더 컴포넌트 제작
+10.2. 시간 범위 표시 (일출~일몰)
+10.3. 슬라이더 드래그 시 실시간 업데이트
+10.4. Play/Pause 버튼
+10.5. 재생 속도 조절 (0.5x, 1x, 2x, 5x)
+10.6. 특정 시각 직접 입력
+
+**성공 기준:**
+- [ ] 슬라이더 드래그 시 30fps 유지
+- [ ] Play 버튼 클릭 시 자동 재생
+- [ ] 일몰 시각 도달 시 자동 정지
+- [ ] 키보드 화살표 키로도 제어 가능
+
+**의존성:** Task 9
+
+---
+
+#### **Task 11: 프론트엔드 - 태양/그림자 시각화**
+**우선순위:** P0  
+**예상 소요:** 3일  
+**담당:** Executor
+
+**세부 작업:**
+11.1. 지도 위에 태양 아이콘 표시 (방위각 기반 위치)
+11.2. 그림자 벡터 렌더링 (선 + 방향 화살표)
+11.3. 태양 궤적선 그리기 (하루 전체 경로)
+11.4. 실시간 업데이트 (타임라인 연동)
+11.5. 애니메이션 부드럽게 처리 (interpolation)
+
+**성공 기준:**
+- [ ] 태양 위치가 실제 방위각과 일치
+- [ ] 그림자 길이/방향 정확히 표시
+- [ ] 애니메이션 끊김 없음 (30fps)
+- [ ] 색상으로 시간대 구분 (새벽/낮/저녁)
+
+**의존성:** Task 9, 10
+
+---
+
+#### **Task 12: 프론트엔드 - 차트 및 데이터 표시**
+**우선순위:** P0  
+**예상 소요:** 2일  
+**담당:** Executor
+
+**세부 작업:**
+12.1. Recharts 라이브러리 설치
+12.2. 태양 고도/방위각 차트 (시간별)
+12.3. 일사량 차트 (GHI/DNI/DHI)
+12.4. 그림자 길이 차트
+12.5. 요약 대시보드 (일출/일몰, 최대 고도, 총 일사량)
+12.6. 반응형 차트 (모바일 대응)
+
+**성공 기준:**
+- [ ] 차트가 실시간 데이터와 동기화
+- [ ] 슬라이더 위치에 차트 커서 표시
+- [ ] 툴팁으로 상세 값 확인 가능
+- [ ] 차트 렌더링 시간 < 500ms
+
+**의존성:** Task 9
+
+---
+
+#### **Task 13: 프론트엔드 - 데이터 내보내기 기능**
+**우선순위:** P1  
+**예상 소요:** 1일  
+**담당:** Executor
+
+**세부 작업:**
+13.1. CSV 내보내기 버튼 및 로직
+13.2. JSON 내보내기
+13.3. 파일명 자동 생성 (`sunpath_{location}_{date}.csv`)
+13.4. 다운로드 진행 상태 표시
+
+**성공 기준:**
+- [ ] CSV 파일이 Excel에서 정상 열림
+- [ ] JSON 파일이 유효한 형식
+- [ ] 모든 계산 결과 포함 (시간, 고도, 방위각, 일사량, 그림자)
+- [ ] 브라우저 다운로드 폴더에 저장
+
+**의존성:** Task 9
+
+---
+
+#### **Task 14: 테스트 작성 및 검증**
+**우선순위:** P1  
+**예상 소요:** 3일  
+**담당:** Executor
+
+**세부 작업:**
+14.1. 백엔드 단위 테스트 (pytest)
+14.2. 프론트엔드 단위 테스트 (Jest)
+14.3. API 통합 테스트
+14.4. E2E 테스트 (Playwright) - 핵심 시나리오
+14.5. 성능 테스트 (응답 시간, 메모리)
+14.6. 극한 조건 테스트 (극지방, 적도, 윤년)
+
+**성공 기준:**
+- [ ] 백엔드 테스트 커버리지 > 80%
+- [ ] 프론트엔드 테스트 커버리지 > 70%
+- [ ] 모든 E2E 시나리오 통과
+- [ ] 성능 목표 달성 (응답 < 3초, FPS > 25)
+
+**의존성:** Task 2~13
+
+---
+
+#### **Task 15: 배포 및 CI/CD 설정**
+**우선순위:** P1  
+**예상 소요:** 2일  
+**담당:** Executor
+
+**세부 작업:**
+15.1. Vercel 배포 설정 (프론트엔드)
+15.2. AWS/Heroku 배포 (백엔드)
+15.3. GitHub Actions CI/CD 파이프라인
+15.4. 환경 변수 설정 (production)
+15.5. 도메인 연결
+15.6. SSL 인증서 설정
+15.7. 모니터링 설정 (Sentry, Analytics)
+
+**성공 기준:**
+- [ ] 프로덕션 URL에서 정상 작동
+- [ ] Git push 시 자동 배포
+- [ ] 테스트 실패 시 배포 중단
+- [ ] HTTPS 적용
+- [ ] 에러 모니터링 활성화
+
+**의존성:** Task 1~14
+
+---
+
+### Phase 2: 인프라 전환 (Render → AWS)
+
+#### **Task 16: Render 배포 환경 인벤토리 작성**
+**우선순위:** P0  
+**예상 소요:** 0.5일  
+**담당:** Planner → Executor
+
+**세부 작업:**
+16.1. Render 서비스 유형, 인스턴스 스펙, 빌드/런타임 커맨드 확인  
+16.2. 환경 변수/Secret 목록 추출 (API 키, DB 연결 등)  
+16.3. 외부 의존성(스토리지, 캐시, 모니터링) 파악  
+16.4. 배포 파이프라인/자동화 여부, 헬스체크 설정 문서화  
+16.5. Render 로그 패턴 및 알림 설정 수집
+
+**성공 기준:**
+- [ ] Render 대시보드 기준으로 필요한 설정들이 모두 목록화되어 문서화됨
+- [ ] 환경 변수/Secret이 안전한 보관소로 옮겨지고 누락 없음이 검증됨
+- [ ] 빌드 및 실행 절차가 텍스트로 정리되어 AWS에서 재현 가능
+
+**의존성:** 없음
+
+---
+
+#### **Task 17: AWS 배포 타깃 환경 준비**
+**우선순위:** P0  
+**예상 소요:** 1일  
+**담당:** Executor
+
+**세부 작업:**
+17.1. 준비된 AWS 서버(예: EC2)의 OS/패키지 업데이트  
+17.2. Docker 및 Docker Compose 또는 Python 런타임 설치  
+17.3. 보안 그룹/방화벽에 HTTP(80)/HTTPS(443)/API 포트(예: 8000) 개방  
+17.4. 애플리케이션 배포용 디렉토리/계정 생성 및 권한 설정  
+17.5. 환경 변수 관리 전략 수립 (Parameter Store/Secrets Manager 혹은 .env)  
+17.6. 헬스체크 스크립트와 모니터링(CloudWatch 에이전트 등) 설치
+
+**성공 기준:**
+- [ ] AWS 서버에서 필요한 런타임이 정상 동작 (`docker --version` 등 확인)  
+- [ ] SSH 접속과 필요한 포트 접근이 모두 허용  
+- [ ] 배포 디렉토리 구조와 권한이 정의됨  
+- [ ] 환경 변수 주입 방식이 테스트로 검증됨
+
+**의존성:** Task 16
+
+---
+
+#### **Task 18: 배포 파이프라인 및 애플리케이션 배포**
+**우선순위:** P0  
+**예상 소요:** 1일  
+**담당:** Executor
+
+**세부 작업:**
+18.1. 기존 Dockerfile/uvicorn 실행 설정 검토 및 AWS 환경에 맞게 조정  
+18.2. GitHub Actions 또는 수동 스크립트 기반 배포 자동화 구성  
+18.3. 애플리케이션 코드와 환경 변수를 AWS 서버에 배포 (예: `docker compose up -d`)  
+18.4. 헬스체크 엔드포인트(`/health` 등) 호출로 서비스 정상 동작 확인  
+18.5. 로그 및 모니터링 경로 정의 (CloudWatch, Loki, journald 등)
+
+**성공 기준:**
+- [ ] AWS 서버에서 FastAPI 백엔드가 정상 기동 (`curl localhost:8000/health` 성공)  
+- [ ] 재배포 자동화 스크립트가 동작해 반복 배포가 가능  
+- [ ] 로그/모니터링 경로가 문서화되고 접근 가능
+
+**의존성:** Task 17
+
+---
+
+#### **Task 19: DNS/SSL 및 전환 계획 수립**
+**우선순위:** P0  
+**예상 소요:** 0.5일  
+**담당:** Executor
+
+**세부 작업:**
+19.1. DNS 레코드 계획 수립 (Route53/Cloudflare 등)  
+19.2. HTTPS 인증서 발급 및 설치 (ACM 또는 Let's Encrypt)  
+19.3. 전환(Cutover) 체크리스트 및 롤백 전략 작성  
+19.4. 전환 전 최종 검증 (부하 테스트, 기능 테스트)  
+19.5. 전환 후 모니터링 및 장애 대응 지침 정리
+
+**성공 기준:**
+- [ ] 테스트 도메인에서 HTTPS 접속이 가능  
+- [ ] Cutover 체크리스트와 롤백 전략이 문서화  
+- [ ] 전환 후 24시간 모니터링 계획이 수립되고 담당자가 지정됨
+
+**의존성:** Task 18
 
 ---
 
@@ -140,38 +543,184 @@
 - [ ] Task 12: 프론트엔드 - 차트 및 데이터 표시 (선택적)
 - [ ] Task 14: 테스트 작성 및 검증
 - [ ] Task 15: 배포 및 CI/CD 설정
-- [ ] Task 16: AWS 마이그레이션 (Render → AWS) 🆕
-  - [x] Task 16.1: EC2 인프라 확인 및 설정 (이미 생성됨)
-  - [x] Task 16.2: EC2 인스턴스 환경 설정 ✅
-  - [x] Task 16.3: 프로덕션 Dockerfile 작성 ✅
-  - [x] Task 16.4: 백엔드 배포 및 설정 ✅
-  - [x] Task 16.4.1: AWS 보안 그룹 설정 ✅
-  - [ ] Task 16.5: Nginx 역방향 프록시 및 SSL 설정
-  - [ ] Task 16.6: ElastiCache Redis 설정 (선택사항, 현재 Docker Redis 사용 중)
-  - [ ] Task 16.7: 모니터링 및 알림 설정
-  - [x] Task 16.8: 프론트엔드 환경변수 업데이트 ✅ **완료**
-    - 가이드 문서 작성 완료: `docs/FRONTEND_ENV_UPDATE.md`
-    - ✅ Vercel 환경변수 업데이트 완료: `NEXT_PUBLIC_API_URL=http://54.180.251.93`
-    - ✅ 재배포 완료
-    - 🔄 프론트엔드에서 새 백엔드 API 호출 테스트 진행 중
-  - [x] Task 16.9: 마이그레이션 검증 및 Rollback 계획 ✅ **완료**
-    - ✅ API 통합 테스트 완료 (모든 테스트 통과: 7/7)
-    - ✅ CORS 설정 확인 완료
-    - ✅ 검증 문서 작성 완료: `docs/MIGRATION_VERIFICATION.md`
-    - ✅ 마이그레이션 완료 요약 작성: `docs/MIGRATION_SUMMARY.md`
-    - ✅ 백엔드 로그 확인 (에러 없음)
-    - ✅ 서비스 상태 확인 (정상 작동)
-    - ✅ Mixed Content 문제 해결: Next.js API Route 프록시 구현
-    - 다음: 프론트엔드 재배포 및 테스트
+- [ ] Task 19: DNS/SSL 및 전환 계획 수립
 
 ### 🟡 In Progress (진행 중)
-- [x] Mixed Content 문제 해결 (진행 중)
-  - ✅ Next.js API Route 프록시 구현 완료
-  - ✅ 프론트엔드 API 클라이언트 수정 완료
-  - 🔄 프론트엔드 재배포 필요
-  - 다음: 재배포 후 테스트
+- [x] Task 13: 프론트엔드 - 데이터 내보내기 기능 (완료!)
+- [ ] Task 18: 배포 파이프라인 및 애플리케이션 배포
 
-<!-- 완료된 상세 기록 섹션은 간결화를 위해 제거되었습니다. 필요 시 Git 히스토리 또는 릴리즈 노트를 참조하세요. -->
+### 🟢 Completed (완료)
+
+**Task 1: 프로젝트 초기 설정 ✅**
+- ✅ TaskMaster 프로젝트 초기화
+- ✅ Next.js 14 프로젝트 생성 (TypeScript, Tailwind CSS, App Router)
+- ✅ FastAPI 백엔드 구조 생성
+- ✅ Docker Compose 설정 파일 작성
+- ✅ 백엔드 requirements.txt 작성 및 패키지 설치
+- ✅ 백엔드 메인 FastAPI 앱 구현 (CORS, health check)
+- ✅ Pydantic 스키마 정의 (Location, SolarCalculationRequest 등)
+- ✅ 환경 설정 파일 (.env, .env.example) 작성
+- ✅ .gitignore 작성
+- ✅ README.md 작성
+- ✅ FastAPI 서버 실행 (http://localhost:8000)
+
+**Task 2: 태양 위치 계산 API ✅**
+- ✅ SolarCalculator 서비스 클래스 구현 (pvlib-python 기반)
+- ✅ NREL SPA 알고리즘 통합
+- ✅ 경도 기반 timezone 자동 추정
+- ✅ 일출/일몰 시각 자동 산출
+- ✅ 극지방 특수 조건 처리
+- ✅ POST /api/solar/position 엔드포인트 구현
+- ✅ GET /api/solar/sunrise-sunset 엔드포인트 구현
+- ✅ GET /api/solar/test 엔드포인트 구현
+- ✅ 정확도 검증: 서울 하지 정오 74.80° (예상 76° 대비 오차 1.2°)
+- ✅ 시계열 데이터 일괄 계산 (벡터화)
+- ✅ API 문서 자동 생성 (Swagger)
+
+**Task 3: 그림자 계산 로직 ✅**
+- ✅ ShadowCalculator 서비스 클래스 구현
+- ✅ 그림자 길이 계산 (삼각법 기반)
+- ✅ 그림자 방향 계산 (태양 방위각 + 180°)
+- ✅ 태양 고도 0° 근처 특별 처리 (무한 그림자)
+- ✅ 그림자 끝점 좌표 계산 (구면 기하학)
+- ✅ 그림자 폴리곤 계산 (직사각형 물체)
+- ✅ 지형 경사 보정 기능
+- ✅ GET /api/shadow/calculate 엔드포인트 구현
+- ✅ GET /api/shadow/test 엔드포인트 구현
+- ✅ GET /api/shadow/validate 엔드포인트 구현
+- ✅ 정확도 검증: 4개 테스트 케이스 100% 통과
+- ✅ 오차율: 최대 0.11% (목표 2% 이내)
+
+**Task 4: 일사량 계산 기본 구현 ✅**
+- ✅ IrradianceCalculator 서비스 클래스 구현
+- ✅ Clear Sky Model (Ineichen) 통합
+- ✅ pvlib.location.Location 객체 활용
+- ✅ GHI/DNI/DHI 계산 완료
+- ✅ PAR (광합성 유효 복사) 계산
+- ✅ 일일 총 일사량 적분 (kWh/m²)
+- ✅ POA (Plane of Array) 일사량 계산 (경사면)
+- ✅ 일사량 통계 (max, mean, min, std)
+- ✅ 물리적 검증 (음수 값, 비현실적 값 체크)
+- ✅ GET /api/irradiance/calculate 엔드포인트 구현
+- ✅ GET /api/irradiance/test 엔드포인트 구현
+- ✅ GET /api/irradiance/sunrise-sunset-irradiance 엔드포인트 구현
+- ✅ 정확도 검증: GHI 945.39 W/m² (예상 1000 ± 10%, 오차 5.46%)
+- ✅ 일일 총량: 8.00 kWh/m²
+- ✅ 통합 API 구현 (POST /api/integrated/calculate)
+- ✅ 한 요청으로 태양+그림자+일사량 모두 계산
+
+**Task 5: Redis 캐싱 레이어 ✅**
+- ✅ RedisClient 싱글톤 클래스 구현
+- ✅ CacheManager 유틸리티 클래스
+- ✅ 캐시 키 생성 전략 (좌표 반올림, MD5 해시)
+- ✅ TTL 설정 (6시간)
+- ✅ 캐시 통계 추적
+- ✅ Graceful fallback (Redis 없이도 작동)
+- ✅ GET /api/cache/stats 엔드포인트
+- ✅ POST /api/cache/clear 엔드포인트
+- ✅ GET /api/cache/test 엔드포인트
+- ✅ 통합 API에 캐싱 적용
+- ✅ Redis 미설치 환경에서도 정상 작동 확인
+
+**Task 6: 프론트엔드 UI 기본 레이아웃 ✅**
+- ✅ Tailwind CSS 설정 (이미 Task 1에서 완료)
+- ✅ 반응형 레이아웃 구조 (Header, Sidebar, Main)
+- ✅ Header 컴포넌트 (로고, 다크 모드 토글, API 상태)
+- ✅ Sidebar 컴포넌트 (위치, 날짜, 물체 높이, 시각 입력)
+- ✅ MainContent 컴포넌트 (지도 영역, 차트 영역)
+- ✅ 다크 모드 지원 (토글 버튼 포함)
+- ✅ lucide-react 아이콘 통합
+- ✅ 빠른 선택 버튼 (서울/부산/제주, 오늘/하지/동지/춘분)
+- ✅ Slider 컴포넌트 (물체 높이)
+- ✅ 현재 설정 표시 패널
+
+**Task 7: 지도 통합 (MapLibre GL JS) ✅**
+- ✅ maplibre-gl 및 react-map-gl 설치
+- ✅ Map 컴포넌트 생성 (React 래퍼)
+- ✅ OpenStreetMap 타일 서버 연결 (CartoDB Voyager)
+- ✅ Dynamic import로 SSR 이슈 해결
+- ✅ 마커 표시 (빨간 핀 + 📍 이모지)
+- ✅ 지도 클릭 이벤트 처리 (onLocationChange)
+- ✅ 줌/패닝 컨트롤 (NavigationControl)
+- ✅ 내 위치 찾기 (GeolocateControl)
+- ✅ 좌표 표시 오버레이
+- ✅ 마커 드래그 가능 (기본 기능)
+- ✅ 상태 연동 (지도 ↔ 사이드바)
+
+**Task 8: 지오코딩 기능 구현 ✅**
+- ✅ Nominatim API 연동 (searchAddress 함수)
+- ✅ 역지오코딩 (reverseGeocode 함수)
+- ✅ 주소 자동완성 (디바운싱 500ms)
+- ✅ 검색 결과 드롭다운 (최대 5개)
+- ✅ 로딩 상태 표시 (Loader2 아이콘)
+- ✅ 한글 주소 지원 (Accept-Language: ko,en)
+- ✅ 영문 주소 지원
+- ✅ 지도 클릭 시 자동 역지오코딩
+- ✅ 디바운스 유틸리티 (500ms delay)
+- ✅ 오류 처리 (네트워크 실패, 빈 결과)
+
+**Task 9: 백엔드 API 통합 ✅**
+- ✅ API 클라이언트 라이브러리 (lib/api.ts)
+- ✅ TypeScript 인터페이스 정의
+- ✅ calculateSolar() 함수 (통합 API 호출)
+- ✅ 에러 핸들링 (try-catch, 상태 관리)
+- ✅ 로딩 상태 관리 (isLoading, setIsLoading)
+- ✅ 자동 계산 (useEffect로 location/date 변경 감지)
+- ✅ 실시간 데이터 표시 (태양 고도, 일사량, 그림자)
+- ✅ Summary 정보 표시 (일출/일몰, 일조시간, 총 일사량)
+- ✅ 데이터 포인트 카운트 표시
+- ✅ CORS 설정 확인 (백엔드에서 이미 완료)
+
+**Task 10: 타임라인 슬라이더 구현 ✅**
+- ✅ Timeline 컴포넌트 생성
+- ✅ 커스텀 슬라이더 (그라데이션 배경)
+- ✅ 시간 범위 표시 (05:00~20:00)
+- ✅ 현재 시각 인디케이터 (흰색 점)
+- ✅ Play/Pause 버튼
+- ✅ Step 버튼 (±1시간)
+- ✅ Skip 버튼 (처음/끝으로)
+- ✅ 재생 속도 조절 (0.5x, 1x, 2x, 5x)
+- ✅ 30fps 애니메이션 루프 (setInterval 33ms)
+- ✅ 자동 정지 (끝 도달 시)
+- ✅ 시각 연동 (슬라이더 ↔ 데이터)
+
+**Task 11: 태양/그림자 시각화 ✅**
+- ✅ 태양 위치 마커 (방위각 기반)
+- ✅ 태양 아이콘 (노란 원 + Sun 아이콘)
+- ✅ 태양 고도 표시 (툴팁)
+- ✅ 애니메이션 효과 (animate-pulse)
+- ✅ 그림자 벡터 렌더링 (보라색 선)
+- ✅ 그림자 끝점 마커 (보라색 점)
+- ✅ GeoJSON LineString 사용
+- ✅ 실시간 업데이트 (타임라인 연동)
+- ✅ 지도 오버레이에 실시간 정보
+- ✅ 태양이 지평선 아래일 때 숨김 (altitude > 0 체크)
+- ✅ 색상 구분 (태양: 노랑, 그림자: 보라)
+
+**Task 13: 데이터 내보내기 기능 ✅**
+- ✅ CSV 내보내기 (UTF-8 BOM, Excel 호환)
+- ✅ JSON 내보내기 (Pretty print)
+- ✅ 요약 텍스트 내보내기
+- ✅ 클립보드 복사 (JSON)
+- ✅ 파일명 자동 생성 (날짜 포함)
+- ✅ 다운로드 진행 상태 표시
+- ✅ Export 유틸리티 라이브러리 (lib/export.ts)
+- ✅ 모든 계산 결과 포함 (시간, 태양, 일사량, 그림자)
+- ✅ 브라우저 다운로드 폴더에 저장
+
+**Task 16: Render 배포 환경 인벤토리 작성 ✅**
+- ✅ Render Web Service(`sunpath-api`) 설정 확인: 리전 Singapore, Free 플랜(0.1 vCPU / 512MB), 브랜치 `master`, Auto Deploy On Commit, Deploy Hook 존재
+- ✅ Render Key Value(`sunpath_redis`) 설정 확인: Free 플랜(25MB / 50 connections), allkeys-lru, 내부 URL `redis://red-d3rluoc9c44c73aqq02u0:6379`
+- ✅ 환경 변수(`ALLOWED_ORIGINS`, `REDIS_URL`) 실운영 값 파악 및 AWS Parameter Store/Secrets Manager 이전 계획 수립
+- ✅ `docs/deployment/render_inventory.md` 문서화 완료
+
+**Task 17: AWS 배포 타깃 환경 준비 ✅**
+- ✅ EC2 SSH 접속 확인(키페어 `boam79-aws-key`, 사용자 `ubuntu`)
+- ✅ 시스템 패키지 업데이트 및 Docker 공식 리포지토리 등록
+- ✅ Docker CE, Buildx, Compose plugin 설치 완료 및 `docker run hello-world` 검증
+- ✅ `/opt/sunpath` 및 `/opt/sunpath/config` 디렉토리 생성, 권한 조정
+- ✅ 환경 변수 템플릿(`/opt/sunpath/config/backend.env`) 준비
+- ✅ UFW 및 보안 그룹 포트 전략 정의(22/80/443/8000)
 
 ### 🔴 Blocked (차단됨)
 *(현재 없음)*
@@ -180,238 +729,7 @@
 
 ## 💬 Executor's Feedback or Assistance Requests
 
-### 2025-11-11 - Mixed Content 문제 해결
-
-- ✅ **Mixed Content 문제 해결 완료**
-  - 문제: HTTPS 프론트엔드에서 HTTP 백엔드로 요청 시 "Failed to fetch" 오류
-  - 원인: 브라우저의 Mixed Content 정책 (HTTPS → HTTP 차단)
-  - 해결: Next.js API Route 프록시 구현
-
-- ✅ **구현 내용**:
-  - `frontend/app/api/proxy/[...path]/route.ts` 생성
-    - 모든 HTTP 메서드 지원 (GET, POST, PUT, PATCH, DELETE, OPTIONS)
-    - 백엔드로 요청 프록시 및 응답 전달
-    - CORS 헤더 처리
-  - `frontend/lib/api.ts` 수정
-    - Vercel 환경에서 HTTPS → HTTP 요청 시 자동으로 프록시 사용
-    - `/api/proxy` 경로로 자동 리다이렉트
-  - 문서 작성: `docs/MIXED_CONTENT_FIX.md`
-
-- 📝 **다음 단계**:
-  1. Git에 커밋 및 푸시
-  2. Vercel 자동 재배포 대기
-  3. 프론트엔드에서 API 호출 테스트
-  4. 모든 기능 정상 작동 확인
-  5. Render 서비스 중지 (검증 완료 후)
-
-### 2025-11-11 - 마이그레이션 완료 보고
-
-- ✅ **마이그레이션 성공적으로 완료**
-  - 모든 API 엔드포인트 정상 작동 확인
-  - API 통합 테스트 완료 (7/7 테스트 통과)
-  - CORS 설정 정상 작동 확인
-  - 프론트엔드 환경변수 업데이트 완료
-  - 재배포 완료
-  - Mixed Content 문제 해결 완료
-
-- ✅ **완료된 작업**:
-  - EC2 인스턴스 설정 완료
-  - Docker 환경 설정 완료
-  - 백엔드 배포 완료
-  - 보안 그룹 설정 완료
-  - Nginx 역방향 프록시 설정 완료
-  - Systemd 서비스 설정 완료
-  - 프론트엔드 환경변수 업데이트 완료
-  - API 통합 테스트 완료
-  - Mixed Content 문제 해결 (API 프록시 구현)
-
-- 📝 **다음 단계**:
-  1. 프론트엔드 재배포 (Git 커밋 및 푸시)
-  2. 프론트엔드에서 수동 테스트 (브라우저에서 위치 입력 및 계산 실행)
-  3. Render 서비스 중지 (검증 완료 후)
-  4. SSL 인증서 설정 (선택사항, 도메인 필요)
-
-- 📚 **참고 문서**:
-  - 마이그레이션 완료 요약: `docs/MIGRATION_SUMMARY.md`
-  - 마이그레이션 검증: `docs/MIGRATION_VERIFICATION.md`
-  - 마이그레이션 체크리스트: `docs/MIGRATION_CHECKLIST.md`
-  - Mixed Content 문제 해결: `docs/MIXED_CONTENT_FIX.md`
-
-### 2025-11-11 - Task 16.5 진행 상황 보고
-
-- ✅ **Nginx 역방향 프록시 설정 완료**
-  - Nginx 설치 확인 완료 (이미 설치됨)
-  - 역방향 프록시 설정 완료 (포트 80 → 8000)
-  - 포트 80 접근 테스트 성공: `http://54.180.251.93/health` 정상 작동
-  - CORS 설정 업데이트 완료 (프론트엔드 도메인 추가)
-  - 백엔드 재시작 완료 (새로운 CORS 설정 적용)
-
-- ✅ **완료된 작업**:
-  - Nginx 설정 파일 생성 (`/etc/nginx/sites-available/sunpath-backend`)
-  - 프록시 헤더 설정 (Host, X-Real-IP, X-Forwarded-For 등)
-  - 타임아웃 설정 (60초)
-  - Health check 엔드포인트 최적화
-  - CORS 환경변수 업데이트 (프론트엔드 도메인 추가)
-
-- ⚠️ **SSL 인증서 설정**:
-  - Let's Encrypt는 IP 주소로 인증서 발급 불가
-  - 도메인 이름 필요
-  - 옵션:
-    1. 도메인 구매/설정 후 Let's Encrypt 사용 (권장)
-    2. 자체 서명 인증서 사용 (개발/테스트용)
-    3. 현재 HTTP 상태로 진행 (프론트엔드 환경변수 업데이트 가능)
-
-- ✅ **추가 완료된 작업**:
-  - Systemd 서비스 설정 완료 (Docker Compose 자동 시작)
-  - 서비스 재시작 테스트 성공
-  - 마이그레이션 체크리스트 문서 작성 완료
-
-- 📝 **다음 단계** (우선순위 순):
-  1. **프론트엔드 환경변수 업데이트** (Vercel) - `NEXT_PUBLIC_API_URL=http://54.180.251.93`
-     - 가이드 문서: `docs/FRONTEND_ENV_UPDATE.md`
-     - Vercel 대시보드에서 환경변수 수정 필요
-  2. 프론트엔드에서 새 백엔드 API 호출 테스트
-  3. 모든 기능 정상 작동 확인
-  4. Render 서비스 중지 (검증 완료 후)
-  5. SSL 인증서 설정 (도메인 설정 후, 선택사항)
-
-### 2025-11-11 - Task 16.4 완료 보고
-
-- ✅ **백엔드 배포 및 설정 완료**
-  - EC2 인스턴스에 백엔드 코드 배포 완료
-  - Docker Compose로 서비스 실행 중
-  - Redis 연결 정상 작동 확인
-  - 포트 8000 외부 접근 가능 (보안 그룹 규칙 추가 완료)
-  - API 문서 접근 가능 (Swagger UI: http://54.180.251.93:8000/docs)
-  - 모든 주요 API 엔드포인트 정상 작동 확인
-
-- ✅ **완료된 작업**:
-  - 프로덕션 Dockerfile 작성
-  - docker-compose.prod.yml 작성
-  - EC2 인스턴스 환경 설정 (Docker, Docker Compose)
-  - 백엔드 코드 배포
-  - 보안 그룹 규칙 추가 (포트 8000)
-  - 외부 접근 테스트 성공
-
-### 2025-11-11 - Task 16.2 진행 상황 보고
-- ✅ EC2 인스턴스 환경 설정 완료
-  - Docker 및 Docker Compose 설치 완료
-  - 프로덕션 Dockerfile 작성 완료
-  - docker-compose.prod.yml 작성 완료
-  - 백엔드 코드 배포 완료
-  - Docker 컨테이너 실행 중 (포트 매핑 완료: 0.0.0.0:8000->8000/tcp)
-  - 로컬에서 API 정상 작동 확인
-- ✅ 해결된 이슈:
-  - 포트 충돌 문제 해결: 기존 systemd 서비스 중지 및 비활성화
-  - 포트 매핑 문제 해결: Docker 컨테이너 포트 매핑 정상 작동
-- ✅ 해결된 이슈 (추가):
-  - Redis 연결 문제 해결: Docker 네트워크에서 Redis 서비스 이름으로 정상 접근 확인 (`redis.ping() == True`)
-  - 백엔드 API 로컬 테스트 성공: `/health`, `/`, `/api/solar/test` 엔드포인트 정상 작동
-- ✅ 해결된 이슈 (최종):
-  - 포트 8000 외부 접근 가능: AWS 보안 그룹 규칙 추가 완료
-  - API 문서 접근 가능: Swagger UI 정상 표시 확인
-- 📝 다음 단계 (우선순위 순):
-  1. ✅ **AWS 보안 그룹에 포트 8000 인바운드 규칙 추가** - **완료**
-     - 보안 그룹: `sg-0a752260e811277f8 (launch-wizard-1)`
-     - 추가된 규칙: Custom TCP, 포트 8000, 소스: Anywhere-IPv4 (0.0.0.0/0)
-     - ✅ 외부 접근 테스트 성공: 모든 API 엔드포인트 접근 가능
-     - ✅ API 문서 접근 성공: Swagger UI 정상 표시
-  2. API 기능 테스트 및 검증
-     - 통합 API 엔드포인트 테스트
-     - 모든 주요 기능 정상 작동 확인
-     - 성능 테스트 (선택사항)
-  3. Nginx 역방향 프록시 설정 (포트 80 → 8000)
-  4. SSL 인증서 설정 (Let's Encrypt)
-  5. Systemd 서비스로 Docker Compose 자동 시작 설정
-  6. 프론트엔드 환경변수 업데이트 (Vercel)
-  7. Render 서비스 중지 (검증 완료 후)
-
-### 2025-01-XX - AWS 마이그레이션 요청
-- **요청 사항**: Render에서 AWS로 백엔드 서버 마이그레이션
-- **현재 상태 (Render)**: 
-  - **백엔드**: Render (https://sunpath-api.onrender.com)
-    - 서비스 이름: `sunpath-api`
-    - 리전: Singapore (Southeast Asia)
-    - 인스턴스 타입: Free (0.1 CPU, 512 MB)
-    - GitHub 저장소: `https://github.com/boam79/SunPath_Shadow_Simulator`
-    - 브랜치: `master`
-    - Root Directory: `backend`
-    - Build Command: `pip install -r requirements.txt`
-    - Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-    - Auto-Deploy: On Commit
-  - **프론트엔드**: Vercel (https://sunpathshadowsimulator.vercel.app)
-  - **Redis**: Render Redis (`sunbath_redis`)
-    - 리전: Singapore
-    - 인스턴스 타입: Free (25 MB RAM, 50 Connection Limit)
-    - 런타임: Valkey 8.1.4
-    - Internal URL: `redis://red-d3rluoc9c44c73aqo2u0:6379`
-    - Maxmemory Policy: `allkeys-lru`
-- **AWS 마이그레이션 진행 상황**:
-  - ✅ EC2 인스턴스 생성 완료 (t3.micro, ap-northeast-2 서울)
-  - ✅ Docker 및 Docker Compose 설치 완료
-  - ✅ 프로덕션 Dockerfile 작성 완료
-  - ✅ 백엔드 코드 배포 완료
-  - ✅ Docker 컨테이너 실행 중 (로컬 및 외부 테스트 성공)
-  - ✅ Redis 연결 확인 완료 (Docker 네트워크에서 정상 작동)
-  - ✅ 포트 8000 외부 접근 가능 (보안 그룹 규칙 추가 완료)
-  - ✅ API 문서 접근 가능 (Swagger UI 정상 표시)
-- **AWS 인프라 현황** (이미 생성됨):
-  - **EC2 인스턴스**: `i-030a6f1fd19110d16 (boam79-sever1)` ✅
-    - 인스턴스 타입: t3.micro
-    - 상태: 실행 중 (Running)
-    - 퍼블릭 IP: 54.180.251.93
-    - 프라이빗 IP: 172.31.9.180
-    - 퍼블릭 DNS: ec2-54-180-251-93.ap-northeast-2.compute.amazonaws.com
-    - 리전: ap-northeast-2 (서울)
-    - AMI: Ubuntu 22.04 LTS (ami-010be25c3775061c9)
-    - 키 페어: boam79-aws-key (키 파일 위치: `./boam79-aws-key.pem`)
-    - 보안 그룹: sg-0a752260e811277f8 (launch-wizard-1)
-      - 인바운드: 포트 80 (HTTP), 포트 22 (SSH) - 0.0.0.0/0 허용
-      - 아웃바운드: 전체 허용
-    - VPC: vpc-0ab02b8bf93b52691
-    - 서브넷: subnet-00759daaf2c8b593d
-- **마이그레이션 목표**:
-  - Render cold start 문제 해결
-  - 더 나은 성능 및 확장성
-  - 비용 효율성 개선
-  - 향상된 모니터링 및 로깅
-- **선택한 AWS 서비스**:
-  - **컨테이너 배포**: ECS Fargate (권장) 또는 Elastic Beanstalk
-    - **대안**: 기존 EC2 인스턴스 활용 (이미 생성됨) ✅
-  - **Redis**: ElastiCache for Redis
-  - **컨테이너 레지스트리**: ECR (Elastic Container Registry)
-  - **로드 밸런서**: Application Load Balancer (선택사항)
-  - **도메인/SSL**: Route 53 + ACM
-  - **모니터링**: CloudWatch
-  - **CI/CD**: GitHub Actions
-- **다음 단계**:
-  1. EC2 인스턴스에 접속하여 환경 설정
-  2. Docker 및 Docker Compose 설치
-  3. 백엔드 애플리케이션 배포
-  4. Nginx 또는 역방향 프록시 설정 (SSL/HTTPS)
-  5. ElastiCache Redis 설정
-  6. 모니터링 및 로깅 설정
-- **참고 사항**:
-  - 키 파일은 프로젝트 루트에 있음: `./boam79-aws-key.pem`
-  - 보안 그룹 규칙 검토 필요 (현재 0.0.0.0/0에서 포트 22, 80 허용)
-  - 프로덕션 환경에서는 SSH 접근을 제한하는 것이 좋음
-
-<!-- 간결화를 위해 일일/세부 실행 보고는 생략합니다. 중요 변경 사항은 커밋 메시지와 릴리즈 노트로 관리합니다. -->
- 
----
- 
-## 📚 Lessons (요약)
-- 출력에 디버깅 유용 정보 포함
-- 파일 편집 전 먼저 읽기
-- 취약점 표시되면 `npm audit` 선 실행
-- `-force` git 사용 전 사용자 확인
- 
----
- 
-## 📝 Notes (요약)
-- **우선순위**: P0(핵심) / P1(조정 가능) / P2(이연)
-- **작업 순서**: 백엔드 → 프론트 통합 → 테스트 → 배포
-- **다음 단계**: Task 12 → Task 14 → Task 15
+### 2025-10-20 - Task 1 완료 보고
 
 **완료 항목:**
 ✅ Task 1.1: Next.js 14 프로젝트 초기화 완료
@@ -867,6 +1185,67 @@ Redis는 성능 최적화 목적이므로, 없어도 모든 기능이 작동합�
 - ✅ JSON 파일이 유효한 형식
 - ✅ 모든 계산 결과 포함
 - ✅ 브라우저 다운로드 폴더에 저장
+
+### 2025-11-10 - Task 16 진행 시작
+
+- Render 배포 가이드(README)와 코드베이스에서 기존 설정, 빌드/실행 커맨드, 환경변수 목록을 수집했습니다.
+- 백엔드 환경변수는 `ALLOWED_ORIGINS`, `REDIS_URL`, `.env` 기반 Redis 설정이 핵심임을 확인했습니다.
+- Render가 제공하는 자동 배포/로그/헬스체크 정보는 README 기준으로만 파악되어 실제 대시보드 세부값 확인이 필요합니다.
+- 실제 운영값(예: `ALLOWED_ORIGINS`, `REDIS_URL` 실주소)은 민감 정보라 사용자 확인이 필요합니다. AWS Parameter Store/Secrets Manager로 이전 예정이니 값 공유 방법을 논의해주세요.
+- 인벤토리 문서를 `docs/deployment/render_inventory.md`에 작성해 AWS 전환 시 참고할 수 있게 정리했습니다.
+
+### 2025-11-10 - Task 16 완료 보고
+
+- 사용자 제공 Render 대시보드 스크린샷을 기반으로 Web Service/Key Value 세부 설정(리전, 인스턴스 스펙, auto-deploy, deploy hook, 내부 Redis URL 등)을 모두 문서화했습니다.
+- `docs/deployment/render_inventory.md` 갱신으로 AWS 전환 시 필요한 체크리스트가 확정되었고, Task 16 성공 기준을 충족했습니다.
+- 다음 단계는 AWS 인스턴스 준비(Task 17)로 넘어갑니다. 추가로 공유할 Render 비밀 값이 있다면 Parameter Store/Secrets Manager에 직접 등록하거나 안전한 채널로 전달 부탁드립니다.
+
+### 2025-11-10 - Task 17 진행 준비
+
+- 사용자로부터 AWS 서버가 이미 생성되어 있다는 정보를 받았습니다. 세부 구성(OS, 퍼블릭 IP/호스트네임, SSH 포트, 보안 그룹 규칙 등)을 확인해야 설치 스크립트와 포트 오픈을 계획할 수 있습니다.
+- Task 17 세부 작업을 위해 필요한 정보:
+  1. **접속 방식**: SSH 사용자 계정명, 키 페어 경로 또는 비밀번호 방식 여부
+  2. **서버 사양**: OS 버전(예: Ubuntu 22.04), 인스턴스 타입, 퍼블릭 IP
+  3. **보안 그룹/방화벽**: 현재 허용된 포트 목록(22, 80, 443, 8000 등)과 추가 개방 필요 여부
+  4. **도메인 연계 예정 여부**: 추후 DNS/SSL 계획에 사용
+- 위 정보를 받는 즉시 Task 17의 실제 설치/설정 절차(Docker 설치, 디렉터리 구조 생성, 환경 변수 저장 방식 테스트)를 진행하겠습니다.
+
+### 2025-11-10 - Task 17 정보 업데이트
+
+- AWS EC2 인스턴스 요약 스크린샷 공유됨: `i-030a6f1fd19110d16`, 인스턴스명 `boam79-sever1`(typo 추정), 리전 `ap-northeast-2 (Seoul)`, 퍼블릭 IP `54.180.251.93`, 프라이빗 IP `172.31.9.180`, 인스턴스 타입 `t3.micro`.
+- VPC `vpc-0ab02b8bf93b52691`, 서브넷 `subnet-00759daaf62c8b593d`. EC2 상태는 실행 중.
+- 아직 필요한 추가 정보: OS/AMI 종류, SSH 사용자 계정/Key Pair 이름, 보안 그룹에서 허용된 포트 리스트(22,80,443,8000 등), 향후 사용할 도메인 여부. 확보되면 Docker 설치 및 포트 설정을 진행 예정.
+
+### 2025-11-10 - Task 17 세부 정보 수집 완료
+
+- AMI: `ami-001be25c3775061c9` (`ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20251015`), OS는 Ubuntu 22.04 LTS 가정.
+- 기본 SSH Key Pair: `boam79-aws-key`, SSH 기본 사용자 계정은 Ubuntu AMI 기준 `ubuntu`.
+- 보안 그룹: `sg-0a7525206e811277f8 (launch-wizard-1)`이 연결되어 있으며, 현재 인바운드 규칙은 22/TCP(0.0.0.0/0)만 허용. 아웃바운드는 전체 허용.
+- 아직 개방되지 않은 포트 80/443/8000 등을 AWS 보안 그룹과, 필요 시 OS 방화벽(ufw)에서 추가 오픈해야 함.
+- 다음 단계로, SSH 키를 이용한 접속 확인 → Docker & Docker Compose 설치 → 애플리케이션 배포 디렉토리 준비 → 환경 변수 저장 전략 테스트 순으로 진행 예정. 도메인 계획은 추후(Task 19)에서 다룰 예정.
+- SSH Key Pair(`boam79-aws-key`)의 개인키(.pem) 경로 혹은 전달 방식이 필요합니다. 존재 여부와 사용 가능한 로컬 경로를 알려주시면 접속 스크립트를 준비하겠습니다.
+- 사용자 응답 "@boam79-aws-key.pem (2-26)"는 키 위치로 추정되나 정확한 파일 경로나 접근 방법이 불명확합니다. 예: `C:\Users\{사용자}\.ssh\boam79-aws-key.pem` 형태로 명시가 필요. 확인해야 다음 단계 진행 가능.
+- 사용자 스크린샷 기준으로 프로젝트 루트에 `boam79-aws-key.pem` 파일이 존재함을 확인. (워크스페이스 싱크가 일부 도구에서 보이지 않았던 것으로 추정) 파일 경로: `C:\Users\gmhos\Desktop\pjm7908\Github\SunPath_Shadow_Simulator\boam79-aws-key.pem`.
+- Docker 설치 및 서버 초기 세팅 절차(apt update → Docker 저장소 등록 → docker-ce & compose 설치 → docker 그룹 추가 → `/opt/sunpath` 디렉터리 생성 → 환경 변수 파일 준비 → UFW 포트 개방)를 사용자에게 전달하여 실행 준비 완료 상태.
+
+### 2025-11-10 - Task 17 완료 보고
+
+- Docker/Compose 설치 및 `docker run --rm hello-world` 테스트 수행으로 컨테이너 런타임 정상 확인.
+- `/opt/sunpath` 및 `/opt/sunpath/config/backend.env` 준비 완료, 환경 변수 템플릿 작성.
+- UFW 포트 전략(22/80/443/8000) 확정, 보안 그룹과 일치 여부 확인 필요.
+- Task 17 성공 기준 충족 → 완료 처리, 다음 단계(Task 18) 준비.
+
+### 2025-11-10 - Task 18 착수
+
+- 배포 접근 방식 결정: EC2 인스턴스 내 `/opt/sunpath`에 Git 저장소를 직접 클론하여 수동 배포 파이프라인을 먼저 구축한 후, GitHub Actions 기반 SSH 자동화를 추가하는 단계적 전략으로 진행.
+- 1차 목표는 FastAPI 백엔드를 EC2에서 서비스하도록 구성(systemd 서비스, 환경 변수 로딩, 포트 설정). 이후 같은 절차를 CI/CD로 자동화.
+- 다음 액션: EC2에 Git/필요 패키지 설치 확인, `/opt/sunpath` 하위에 리포지토리 클론, 백엔드 실행 스크립트 및 systemd 서비스 정의.
+- 진행 상황 업데이트: Git 설치 확인(`git version 2.x` ) → `/opt/sunpath/app` 경로에 저장소 클론 완료.
+- FastAPI용 가상환경 생성, requirements 설치, systemd 서비스(`/etc/systemd/system/sunpath-backend.service`) 작성 및 `curl http://localhost:8000/health` 로 정상 동작 확인 완료.
+- Nginx 설치 및 커스텀 서버 블록 적용, 기본 사이트 비활성화 → `http://54.180.251.93/health` 외부에서도 JSON 응답 확인 완료.
+- 배포 전용 SSH 키(`sunpath-deploy`) 생성 및 EC2 `authorized_keys` 등록, 로컬에서 새 키로 접속 검증 완료 (Task 18 자동화 준비).
+- GitHub Actions Secrets(`EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`) 저장 완료 → 자동 배포 워크플로 작성 단계 진입.
+- `.github/workflows/deploy-backend.yml` 추가: master/main push 시 SSH로 EC2에 접속해 git pull·pip install·서비스 재시작 후 헬스체크 수행하는 CI/CD 파이프라인 구성.
 
 **다음 단계:**
 Task 12 (차트)를 건너뛰고 핵심 기능 테스트 후 최종 정리합니다.
