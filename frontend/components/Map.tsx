@@ -169,8 +169,6 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
           <GeolocateControl
             position="top-right"
             trackUserLocation={false}
-            showUserHeading={false}
-            showUserLocation={false}
             onGeolocate={(e) => {
               try {
                 const { latitude, longitude } = e.coords;
@@ -181,15 +179,14 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
                   return;
                 }
                 onLocationChange(latitude, longitude);
-              } catch (error) {
+              } catch {
                 // 에러를 조용히 무시 (사이드바의 현재 위치 버튼 사용)
               }
             }}
-            onError={(error) => {
+            onError={() => {
               // CoreLocation 에러를 조용히 무시
               // 브라우저 콘솔에 에러가 표시될 수 있지만, 애플리케이션 동작에는 영향 없음
               // 사이드바의 "현재 위치 사용" 버튼을 사용하면 됨
-              void error; // 사용하지 않는 변수 경고 방지
             }}
           />
         )}

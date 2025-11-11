@@ -19,10 +19,6 @@ const getApiBaseUrl = () => {
   
   // 브라우저에서 실행 중인 경우
   if (typeof window !== 'undefined') {
-    // Vercel 환경 확인 (hostname 기반)
-    const isVercel = window.location.hostname.includes('vercel.app') || 
-                     window.location.hostname.includes('vercel.dev');
-    
     // HTTPS 페이지에서 HTTP 백엔드로 요청하는 경우 프록시 사용
     if (window.location.protocol === 'https:' && apiUrl.startsWith('http://')) {
       // Mixed Content 문제를 해결하기 위해 Next.js API Route 프록시 사용
