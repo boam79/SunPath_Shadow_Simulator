@@ -36,6 +36,9 @@
 ### Infrastructure
 - **Docker** - 컨테이너화
 - **Docker Compose** - 로컬 개발 환경
+- **AWS EC2** - 백엔드 프로덕션 서버 (v0.1.12+)
+- **Nginx** - 역방향 프록시
+- **Vercel** - 프론트엔드 호스팅
 
 ## 🚀 시작하기
 
@@ -200,9 +203,33 @@ vercel
 - 자동 HTTPS 적용
 - Git push 시 자동 재배포
 
-### Backend 배포 (Render 권장)
+### Backend 배포
 
-#### Render 배포
+#### AWS EC2 배포 (현재 사용 중, v0.1.12+)
+
+**AWS EC2 인스턴스 설정:**
+- **인스턴스 타입**: t3.micro
+- **리전**: ap-northeast-2 (서울)
+- **AMI**: Ubuntu 22.04 LTS
+- **퍼블릭 IP**: `54.180.251.93`
+
+**배포 절차:**
+1. EC2 인스턴스 생성 및 보안 그룹 설정 (포트 22, 80, 8000)
+2. Docker 및 Docker Compose 설치
+3. 프로덕션 Dockerfile로 이미지 빌드
+4. Nginx 역방향 프록시 설정 (포트 80 → 8000)
+5. Systemd 서비스 설정 (자동 시작)
+6. 환경변수 설정 (`.env` 파일)
+
+**상세 가이드:**
+- [AWS 마이그레이션 완료 요약](./docs/MIGRATION_SUMMARY.md)
+- [AWS 사용 확인 방법](./docs/AWS_USAGE_VERIFICATION.md)
+- [Mixed Content 문제 해결](./docs/MIXED_CONTENT_FIX.md)
+
+#### Render 배포 (이전, v0.1.11 이하)
+
+> **참고**: v0.1.12부터 AWS EC2로 마이그레이션되었습니다.
+
 1. [Render](https://render.com)에 가입/로그인
 2. **New +** → **Web Service** 선택
 3. GitHub 저장소 연결
@@ -219,7 +246,13 @@ vercel
    ```
 6. **Create Web Service** 클릭
 
-#### Redis 추가 (Render)
+#### Redis 설정
+
+**AWS EC2 (현재):**
+- Docker Compose로 Redis 컨테이너 실행
+- 또는 AWS ElastiCache 사용 가능 (선택사항)
+
+**Render (이전):**
 1. **New +** → **Redis** 선택
 2. Redis 인스턴스 생성
 3. Internal Redis URL을 백엔드 `REDIS_URL`에 연결
@@ -234,23 +267,35 @@ vercel
 
 ### 🎉 배포 완료 현황
 
-**프로덕션 환경:**
+**프로덕션 환경 (v0.1.12+):**
 - ✅ **Frontend**: https://sunpathshadowsimulator.vercel.app (Vercel)
-- ✅ **Backend**: https://sunpath-api.onrender.com (Render)
-- ✅ **Redis**: Render Redis 인스턴스 연결됨
+- ✅ **Backend**: http://54.180.251.93 (AWS EC2) 🆕
+- ✅ **Redis**: Docker Compose Redis 컨테이너 (AWS EC2)
+- ✅ **Nginx**: 역방향 프록시 (포트 80 → 8000)
 - ✅ **CORS**: 환경변수 기반 설정으로 해결
-- ✅ **자동 배포**: Git push 시 자동 재배포 활성화
+- ✅ **Mixed Content**: Next.js API Route 프록시로 해결 🆕
+- ✅ **자동 시작**: Systemd 서비스로 부팅 시 자동 시작
+- ✅ **자동 배포**: Git push 시 프론트엔드 자동 재배포 (Vercel)
+
+**이전 프로덕션 환경 (v0.1.11 이하):**
+- ⚠️ **Backend**: https://sunpath-api.onrender.com (Render) - 마이그레이션 완료
+- ⚠️ **Redis**: Render Redis 인스턴스 - 마이그레이션 완료
 
 **주요 해결 사항:**
+- ✅ AWS EC2 마이그레이션 완료 (v0.1.12) 🆕
+- ✅ Cold Start 문제 해결 (항상 실행 중)
+- ✅ 응답 시간 개선 (100-200ms, 일관성 있음)
+- ✅ Mixed Content 문제 해결 (Next.js API Route 프록시) 🆕
 - ✅ CORS 오류 해결 (환경변수 기반 `ALLOWED_ORIGINS` 설정)
-- ✅ Render 백엔드 502 오류 해결 (수동 재배포)
 - ✅ 프론트엔드-백엔드 API 통신 정상화
 - ✅ 실시간 태양 경로 및 그림자 시뮬레이션 정상 작동
+- ✅ Nginx 역방향 프록시 설정 완료 🆕
+- ✅ Systemd 서비스 자동 시작 설정 완료 🆕
 
 ### 대안 플랫폼
 - **Frontend**: Netlify, Cloudflare Pages
-- **Backend**: Railway, Fly.io, Google Cloud Run, AWS Elastic Beanstalk
-- **Redis**: Upstash, Redis Cloud
+- **Backend**: AWS EC2 (현재 사용 중), Railway, Fly.io, Google Cloud Run, AWS Elastic Beanstalk, Render
+- **Redis**: AWS ElastiCache, Upstash, Redis Cloud, Docker Compose
 
 ## 🗺️ 개발 로드맵
 
@@ -281,7 +326,10 @@ vercel
 - [x] Perez Sky Model, 배치 계산 API, 계절 비교
 - [x] 성능 최적화 (useMemo, 렌더링 최적화)
 - [x] 계산 정밀도 개선 (좌표 0.1m)
+- [x] AWS EC2 마이그레이션 (v0.1.12) 🆕
+- [x] Mixed Content 문제 해결 (v0.1.12) 🆕
 - [ ] 네이버 지도 통합 (예정)
+- [ ] SSL 인증서 설정 (도메인 필요)
 
 ---
 
@@ -310,7 +358,14 @@ vercel
 
 ## 📋 최근 버전
 
-### v0.1.11 (최신)
+### v0.1.12 (최신) 🆕
+- **AWS EC2 마이그레이션**: Render에서 AWS EC2로 백엔드 마이그레이션 완료
+- **성능 개선**: Cold Start 문제 해결, 응답 시간 개선 (100-200ms)
+- **Mixed Content 해결**: Next.js API Route 프록시 구현
+- **인프라 개선**: Nginx 역방향 프록시, Systemd 자동 시작 설정
+- **문서화**: AWS 마이그레이션 가이드 및 확인 방법 문서 추가
+
+### v0.1.11
 - **다국어 지원 확장**: 모든 새 기능 번역 (배치/계절/고급옵션/프리셋)
 - **헤더 초기화**: 클릭 시 서울 기본 위치로 재설정
 - **UX 개선**: 초기 렌더링 중복 계산 방지
@@ -357,5 +412,5 @@ MVP: 태양 경로, 그림자, 일사량 계산, 타임라인 애니메이션
 
 ---
 
-**버전:** 0.1.11
-**최종 수정:** 2025-11-02
+**버전:** 0.1.12
+**최종 수정:** 2025-11-11
