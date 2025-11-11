@@ -35,8 +35,8 @@ void isVercelEnv; // currently not used but kept for future behavior toggles
 
 /**
  * Fetch with automatic retry using exponential backoff
- * Retries on network errors or 5xx server errors (Render cold start)
- * Does not retry on 4xx client errors
+ * Retries on network errors or 5xx server errors (but not 504 timeout)
+ * Does not retry on 4xx client errors or 504 timeout errors
  */
 async function fetchWithRetry(
   url: string,
@@ -48,20 +48,53 @@ async function fetchWithRetry(
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch(url, options);
+      // 타임아웃 설정 (65초 - 프록시보다 약간 길게)
+      const TIMEOUT_MS = 65000;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
       
-      // Don't retry on 4xx client errors (bad request)
-      if (response.status >= 400 && response.status < 500) {
-        return response;
+      const fetchOptions = {
+        ...options,
+        signal: controller.signal,
+      };
+      
+      try {
+        const response = await fetch(url, fetchOptions);
+        clearTimeout(timeoutId);
+        
+        // 504 Gateway Timeout은 재시도하지 않음 (백엔드 문제)
+        if (response.status === 504) {
+          return response;
+        }
+        
+        // Don't retry on 4xx client errors (bad request)
+        if (response.status >= 400 && response.status < 500) {
+          return response;
+        }
+        
+        // Retry on 5xx server errors (except 504) or network errors
+        if (response.ok || attempt === maxRetries) {
+          return response;
+        }
+        
+        // If we get here, it's a 5xx error and we should retry
+        lastError = new Error(`Server error: ${response.status}`);
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        
+        // 타임아웃 에러는 재시도하지 않음
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          lastError = new Error(`Request timeout: 요청이 ${TIMEOUT_MS / 1000}초 내에 완료되지 않았습니다.`);
+          break; // 타임아웃은 재시도하지 않음
+        }
+        
+        lastError = fetchError instanceof Error ? fetchError : new Error('Network error');
+        
+        // If this is the last attempt, throw the error
+        if (attempt === maxRetries) {
+          throw lastError;
+        }
       }
-      
-      // Retry on 5xx server errors or network errors
-      if (response.ok || attempt === maxRetries) {
-        return response;
-      }
-      
-      // If we get here, it's a 5xx error and we should retry
-      lastError = new Error(`Server error: ${response.status}`);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error('Network error');
       
@@ -194,10 +227,25 @@ export async function calculateSolar(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      const errorMessage = typeof error.detail === 'string'
-        ? error.detail
-        : error.message || error.detail?.message || 'API request failed';
+      let errorMessage = 'API request failed';
+      try {
+        const error = await response.json();
+        // 프록시에서 반환한 에러 메시지 우선 사용
+        errorMessage = error.message || 
+          (typeof error.detail === 'string' ? error.detail : error.detail?.message) ||
+          `Server returned status ${response.status}`;
+      } catch {
+        // JSON 파싱 실패 시 상태 코드 기반 메시지
+        if (response.status === 504) {
+          errorMessage = '요청이 타임아웃되었습니다. 백엔드 서버 응답이 너무 오래 걸립니다.';
+        } else if (response.status >= 500) {
+          errorMessage = '백엔드 서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        } else if (response.status === 404) {
+          errorMessage = '요청한 리소스를 찾을 수 없습니다.';
+        } else {
+          errorMessage = `서버 오류 (${response.status})`;
+        }
+      }
       throw new Error(errorMessage);
     }
 
