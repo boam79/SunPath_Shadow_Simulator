@@ -2,7 +2,28 @@
  * API client for SunPath & Shadow Simulator backend
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// API URL 설정
+// Vercel 환경에서 HTTP 백엔드를 사용하는 경우 프록시를 통해 요청하여 Mixed Content 문제 해결
+const getApiBaseUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  
+  // 브라우저에서 실행 중인 경우
+  if (typeof window !== 'undefined') {
+    // Vercel 환경 확인 (hostname 기반)
+    const isVercel = window.location.hostname.includes('vercel.app') || 
+                     window.location.hostname.includes('vercel.dev');
+    
+    // HTTPS 페이지에서 HTTP 백엔드로 요청하는 경우 프록시 사용
+    if (window.location.protocol === 'https:' && apiUrl.startsWith('http://')) {
+      // Mixed Content 문제를 해결하기 위해 Next.js API Route 프록시 사용
+      return '/api/proxy';
+    }
+  }
+  
+  return apiUrl;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Vercel 환경 감지 (preview/production 또는 VERCEL 환경변수 존재 여부)
 const isVercelEnv = !!(

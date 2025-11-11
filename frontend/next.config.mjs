@@ -3,6 +3,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   },
+  // Next.js API Route를 사용하여 프록시하므로 rewrites 불필요
   typescript: {
     // 프로덕션 빌드 시 타입 에러 무시 (선택사항)
     // ignoreBuildErrors: false,
