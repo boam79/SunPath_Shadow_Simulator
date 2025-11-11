@@ -170,11 +170,10 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
             }
             onLocationChange(latitude, longitude);
           }}
-          onError={(e) => {
+          onError={() => {
             // CoreLocation 에러를 조용히 무시 (사이드바의 현재 위치 버튼 사용)
-            if (process.env.NODE_ENV === 'development') {
-              console.debug('GeolocateControl error:', e);
-            }
+            // 프로덕션에서는 콘솔에 아무것도 출력하지 않음
+            // 개발 모드에서도 조용히 처리 (불필요한 경고 방지)
           }}
         />
 

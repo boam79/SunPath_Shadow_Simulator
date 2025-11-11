@@ -166,7 +166,10 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
           })
           .catch((err) => {
             // Silently fallback to local calculation
-            console.warn('최적화 API 실패, 로컬 계산으로 전환:', err);
+            // 개발 모드에서만 경고 출력
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('최적화 API 실패, 로컬 계산으로 전환:', err);
+            }
             setUseBackend(false);
             setIsLoading(false);
             // Use local calculation immediately

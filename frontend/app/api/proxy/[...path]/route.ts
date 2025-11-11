@@ -6,6 +6,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// 개발 모드에서만 로그 출력
+const log = (...args: unknown[]) => {
+  if (isDevelopment) {
+    console.log(...args);
+  }
+};
+
+const logError = (...args: unknown[]) => {
+  // 에러는 항상 로그 (프로덕션에서도 디버깅 필요)
+  console.error(...args);
+};
 
 export async function GET(
   request: NextRequest,
@@ -74,7 +87,7 @@ async function proxyRequest(
     // 백엔드 URL 구성 (예: http://54.180.251.93/api/integrated/calculate)
     const targetUrl = `${BACKEND_URL}/${path}${queryString}`;
     
-    console.log(`[API Proxy] ${method} ${path} -> ${targetUrl}`);
+    log(`[API Proxy] ${method} ${path} -> ${targetUrl}`);
 
     // 요청 본문 가져오기
     let body: string | undefined;
@@ -106,7 +119,7 @@ async function proxyRequest(
       
       // 타임아웃 에러 처리
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error(`[API Proxy] Timeout after ${TIMEOUT_MS}ms: ${targetUrl}`);
+        logError(`[API Proxy] Timeout after ${TIMEOUT_MS}ms: ${targetUrl}`);
         return NextResponse.json(
           { 
             error: 'Request timeout', 
@@ -118,7 +131,7 @@ async function proxyRequest(
       }
       
       // 네트워크 에러 처리
-      console.error('[API Proxy] Network error:', fetchError);
+      logError('[API Proxy] Network error:', fetchError);
       return NextResponse.json(
         { 
           error: 'Network error', 
@@ -131,14 +144,14 @@ async function proxyRequest(
     
     clearTimeout(timeoutId);
     const elapsedTime = Date.now() - startTime;
-    console.log(`[API Proxy] ${method} ${path} completed in ${elapsedTime}ms`);
+    log(`[API Proxy] ${method} ${path} completed in ${elapsedTime}ms`);
 
     // 응답 데이터 가져오기
     let data: string;
     try {
       data = await response.text();
     } catch (readError) {
-      console.error('[API Proxy] Failed to read response:', readError);
+      logError('[API Proxy] Failed to read response:', readError);
       return NextResponse.json(
         { 
           error: 'Response read error', 
@@ -157,7 +170,7 @@ async function proxyRequest(
 
     // 504 Gateway Timeout 에러 처리
     if (response.status === 504) {
-      console.error(`[API Proxy] Backend returned 504: ${targetUrl}`);
+      logError(`[API Proxy] Backend returned 504: ${targetUrl}`);
       return NextResponse.json(
         { 
           error: 'Gateway timeout', 
@@ -170,7 +183,7 @@ async function proxyRequest(
 
     // 5xx 서버 에러 처리
     if (response.status >= 500) {
-      console.error(`[API Proxy] Backend server error ${response.status}: ${targetUrl}`);
+      logError(`[API Proxy] Backend server error ${response.status}: ${targetUrl}`);
       return NextResponse.json(
         { 
           error: 'Backend server error', 
@@ -203,7 +216,7 @@ async function proxyRequest(
     });
   } catch (error) {
     clearTimeout(timeoutId);
-    console.error('[API Proxy] Unexpected error:', error);
+    logError('[API Proxy] Unexpected error:', error);
     return NextResponse.json(
       { 
         error: 'Proxy request failed', 

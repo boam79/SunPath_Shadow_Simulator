@@ -2,6 +2,16 @@
  * API client for SunPath & Shadow Simulator backend
  */
 
+// Development mode check
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// 개발 모드에서만 로그 출력
+const log = (...args: unknown[]) => {
+  if (isDevelopment) {
+    console.log(...args);
+  }
+};
+
 // API URL 설정
 // Vercel 환경에서 HTTP 백엔드를 사용하는 경우 프록시를 통해 요청하여 Mixed Content 문제 해결
 const getApiBaseUrl = () => {
@@ -107,7 +117,7 @@ async function fetchWithRetry(
     // Exponential backoff: wait before retrying
     // Delay: 1s, 2s, 4s for attempts 0, 1, 2
     const delay = initialDelay * Math.pow(2, attempt);
-    console.log(`⚠️ API request failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`);
+    log(`⚠️ API request failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`);
     await new Promise(resolve => setTimeout(resolve, delay));
   }
   
@@ -251,7 +261,10 @@ export async function calculateSolar(
 
     return await response.json();
   } catch (error) {
-    console.error('Calculate solar error:', error);
+    // 프로덕션에서도 에러 로그는 유지 (디버깅 필요)
+    if (isDevelopment) {
+      console.error('Calculate solar error:', error);
+    }
     // 더미 데이터 사용 금지: 실제 백엔드 연결 실패 시 오류를 그대로 전달
     throw error instanceof Error ? error : new Error('Backend API request failed');
   }
@@ -276,7 +289,9 @@ export async function getSunriseSunset(
 
     return await response.json();
   } catch (error) {
-    console.error('Sunrise/sunset error:', error);
+    if (isDevelopment) {
+      console.error('Sunrise/sunset error:', error);
+    }
     throw error;
   }
 }
@@ -302,7 +317,9 @@ export async function calculateShadow(
 
     return await response.json();
   } catch (error) {
-    console.error('Shadow calculation error:', error);
+    if (isDevelopment) {
+      console.error('Shadow calculation error:', error);
+    }
     throw error;
   }
 }
@@ -320,7 +337,9 @@ export async function getCacheStats(): Promise<{ [key: string]: unknown } | null
 
     return await response.json();
   } catch (error) {
-    console.error('Cache stats error:', error);
+    if (isDevelopment) {
+      console.error('Cache stats error:', error);
+    }
     return null;
   }
 }
@@ -334,7 +353,9 @@ export async function healthCheck(): Promise<boolean> {
     const response = await fetchWithRetry(`${API_BASE_URL}/health`, {}, 1, 500);
     return response.ok;
   } catch (error) {
-    console.error('Health check failed:', error);
+    if (isDevelopment) {
+      console.error('Health check failed:', error);
+    }
     return false;
   }
 }
@@ -397,7 +418,9 @@ export async function optimizePeriods(
 
     return await response.json();
   } catch (error) {
-    console.error('Optimization error:', error);
+    if (isDevelopment) {
+      console.error('Optimization error:', error);
+    }
     throw error;
   }
 }
@@ -431,7 +454,9 @@ export async function calculateBatch(
 
     return await response.json();
   } catch (error) {
-    console.error('Batch calculation error:', error);
+    if (isDevelopment) {
+      console.error('Batch calculation error:', error);
+    }
     throw error;
   }
 }

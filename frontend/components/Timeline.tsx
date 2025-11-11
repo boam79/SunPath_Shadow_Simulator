@@ -47,13 +47,17 @@ export default function Timeline({
   // Convert time string to minutes with improved error handling
   const timeToMinutes = useCallback((time: string): number => {
     if (!time || typeof time !== 'string') {
-      console.error(`Invalid time input: ${time}`);
+      if (isDevelopment) {
+        console.error(`Invalid time input: ${time}`);
+      }
       return 0;
     }
 
     const parts = time.split(':');
     if (parts.length < 2 || parts.length > 2) {
-      console.error(`Invalid time format: ${time} (expected HH:MM)`);
+      if (isDevelopment) {
+        console.error(`Invalid time format: ${time} (expected HH:MM)`);
+      }
       return 0;
     }
 
@@ -61,7 +65,9 @@ export default function Timeline({
     const minutesStr = parts[1]?.trim();
 
     if (!hoursStr || !minutesStr) {
-      console.error(`Invalid time format: ${time} (missing hours or minutes)`);
+      if (isDevelopment) {
+        console.error(`Invalid time format: ${time} (missing hours or minutes)`);
+      }
       return 0;
     }
 
@@ -69,12 +75,16 @@ export default function Timeline({
     const minutes = parseInt(minutesStr, 10);
 
     if (isNaN(hours) || isNaN(minutes)) {
-      console.error(`Invalid time format: ${time} (non-numeric values)`);
+      if (isDevelopment) {
+        console.error(`Invalid time format: ${time} (non-numeric values)`);
+      }
       return 0;
     }
 
     if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-      console.error(`Time out of range: ${time}`);
+      if (isDevelopment) {
+        console.error(`Time out of range: ${time}`);
+      }
       return Math.max(0, Math.min(1439, hours * 60 + minutes));
     }
 

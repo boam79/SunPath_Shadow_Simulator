@@ -61,7 +61,9 @@ export async function searchAddress(query: string): Promise<GeocodeResult[]> {
       };
     });
   } catch (error) {
-    console.error('Geocoding error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Geocoding error:', error);
+    }
     return [];
   }
 }
@@ -101,7 +103,9 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string |
     const display = road ? `${road}${house}, ${city} ${state}`.trim() : data.display_name || null;
     return display;
   } catch (error) {
-    console.error('Reverse geocoding error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Reverse geocoding error:', error);
+    }
     return null;
   }
 }

@@ -191,7 +191,9 @@ export async function copyToClipboard(data: SolarCalculationResponse): Promise<b
     await navigator.clipboard.writeText(jsonString);
     return true;
   } catch (error) {
-    console.error('Failed to copy to clipboard:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Failed to copy to clipboard:', error);
+    }
     return false;
   }
 }

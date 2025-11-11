@@ -82,7 +82,9 @@ export default function MainContent({
     // Format: YYYY-MM-DDTHH:mm:ss (local timezone)
     const target = new Date(`${date}T${currentTime}:00`);
     if (isNaN(target.getTime())) {
-      console.error(`Invalid date/time: ${date}T${currentTime}:00`);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`Invalid date/time: ${date}T${currentTime}:00`);
+      }
       return null;
     }
     const series = solarData.series.map(p => ({ p, t: new Date(p.timestamp).getTime() }));
