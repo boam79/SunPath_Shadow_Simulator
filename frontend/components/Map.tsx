@@ -25,6 +25,14 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
   });
 
   const [addressName, setAddressName] = useState<string | null>(null);
+  const [geolocationSupported, setGeolocationSupported] = useState(false);
+  
+  // 브라우저가 geolocation을 지원하는지 확인
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+      setGeolocationSupported(true);
+    }
+  }, []);
   
   // MapLibre 스타일을 state로 관리하여 불필요한 재렌더링 방지
   const [mapStyle] = useState({
@@ -156,26 +164,35 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
         {/* Navigation Controls */}
         <NavigationControl position="top-right" />
         
-        {/* Geolocate Control */}
-        <GeolocateControl
-          position="top-right"
-          trackUserLocation={false}
-          onGeolocate={(e) => {
-            const { latitude, longitude } = e.coords;
-            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-              return;
-            }
-            if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-              return;
-            }
-            onLocationChange(latitude, longitude);
-          }}
-          onError={() => {
-            // CoreLocation 에러를 조용히 무시 (사이드바의 현재 위치 버튼 사용)
-            // 프로덕션에서는 콘솔에 아무것도 출력하지 않음
-            // 개발 모드에서도 조용히 처리 (불필요한 경고 방지)
-          }}
-        />
+        {/* Geolocate Control - geolocation이 지원되는 경우에만 표시 */}
+        {geolocationSupported && (
+          <GeolocateControl
+            position="top-right"
+            trackUserLocation={false}
+            showUserHeading={false}
+            showUserLocation={false}
+            onGeolocate={(e) => {
+              try {
+                const { latitude, longitude } = e.coords;
+                if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                  return;
+                }
+                if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+                  return;
+                }
+                onLocationChange(latitude, longitude);
+              } catch (error) {
+                // 에러를 조용히 무시 (사이드바의 현재 위치 버튼 사용)
+              }
+            }}
+            onError={(error) => {
+              // CoreLocation 에러를 조용히 무시
+              // 브라우저 콘솔에 에러가 표시될 수 있지만, 애플리케이션 동작에는 영향 없음
+              // 사이드바의 "현재 위치 사용" 버튼을 사용하면 됨
+              void error; // 사용하지 않는 변수 경고 방지
+            }}
+          />
+        )}
 
         {/* Sun Path Polyline (if series available) */}
         {location && solarSeries && solarSeries.length > 1 && (

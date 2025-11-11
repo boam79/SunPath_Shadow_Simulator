@@ -35,14 +35,6 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Vercel 환경 감지 (preview/production 또는 VERCEL 환경변수 존재 여부)
-const isVercelEnv = !!(
-  process.env.VERCEL ||
-  process.env.VERCEL_ENV === 'preview' ||
-  process.env.VERCEL_ENV === 'production'
-);
-void isVercelEnv; // currently not used but kept for future behavior toggles
-
 /**
  * Fetch with automatic retry using exponential backoff
  * Retries on network errors or 5xx server errors (but not 504 timeout)
