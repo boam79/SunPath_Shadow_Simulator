@@ -57,9 +57,7 @@ export default function PresetManager({
       localStorage.setItem('solar_presets', JSON.stringify(presets));
     } catch (error) {
       if (isDevelopment) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Failed to save presets:', error);
-        }
+        console.error('Failed to save presets:', error);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

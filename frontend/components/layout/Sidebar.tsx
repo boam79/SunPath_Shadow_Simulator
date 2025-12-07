@@ -100,9 +100,7 @@ export default function Sidebar({
         setShowResults(true);
       } catch (error) {
         if (isDevelopment) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Search error:', error);
-          }
+          console.error('Search error:', error);
         }
         setSearchResults([]);
       } finally {
