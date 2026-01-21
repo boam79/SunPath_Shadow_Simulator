@@ -36,9 +36,12 @@
 ### Infrastructure
 - **Docker** - 컨테이너화
 - **Docker Compose** - 로컬 개발 환경
-- **AWS EC2** - 백엔드 프로덕션 서버 (v0.1.12+)
-- **Nginx** - 역방향 프록시
+- **Render** - 백엔드 프로덕션 서버 (v0.1.13+) 🆕
 - **Vercel** - 프론트엔드 호스팅
+
+### 프로덕션 URL
+- **Frontend**: https://sunpathshadowsimulator.vercel.app
+- **Backend**: https://sunpath-shadow-simulator.onrender.com 🆕
 
 ## 🚀 시작하기
 
@@ -194,9 +197,18 @@ vercel
 4. **Root Directory**: `frontend` 선택
 5. **Environment Variables** 설정:
    ```
-   NEXT_PUBLIC_API_URL=https://your-backend-api-url.com
+   NEXT_PUBLIC_API_URL=https://sunpath-shadow-simulator.onrender.com
    ```
 6. **Deploy** 클릭
+
+**기존 프로젝트 환경 변수 수정:**
+1. Vercel 대시보드 → 프로젝트 선택
+2. **Settings** → **Environment Variables**
+3. `NEXT_PUBLIC_API_URL` 추가/수정:
+   ```
+   NEXT_PUBLIC_API_URL=https://sunpath-shadow-simulator.onrender.com
+   ```
+4. **Save** → **Deployments** → **Redeploy**
 
 #### 3. 배포 후 확인
 - 프론트엔드 URL: `https://your-project.vercel.app`
@@ -205,57 +217,82 @@ vercel
 
 ### Backend 배포
 
-#### AWS EC2 배포 (현재 사용 중, v0.1.12+)
+#### Render 배포 (현재 사용 중, v0.1.13+) 🆕
 
-**AWS EC2 인스턴스 설정:**
-- **인스턴스 타입**: t3.micro
-- **리전**: ap-northeast-2 (서울)
-- **AMI**: Ubuntu 22.04 LTS
-- **퍼블릭 IP**: `54.180.251.93`
+**Render 서비스 설정:**
+- **서비스 타입**: Web Service (Free Plan)
+- **리전**: Singapore (Southeast Asia)
+- **런타임**: Python 3.11
+- **URL**: https://sunpath-shadow-simulator.onrender.com
 
 **배포 절차:**
-1. EC2 인스턴스 생성 및 보안 그룹 설정 (포트 22, 80, 8000)
-2. Docker 및 Docker Compose 설치
-3. 프로덕션 Dockerfile로 이미지 빌드
-4. Nginx 역방향 프록시 설정 (포트 80 → 8000)
-5. Systemd 서비스 설정 (자동 시작)
-6. 환경변수 설정 (`.env` 파일)
-
-**상세 가이드:**
-- [AWS 마이그레이션 완료 요약](./docs/MIGRATION_SUMMARY.md)
-- [AWS 사용 확인 방법](./docs/AWS_USAGE_VERIFICATION.md)
-- [Mixed Content 문제 해결](./docs/MIXED_CONTENT_FIX.md)
-
-#### Render 배포 (이전, v0.1.11 이하)
-
-> **참고**: v0.1.12부터 AWS EC2로 마이그레이션되었습니다.
-
-1. [Render](https://render.com)에 가입/로그인
+1. [Render](https://render.com)에 가입/로그인 (GitHub 연동 권장)
 2. **New +** → **Web Service** 선택
-3. GitHub 저장소 연결
+3. GitHub 저장소 연결: `boam79/SunPath_Shadow_Simulator`
 4. 설정:
-   - **Name**: `sunpath-api`
-   - **Root Directory**: `backend`
+   - **Name**: `sunpath-shadow-simulator`
+   - **Root Directory**: `backend` ⚠️ 중요!
    - **Environment**: `Python 3`
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Health Check Path**: `/health`
 5. **Environment Variables** 설정:
    ```
-   REDIS_URL=redis://red-xxxxx:6379
-   ALLOWED_ORIGINS=https://your-frontend.vercel.app
+   PYTHON_VERSION=3.11.0
+   ALLOWED_ORIGINS=https://sunpathshadowsimulator.vercel.app
    ```
 6. **Create Web Service** 클릭
+7. 배포 완료까지 3-5분 대기
 
-#### Redis 설정
+**자동 배포 파일 (render.yaml):**
+```yaml
+services:
+  - type: web
+    name: sunpath-backend
+    runtime: python
+    region: singapore
+    plan: free
+    branch: master
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ALLOWED_ORIGINS
+        value: https://sunpathshadowsimulator.vercel.app
+    healthCheckPath: /health
+```
 
-**AWS EC2 (현재):**
-- Docker Compose로 Redis 컨테이너 실행
-- 또는 AWS ElastiCache 사용 가능 (선택사항)
+**상세 가이드:**
+- [Render 빠른 시작 가이드](./RENDER_QUICK_START.md)
+- [Render 배포 가이드](./RENDER_DEPLOYMENT_GUIDE.md)
+- [대안 솔루션](./ALTERNATIVE_SOLUTIONS.md)
 
-**Render (이전):**
-1. **New +** → **Redis** 선택
+#### Redis 설정 (선택사항)
+
+Redis는 캐싱 용도로 사용되며, 없어도 백엔드가 정상 작동합니다.
+
+**Render Key Value (무료):**
+1. **New +** → **Key Value** 선택
 2. Redis 인스턴스 생성
 3. Internal Redis URL을 백엔드 `REDIS_URL`에 연결
+
+**참고:** 백엔드는 Redis 연결 실패 시 자동으로 fallback하여 캐싱 없이 정상 작동합니다.
+
+#### AWS EC2 배포 (이전, v0.1.12)
+
+> **참고**: v0.1.13부터 AWS EC2 서버 다운으로 Render로 재마이그레이션되었습니다.
+
+**이전 AWS EC2 설정:**
+- **인스턴스 타입**: t3.micro
+- **리전**: ap-northeast-2 (서울)
+- **퍼블릭 IP**: `54.180.251.93` (현재 응답 없음)
+
+**상세 가이드 (참고용):**
+- [AWS 마이그레이션 완료 요약](./docs/MIGRATION_SUMMARY.md)
+- [AWS 사용 확인 방법](./docs/AWS_USAGE_VERIFICATION.md)
+- [Mixed Content 문제 해결](./docs/MIXED_CONTENT_FIX.md)
 
 ### 배포 체크리스트 ✅ (완료)
 - [x] Frontend 환경변수 설정 (`NEXT_PUBLIC_API_URL`)
@@ -267,30 +304,29 @@ vercel
 
 ### 🎉 배포 완료 현황
 
-**프로덕션 환경 (v0.1.12+):**
+**프로덕션 환경 (v0.1.13+):**
 - ✅ **Frontend**: https://sunpathshadowsimulator.vercel.app (Vercel)
-- ✅ **Backend**: http://54.180.251.93 (AWS EC2) 🆕
-- ✅ **Redis**: Docker Compose Redis 컨테이너 (AWS EC2)
-- ✅ **Nginx**: 역방향 프록시 (포트 80 → 8000)
+- ✅ **Backend**: https://sunpath-shadow-simulator.onrender.com (Render) 🆕
 - ✅ **CORS**: 환경변수 기반 설정으로 해결
-- ✅ **Mixed Content**: Next.js API Route 프록시로 해결 🆕
-- ✅ **자동 시작**: Systemd 서비스로 부팅 시 자동 시작
-- ✅ **자동 배포**: Git push 시 프론트엔드 자동 재배포 (Vercel)
+- ✅ **HTTPS**: Render에서 자동 SSL 인증서 제공 🆕
+- ✅ **자동 배포**: Git push 시 프론트/백엔드 자동 재배포
 
-**이전 프로덕션 환경 (v0.1.11 이하):**
-- ⚠️ **Backend**: https://sunpath-api.onrender.com (Render) - 마이그레이션 완료
-- ⚠️ **Redis**: Render Redis 인스턴스 - 마이그레이션 완료
+**이전 프로덕션 환경:**
+- ⚠️ **AWS EC2** (v0.1.12): 54.180.251.93 - 서버 다운으로 Render로 마이그레이션 완료
+- ⚠️ **Render** (v0.1.11 이하): sunpath-api.onrender.com - 서비스 중단
 
-**주요 해결 사항:**
-- ✅ AWS EC2 마이그레이션 완료 (v0.1.12) 🆕
-- ✅ Cold Start 문제 해결 (항상 실행 중)
-- ✅ 응답 시간 개선 (100-200ms, 일관성 있음)
-- ✅ Mixed Content 문제 해결 (Next.js API Route 프록시) 🆕
+**주요 해결 사항 (v0.1.13):**
+- ✅ AWS EC2 서버 다운 대응으로 Render 재배포 🆕
+- ✅ HTTPS 자동 적용 (Mixed Content 문제 완전 해결) 🆕
+- ✅ 무료 플랜으로 24/7 운영 (콜드 스타트 있음)
+- ✅ GitHub 연동 자동 배포 설정 완료 🆕
 - ✅ CORS 오류 해결 (환경변수 기반 `ALLOWED_ORIGINS` 설정)
 - ✅ 프론트엔드-백엔드 API 통신 정상화
 - ✅ 실시간 태양 경로 및 그림자 시뮬레이션 정상 작동
-- ✅ Nginx 역방향 프록시 설정 완료 🆕
-- ✅ Systemd 서비스 자동 시작 설정 완료 🆕
+
+**Render 무료 플랜 특이사항:**
+- ⚠️ 15분 비활성화 시 슬립 모드 (첫 요청 시 30초 콜드 스타트)
+- 💡 해결책: UptimeRobot으로 5분마다 ping 전송 권장
 
 ### 대안 플랫폼
 - **Frontend**: Netlify, Cloudflare Pages
@@ -358,12 +394,21 @@ vercel
 
 ## 📋 최근 버전
 
-### v0.1.12 (최신) 🆕
+### v0.1.13 (최신) 🆕
+- **Render 재배포**: AWS EC2 서버 다운으로 Render.com으로 재마이그레이션
+- **HTTPS 자동 적용**: Render에서 SSL 인증서 자동 제공, Mixed Content 문제 완전 해결
+- **무료 플랜 운영**: 24/7 운영 가능 (콜드 스타트 있음)
+- **자동 배포 설정**: `render.yaml` 파일로 자동 배포 구성
+- **문서화**: Render 배포 가이드 및 대안 솔루션 문서 추가
+- **Backend URL**: https://sunpath-shadow-simulator.onrender.com
+
+### v0.1.12
 - **AWS EC2 마이그레이션**: Render에서 AWS EC2로 백엔드 마이그레이션 완료
 - **성능 개선**: Cold Start 문제 해결, 응답 시간 개선 (100-200ms)
 - **Mixed Content 해결**: Next.js API Route 프록시 구현
 - **인프라 개선**: Nginx 역방향 프록시, Systemd 자동 시작 설정
 - **문서화**: AWS 마이그레이션 가이드 및 확인 방법 문서 추가
+- ⚠️ **현재 상태**: 서버 다운 (v0.1.13에서 Render로 재마이그레이션)
 
 ### v0.1.11
 - **다국어 지원 확장**: 모든 새 기능 번역 (배치/계절/고급옵션/프리셋)
@@ -412,8 +457,8 @@ MVP: 태양 경로, 그림자, 일사량 계산, 타임라인 애니메이션
 
 ---
 
-**버전:** 0.1.12
-**최종 수정:** 2025-12-03
+**버전:** 0.1.13
+**최종 수정:** 2026-01-21
 
 ## 🔒 보안 정보
 
