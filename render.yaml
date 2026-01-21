@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: sunpath-backend
+    runtime: python
+    region: singapore
+    plan: free
+    branch: master
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ALLOWED_ORIGINS
+        value: https://sunpath-simulator.vercel.app,http://localhost:3000
+    healthCheckPath: /health
