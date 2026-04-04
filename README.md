@@ -244,6 +244,8 @@ vercel
 6. **Create Web Service** 클릭
 7. 배포 완료까지 3-5분 대기
 
+**GitHub Actions:** `.github/workflows/deploy-backend.yml`은 **AWS EC2 수동 배포 전용**입니다. `master` push 시 자동 실행되지 않으며, 프로덕션은 Render가 Git 연동으로 배포합니다.
+
 **자동 배포 파일 (render.yaml):**
 ```yaml
 services:

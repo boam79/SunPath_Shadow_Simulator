@@ -13,19 +13,24 @@ const log = (...args: unknown[]) => {
 };
 
 // API URL 설정
-// Vercel 환경에서 HTTP 백엔드를 사용하는 경우 프록시를 통해 요청하여 Mixed Content 문제 해결
+// - Mixed Content: HTTPS 페이지 → HTTP API 는 브라우저가 차단 → 프록시 사용
+// - HTTPS API(Render 등): 페이지와 출처가 다르면 브라우저 CORS 필요 → 동일 출처로만 부르기 위해 프록시 사용
 const getApiBaseUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  
-  // 브라우저에서 실행 중인 경우
+
   if (typeof window !== 'undefined') {
-    // HTTPS 페이지에서 HTTP 백엔드로 요청하는 경우 프록시 사용
-    if (window.location.protocol === 'https:' && apiUrl.startsWith('http://')) {
-      // Mixed Content 문제를 해결하기 위해 Next.js API Route 프록시 사용
-      return '/api/proxy';
+    try {
+      const apiOrigin = new URL(apiUrl, window.location.href).origin;
+      if (apiOrigin !== window.location.origin) {
+        return '/api/proxy';
+      }
+    } catch {
+      if (window.location.protocol === 'https:' && apiUrl.startsWith('http://')) {
+        return '/api/proxy';
+      }
     }
   }
-  
+
   return apiUrl;
 };
 
