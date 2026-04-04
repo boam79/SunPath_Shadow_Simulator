@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
+const RENDER_URL = 'https://sunpath-shadow-simulator.onrender.com';
+
 const nextConfig = {
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    // Vercel에 NEXT_PUBLIC_API_URL이 없으면 Render URL을 기본값으로 사용
+    // (클라이언트 번들에 빌드 시 박히는 값이므로 반드시 HTTPS URL이어야 함)
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || RENDER_URL,
   },
   // Next.js API Route를 사용하여 프록시하므로 rewrites 불필요
   typescript: {

@@ -5,7 +5,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// BACKEND_API_URL: 서버 전용(비공개) - Vercel 환경변수에 설정 권장
+// NEXT_PUBLIC_API_URL: 클라이언트에도 노출되는 변수 (fallback)
+// 둘 다 없으면 알려진 Render 주소를 기본값으로 사용
+const BACKEND_URL =
+  process.env.BACKEND_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'https://sunpath-shadow-simulator.onrender.com';
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 // 개발 모드에서만 로그 출력
