@@ -21,12 +21,14 @@ const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     try {
       const apiOrigin = new URL(apiUrl, window.location.href).origin;
+      // 출처가 다르면 Next.js rewrite(/api/backend)를 통해 서버사이드 프록시 경유
+      // CORS preflight 없이 Vercel 인프라가 Render로 요청을 전달
       if (apiOrigin !== window.location.origin) {
-        return '/api/proxy';
+        return '/api/backend';
       }
     } catch {
       if (window.location.protocol === 'https:' && apiUrl.startsWith('http://')) {
-        return '/api/proxy';
+        return '/api/backend';
       }
     }
   }
