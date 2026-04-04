@@ -12,7 +12,7 @@
 ### 2️⃣ ALLOWED_ORIGINS
 
 **NAME_OF_VARIABLE:** `ALLOWED_ORIGINS`  
-**value:** `https://sunpath-simulator.vercel.app,http://localhost:3000`
+**value:** `https://sunpathshadowsimulator.vercel.app,http://localhost:3000`
 
 ---
 
@@ -25,7 +25,7 @@
 
 ### 두 번째 환경 변수:
 1. **NAME_OF_VARIABLE** 필드에: `ALLOWED_ORIGINS`
-2. **value** 필드에: `https://sunpath-simulator.vercel.app,http://localhost:3000`
+2. **value** 필드에: `https://sunpathshadowsimulator.vercel.app,http://localhost:3000`
 
 ---
 

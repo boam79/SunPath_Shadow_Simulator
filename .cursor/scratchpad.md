@@ -729,6 +729,20 @@
 
 ## 💬 Executor's Feedback or Assistance Requests
 
+### 2026-04-04 - 백엔드 상태 확인 및 AWS→Render 운영 정합성
+
+**상태 확인 (curl):**
+- Render `https://sunpath-shadow-simulator.onrender.com/health` → HTTP 200, `healthy`
+- AWS EC2 `54.180.251.93` → 타임아웃(비가동)
+
+**저장소 변경:**
+- GitHub Actions `deploy-backend.yml`: `push` 트리거 제거, `workflow_dispatch`만 유지(EC2 수동 복구용)
+- `render.yaml`의 `ALLOWED_ORIGINS`를 운영 프론트 도메인(`sunpathshadowsimulator.vercel.app`)과 일치시킴
+- `scripts/check-backend-production.sh` 추가, `check-aws-backend.sh`는 해당 스크립트로 위임
+- README에 Actions 동작 설명 보강, `RENDER_ENV_VARS.md` 도메인 오타 수정
+
+**사용자 확인 필요:** Render 대시보드에 이미 서비스가 있으면 `ALLOWED_ORIGINS`를 위 값과 동일하게 수동 반영하고 재배포하세요. Vercel의 `NEXT_PUBLIC_API_URL`이 Render HTTPS URL인지 확인하세요.
+
 ### 2025-10-20 - Task 1 완료 보고
 
 **완료 항목:**
