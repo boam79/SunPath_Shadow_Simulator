@@ -15,6 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
+  manifest: '/manifest.json',
   title: {
     default: "SunPath & Shadow Simulator | 태양 경로 그림자 시뮬레이터",
     template: "%s | SunPath & Shadow Simulator"

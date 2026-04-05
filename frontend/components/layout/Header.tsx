@@ -1,22 +1,54 @@
 'use client';
 
 import { Sun, Moon, Globe } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n-context';
 import { locales, localeNames } from '@/lib/i18n';
 
 interface HeaderProps { onReset?: () => void; onToggleSidebar?: () => void }
 
+type ApiStatus = 'checking' | 'ok' | 'slow' | 'error';
+
 export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
   const [darkMode, setDarkMode] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [apiStatus, setApiStatus] = useState<ApiStatus>('checking');
   const { locale, setLocale, t } = useI18n();
 
   useEffect(() => {
-    // Check initial dark mode preference
     const isDark = document.documentElement.classList.contains('dark');
     setDarkMode(isDark);
   }, []);
+
+  const checkHealth = useCallback(async () => {
+    setApiStatus('checking');
+    const start = Date.now();
+    try {
+      const res = await fetch('/api/backend/health', { method: 'GET', signal: AbortSignal.timeout(65000) });
+      const elapsed = Date.now() - start;
+      if (res.ok) {
+        setApiStatus(elapsed > 8000 ? 'slow' : 'ok');
+      } else {
+        setApiStatus('error');
+      }
+    } catch {
+      setApiStatus('error');
+    }
+  }, []);
+
+  // 최초 로드 + 5분마다 헬스체크
+  useEffect(() => {
+    checkHealth();
+    const interval = setInterval(checkHealth, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [checkHealth]);
+
+  const statusDot: Record<ApiStatus, { color: string; label: string }> = {
+    checking: { color: 'bg-yellow-400 animate-pulse', label: t('header.apiChecking') || 'API 확인 중' },
+    ok:       { color: 'bg-green-500 animate-pulse', label: t('header.apiConnected') || 'API 연결됨' },
+    slow:     { color: 'bg-yellow-500 animate-pulse', label: t('header.apiSlow') || 'API 느림 (콜드스타트)' },
+    error:    { color: 'bg-red-500', label: t('header.apiError') || 'API 연결 실패' },
+  };
 
   const toggleDarkMode = () => {
     const html = document.documentElement;
@@ -73,18 +105,12 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
               
               {showLangMenu && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowLangMenu(false)}
-                  />
+                  <div className="fixed inset-0 z-40" onClick={() => setShowLangMenu(false)} />
                   <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden">
                     {locales.map((loc) => (
                       <button
                         key={loc}
-                        onClick={() => {
-                          setLocale(loc);
-                          setShowLangMenu(false);
-                        }}
+                        onClick={() => { setLocale(loc); setShowLangMenu(false); }}
                         className={`w-full px-4 py-2 text-left text-sm transition-colors ${
                           locale === loc
                             ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
@@ -112,13 +138,17 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
               )}
             </button>
 
-            {/* API Status */}
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                {t('header.apiConnected')}
+            {/* API Status — 실제 헬스체크 결과 반영 */}
+            <button
+              onClick={checkHealth}
+              title="클릭하여 다시 확인"
+              className="flex items-center space-x-2 cursor-pointer"
+            >
+              <div className={`w-2 h-2 rounded-full ${statusDot[apiStatus].color}`} />
+              <span className="text-sm text-gray-600 dark:text-gray-300 hidden md:inline">
+                {statusDot[apiStatus].label}
               </span>
-            </div>
+            </button>
           </div>
         </div>
       </div>
