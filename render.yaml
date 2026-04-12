@@ -11,6 +11,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
       - key: ALLOWED_ORIGINS
         value: https://sunpathshadowsimulator.vercel.app,http://localhost:3000
     healthCheckPath: /health

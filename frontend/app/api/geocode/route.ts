@@ -6,7 +6,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org';
-const UA = 'SunPath-Shadow-Simulator/0.1.14 (https://sunpathshadowsimulator.vercel.app)';
+const UA = 'SunPath-Shadow-Simulator/0.1.17 (https://sunpathshadowsimulator.vercel.app)';
+
+const MAX_Q = 200;
+
+function parseCoord(v: string | null, min: number, max: number): number | null {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < min || n > max) return null;
+  return n;
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -15,12 +24,22 @@ export async function GET(request: NextRequest) {
   const lon   = searchParams.get('lon');
   const type  = searchParams.get('type') ?? 'search'; // 'search' | 'reverse'
 
+  if (type === 'search' && q && q.length > MAX_Q) {
+    return NextResponse.json({ error: `검색어는 ${MAX_Q}자 이하로 입력해 주세요.` }, { status: 400 });
+  }
+
   try {
     let url: string;
 
     if (type === 'reverse' && lat && lon) {
+      const latN = parseCoord(lat, -90, 90);
+      const lonN = parseCoord(lon, -180, 180);
+      if (latN == null || lonN == null) {
+        return NextResponse.json({ error: '유효한 lat/lon 범위가 아닙니다.' }, { status: 400 });
+      }
       const params = new URLSearchParams({
-        lat, lon,
+        lat: String(latN),
+        lon: String(lonN),
         format: 'jsonv2',
         addressdetails: '1',
         namedetails: '1',

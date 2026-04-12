@@ -14,9 +14,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'lat, lon, date 파라미터 필요' }, { status: 400 });
   }
 
+  const latN = Number(lat);
+  const lonN = Number(lon);
+  if (!Number.isFinite(latN) || latN < -90 || latN > 90 || !Number.isFinite(lonN) || lonN < -180 || lonN > 180) {
+    return NextResponse.json({ error: 'lat/lon 범위가 올바르지 않습니다.' }, { status: 400 });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return NextResponse.json({ error: 'date는 YYYY-MM-DD 형식이어야 합니다.' }, { status: 400 });
+  }
+
   const params = new URLSearchParams({
-    latitude: lat,
-    longitude: lon,
+    latitude: String(latN),
+    longitude: String(lonN),
     hourly: 'cloudcover,shortwave_radiation,precipitation_probability',
     daily: 'sunrise,sunset',
     timezone: 'auto',

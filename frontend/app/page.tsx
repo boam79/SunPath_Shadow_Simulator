@@ -75,6 +75,10 @@ function HomeInner() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const [solarData, setSolarData] = useState<SolarCalculationResponse | null>(null);
+  const [solarDataB, setSolarDataB] = useState<SolarCalculationResponse | null>(null);
+  const [compareEnabled, setCompareEnabled] = useState(false);
+  const [compareHeight, setCompareHeight] = useState(5);
+  const [lastSavedHint, setLastSavedHint] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMs, setLoadingMs] = useState(0);   // 콜드스타트 경과 시간
@@ -136,6 +140,25 @@ function HomeInner() {
       });
       setSolarData(response);
       writeCache(key, response);
+      try {
+        localStorage.setItem(
+          'sunpath_last_summary_v1',
+          JSON.stringify({
+            savedAt: Date.now(),
+            lat: location.lat,
+            lon: location.lon,
+            date,
+            height: objectHeight,
+            sunrise: response.summary.sunrise,
+            sunset: response.summary.sunset,
+            dayLenMin: response.summary.day_length,
+          })
+        );
+        setLastSavedHint(true);
+        setTimeout(() => setLastSavedHint(false), 6000);
+      } catch {
+        /* storage full */
+      }
       devLog('✅ Fetched', response.series.length, 'points');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
@@ -144,6 +167,31 @@ function HomeInner() {
       setIsLoading(false);
     }
   }, [location, date, objectHeight]);
+
+  // 비교 모드: 두 번째 물체 높이로 병렬 계산
+  useEffect(() => {
+    if (!compareEnabled || !location) {
+      setSolarDataB(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await calculateSolar({
+          location: { lat: location.lat, lon: location.lon, altitude: 0 },
+          datetime: { date, start_time: '00:00', end_time: '23:59', interval: 60 },
+          object: { height: compareHeight },
+          options: { atmosphere: true, precision: 'high' },
+        });
+        if (!cancelled) setSolarDataB(r);
+      } catch {
+        if (!cancelled) setSolarDataB(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [compareEnabled, compareHeight, location, date]);
 
   // 초기 마운트: URL 파라미터 없으면 서울 기본값
   const isInitialMount = useRef(true);
@@ -186,6 +234,8 @@ function HomeInner() {
           setCurrentTime('12:00');
           setIsPlaying(false);
           setSolarData(null);
+          setSolarDataB(null);
+          setCompareEnabled(false);
         }}
         onToggleSidebar={() => setSidebarOpen(v => !v)}
       />
@@ -217,6 +267,11 @@ function HomeInner() {
                 setCurrentTime={setCurrentTime}
                 solarData={solarData}
                 timeline={{ currentTime, onTimeChange: handleTimeChange, isPlaying, onPlayPause: handlePlayPause, startTime: tlStart, endTime: tlEnd }}
+                compareEnabled={compareEnabled}
+                setCompareEnabled={setCompareEnabled}
+                compareHeight={compareHeight}
+                setCompareHeight={setCompareHeight}
+                solarDataB={solarDataB}
               />
             </div>
           </div>
@@ -235,6 +290,11 @@ function HomeInner() {
             setCurrentTime={setCurrentTime}
             solarData={solarData}
             timeline={{ currentTime, onTimeChange: handleTimeChange, isPlaying, onPlayPause: handlePlayPause, startTime: tlStart, endTime: tlEnd }}
+            compareEnabled={compareEnabled}
+            setCompareEnabled={setCompareEnabled}
+            compareHeight={compareHeight}
+            setCompareHeight={setCompareHeight}
+            solarDataB={solarDataB}
           />
         </div>
 
@@ -256,6 +316,11 @@ function HomeInner() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400 gap-4">
           <div className="flex items-center space-x-4 mb-2 md:mb-0">
             <span>{t('footer.copyright')}</span>
+            {lastSavedHint && (
+              <span className="text-xs text-emerald-600 dark:text-emerald-400" role="status">
+                {t('sidebar.lastSavedHint')}
+              </span>
+            )}
             <span className="hidden md:inline">•</span>
             <span>{t('footer.createdBy')}: <strong className="text-gray-800 dark:text-gray-200">boam79</strong></span>
           </div>

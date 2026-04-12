@@ -12,6 +12,9 @@ const log = (...args: unknown[]) => {
   }
 };
 
+/** 백엔드 버전 경로 (레거시 /api/* 는 서버에서 동일 마운트) */
+export const API_VERSION_PREFIX = '/api/v1';
+
 // API URL 설정
 // - Mixed Content: HTTPS 페이지 → HTTP API 는 브라우저가 차단 → 프록시 사용
 // - HTTPS API(Render 등): 페이지와 출처가 다르면 브라우저 CORS 필요 → 동일 출처로만 부르기 위해 프록시 사용
@@ -223,7 +226,7 @@ export async function calculateSolar(
   request: SolarCalculationRequest
 ): Promise<SolarCalculationResponse> {
   try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/api/integrated/calculate`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}${API_VERSION_PREFIX}/integrated/calculate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -275,7 +278,7 @@ export async function getSunriseSunset(
 ): Promise<{ sunrise: string; sunset: string; [key: string]: unknown }> {
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}/api/solar/sunrise-sunset?lat=${lat}&lon=${lon}&date=${date}`
+      `${API_BASE_URL}${API_VERSION_PREFIX}/solar/sunrise-sunset?lat=${lat}&lon=${lon}&date=${date}`
     );
 
     if (!response.ok) {
@@ -303,7 +306,7 @@ export async function calculateShadow(
 ): Promise<Shadow> {
   try {
     const response = await fetchWithRetry(
-      `${API_BASE_URL}/api/shadow/calculate?lat=${lat}&lon=${lon}&date=${date}&time=${time}&object_height=${object_height}`
+      `${API_BASE_URL}${API_VERSION_PREFIX}/shadow/calculate?lat=${lat}&lon=${lon}&date=${date}&time=${time}&object_height=${object_height}`
     );
 
     if (!response.ok) {
@@ -324,7 +327,7 @@ export async function calculateShadow(
  */
 export async function getCacheStats(): Promise<{ [key: string]: unknown } | null> {
   try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/api/cache/stats`);
+    const response = await fetchWithRetry(`${API_BASE_URL}${API_VERSION_PREFIX}/cache/stats`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch cache stats');
@@ -395,7 +398,7 @@ export async function optimizePeriods(
   solarData: SolarCalculationResponse
 ): Promise<OptimizationResult> {
   try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/api/integrated/optimize`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}${API_VERSION_PREFIX}/integrated/optimize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -428,7 +431,7 @@ export async function calculateBatch(
   parallel: boolean = true
 ): Promise<BatchCalculationResponse> {
   try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/api/integrated/batch`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}${API_VERSION_PREFIX}/integrated/batch`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

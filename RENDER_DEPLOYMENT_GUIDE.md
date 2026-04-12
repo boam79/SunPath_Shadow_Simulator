@@ -222,17 +222,8 @@ Settings → Environment:
 - 첫 요청 시 30초 소요 (깨어나는 시간)
 - 이후 요청은 즉시 응답
 
-### 해결 방법:
-1. **외부 모니터링** (무료):
-   ```
-   https://uptimerobot.com
-   - 5분마다 자동 핑
-   - 슬립 방지
-   ```
-
-2. **유료 플랜 전환** ($7/월):
-   - 콜드 스타트 없음
-   - 더 많은 리소스
+### 완화 방법:
+- **유료 플랜 전환** ($7/월 등): 콜드 스타트 없음, 리소스 증가
 
 ---
 
@@ -291,20 +282,6 @@ Render 설정:
 - [ ] /docs 접속 가능 확인
 - [ ] 프론트엔드 연결 테스트
 - [ ] 실제 API 호출 테스트
-
----
-
-## 🎁 보너스: 모니터링 설정
-
-### UptimeRobot으로 슬립 방지 (무료)
-
-1. https://uptimerobot.com 가입
-2. "Add New Monitor" 클릭
-3. 설정:
-   - Monitor Type: HTTP(s)
-   - URL: `https://your-app.onrender.com/health`
-   - Monitoring Interval: 5 minutes
-4. 완료! 이제 서버가 자동으로 깨어있음
 
 ---
 

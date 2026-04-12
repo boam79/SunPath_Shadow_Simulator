@@ -7,6 +7,9 @@ __pycache__/
 .Python
 env/
 venv/
+backend/.venv/
+backend/.venv311/
+.venv311/
 ENV/
 env.bak/
 venv.bak/

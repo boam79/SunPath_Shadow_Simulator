@@ -204,11 +204,11 @@ export default function MainContent({
 
       {/* Error banner and retry */}
       {error && (
-        <div className="w-full md:max-w-6xl mx-auto px-4 mt-3">
+        <div className="w-full md:max-w-6xl mx-auto px-4 mt-3" role="alert" aria-live="assertive">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-center justify-between">
             <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             {onRetry && (
-              <button onClick={onRetry} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md">{t('optimization.retry')}</button>
+              <button type="button" onClick={onRetry} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md">{t('optimization.retry')}</button>
             )}
           </div>
         </div>

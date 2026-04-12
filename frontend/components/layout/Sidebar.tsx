@@ -1,6 +1,6 @@
 'use client';
 
-import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy, Navigation, Layers } from 'lucide-react';
+import { MapPin, Calendar, Ruler, Search, Loader2, Download, FileJson, FileText, Copy, Navigation, Layers, Printer } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { searchAddress, reverseGeocode, type GeocodeResult } from '@/lib/geocoding';
 import { exportToCSV, exportToJSON, exportSummary, copyToClipboard } from '@/lib/export';
@@ -12,6 +12,18 @@ import PresetManager from '@/components/PresetManager';
 import SeasonComparison from '@/components/SeasonComparison';
 import { useI18n } from '@/lib/i18n-context';
 import type { SolarCalculationResponse } from '@/lib/api';
+import { openPrintableSolarReport } from '@/lib/printReport';
+import WeatherStrip from '@/components/WeatherStrip';
+
+function maxShadowLength(data: SolarCalculationResponse | null | undefined): number {
+  if (!data?.series?.length) return 0;
+  return Math.max(
+    0,
+    ...data.series.map((p) =>
+      p.shadow?.length != null && Number.isFinite(p.shadow.length) ? p.shadow.length : 0
+    )
+  );
+}
 
 interface SidebarProps {
   location: {lat: number; lon: number} | null;
@@ -31,6 +43,11 @@ interface SidebarProps {
     startTime?: string;
     endTime?: string;
   };
+  compareEnabled?: boolean;
+  setCompareEnabled?: (v: boolean) => void;
+  compareHeight?: number;
+  setCompareHeight?: (h: number) => void;
+  solarDataB?: SolarCalculationResponse | null;
 }
 
 export default function Sidebar({
@@ -43,7 +60,12 @@ export default function Sidebar({
   currentTime,
   setCurrentTime,
   solarData,
-  timeline
+  timeline,
+  compareEnabled = false,
+  setCompareEnabled,
+  compareHeight = 5,
+  setCompareHeight,
+  solarDataB = null,
 }: SidebarProps) {
   const { t } = useI18n();
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -460,6 +482,34 @@ export default function Sidebar({
           />
         </div>
 
+        {setCompareEnabled && setCompareHeight && (
+          <div className="space-y-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-2">
+            <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+              <input
+                type="checkbox"
+                className="rounded border-gray-300"
+                checked={compareEnabled}
+                onChange={(e) => setCompareEnabled(e.target.checked)}
+              />
+              <span>{t('sidebar.compareToggle')}</span>
+            </label>
+            {compareEnabled && (
+              <div className="space-y-1">
+                <label className="text-xs text-gray-600 dark:text-gray-400">{t('sidebar.compareHeight')}</label>
+                <input
+                  type="range"
+                  min={1}
+                  max={100}
+                  value={compareHeight}
+                  onChange={(e) => setCompareHeight(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg accent-amber-600"
+                />
+                <div className="text-xs text-center text-amber-700 dark:text-amber-300">{compareHeight}m</div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Time Input */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -485,6 +535,43 @@ export default function Sidebar({
               <p>🕐 {t('sidebar.timeLabel')}: {currentTime}</p>
               <p>📏 {t('sidebar.heightLabel')}: {objectHeight}m</p>
             </div>
+          </div>
+        )}
+
+        {location && (
+          <WeatherStrip
+            lat={location.lat}
+            lon={location.lon}
+            date={date}
+            currentTime={currentTime}
+            labels={{
+              title: t('sidebar.weatherTitle'),
+              avgCloud: t('sidebar.weatherAvgCloud'),
+              atTime: t('sidebar.weatherAtTime'),
+              precip: t('sidebar.weatherPrecip'),
+            }}
+          />
+        )}
+
+        {compareEnabled && solarData && solarDataB && (
+          <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/30 p-2 text-xs">
+            <div className="font-semibold text-amber-900 dark:text-amber-200 mb-1">{t('sidebar.compareTableTitle')}</div>
+            <table className="w-full text-left">
+              <thead>
+                <tr>
+                  <th className="pr-2" />
+                  <th className="text-amber-800 dark:text-amber-300">{t('sidebar.compareColA')}</th>
+                  <th className="text-amber-800 dark:text-amber-300">{t('sidebar.compareColB')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="pr-2 font-medium">max</td>
+                  <td>{maxShadowLength(solarData).toFixed(2)}</td>
+                  <td>{maxShadowLength(solarDataB).toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         )}
 
@@ -536,6 +623,23 @@ export default function Sidebar({
               >
                 <Copy className="w-4 h-4" />
                 <span>{copySuccess ? t('sidebar.exportCopied') : t('sidebar.exportCopy')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!location) return;
+                  openPrintableSolarReport(solarData, {
+                    lat: location.lat,
+                    lon: location.lon,
+                    date,
+                    objectHeightM: objectHeight,
+                  });
+                }}
+                className="col-span-2 flex items-center justify-center space-x-2 px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white text-sm rounded-lg transition-colors"
+              >
+                <Printer className="w-4 h-4" aria-hidden />
+                <span>{t('sidebar.printReport')}</span>
               </button>
             </div>
             

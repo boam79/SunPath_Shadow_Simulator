@@ -44,10 +44,10 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
   }, [checkHealth]);
 
   const statusDot: Record<ApiStatus, { color: string; label: string }> = {
-    checking: { color: 'bg-yellow-400 animate-pulse', label: t('header.apiChecking') || 'API 확인 중' },
-    ok:       { color: 'bg-green-500 animate-pulse', label: t('header.apiConnected') || 'API 연결됨' },
-    slow:     { color: 'bg-yellow-500 animate-pulse', label: t('header.apiSlow') || 'API 느림 (콜드스타트)' },
-    error:    { color: 'bg-red-500', label: t('header.apiError') || 'API 연결 실패' },
+    checking: { color: 'bg-yellow-400 animate-pulse', label: t('header.apiChecking') },
+    ok:       { color: 'bg-green-500 animate-pulse', label: t('header.apiConnected') },
+    slow:     { color: 'bg-yellow-500 animate-pulse', label: t('header.apiSlow') },
+    error:    { color: 'bg-red-500', label: t('header.apiError') },
   };
 
   const toggleDarkMode = () => {
@@ -65,7 +65,14 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo & Title */}
-          <div className="flex items-center space-x-3 cursor-pointer select-none" onClick={onReset}>
+          <div
+            className="flex items-center space-x-3 cursor-pointer select-none"
+            onClick={onReset}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onReset?.(); } }}
+            role="button"
+            tabIndex={0}
+            aria-label={t('header.title')}
+          >
             <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
               <Sun className="w-6 h-6 text-white" />
             </div>
@@ -83,9 +90,10 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
           <div className="flex items-center space-x-4">
             {/* Mobile: Sidebar Toggle */}
             <button
+              type="button"
               onClick={onToggleSidebar}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors md:hidden"
-              aria-label="Open sidebar"
+              aria-label={t('header.openSidebar')}
             >
               <span className="block w-5 h-0.5 bg-gray-700 dark:bg-gray-300 mb-1"></span>
               <span className="block w-5 h-0.5 bg-gray-700 dark:bg-gray-300 mb-1"></span>
@@ -95,9 +103,10 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
             {/* Language Selector */}
             <div className="relative z-50">
               <button
+                type="button"
                 onClick={() => setShowLangMenu(!showLangMenu)}
                 className="flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm"
-                aria-label="Select language"
+                aria-label={t('header.selectLanguage')}
               >
                 <Globe className="w-4 h-4" />
                 <span className="hidden md:inline">{localeNames[locale]}</span>
@@ -109,6 +118,7 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
                   <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden">
                     {locales.map((loc) => (
                       <button
+                        type="button"
                         key={loc}
                         onClick={() => { setLocale(loc); setShowLangMenu(false); }}
                         className={`w-full px-4 py-2 text-left text-sm transition-colors ${
@@ -127,9 +137,10 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
 
             {/* Dark Mode Toggle */}
             <button
+              type="button"
               onClick={toggleDarkMode}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle dark mode"
+              aria-label={t('header.toggleDark')}
             >
               {darkMode ? (
                 <Sun className="w-5 h-5 text-yellow-500" />
@@ -140,8 +151,10 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
 
             {/* API Status — 실제 헬스체크 결과 반영 */}
             <button
+              type="button"
               onClick={checkHealth}
-              title="클릭하여 다시 확인"
+              title={t('header.apiRecheck')}
+              aria-label={t('header.apiRecheck')}
               className="flex items-center space-x-2 cursor-pointer"
             >
               <div className={`w-2 h-2 rounded-full ${statusDot[apiStatus].color}`} />

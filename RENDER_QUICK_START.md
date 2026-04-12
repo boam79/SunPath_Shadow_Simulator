@@ -159,15 +159,8 @@ npm run dev
 - Git push하면 자동으로 재배포
 - Settings → "Auto-Deploy: Yes" 확인
 
-### 슬립 모드 방지 (선택사항)
-무료 플랜은 15분 비활성화 시 슬립 모드 진입
-
-**해결법:**
-1. https://uptimerobot.com 가입
-2. "Add New Monitor" 클릭
-3. URL 입력: `https://your-app.onrender.com/health`
-4. Interval: 5분
-5. 완료! 이제 항상 깨어있음
+### 슬립 모드 (무료 플랜)
+15분 비활성화 시 슬립·콜드 스타트가 있을 수 있습니다. 상시 응답이 필요하면 Render 유료 플랜을 검토하세요.
 
 ### 커스텀 도메인 (선택사항)
 Settings → Custom Domains:
