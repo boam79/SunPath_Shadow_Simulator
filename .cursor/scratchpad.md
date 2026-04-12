@@ -743,6 +743,12 @@
 
 **사용자 확인 필요:** Render 대시보드에 이미 서비스가 있으면 `ALLOWED_ORIGINS`를 위 값과 동일하게 수동 반영하고 재배포하세요. Vercel의 `NEXT_PUBLIC_API_URL`이 Render HTTPS URL인지 확인하세요.
 
+### 2026-04-05 - 프론트 리팩터링(요청: 전부 진행)
+
+**완료:** `lib/api/` 모듈 분할 및 기존 `lib/api.ts` 제거, `@/lib/api`는 `lib/api/index.ts`로 유지. `lib/solar-page-cache.ts` + `lib/hooks/useSolarPageState.ts`로 `app/page.tsx` 상태·캐시·페치 이전. `components/sidebar/`(TabNav, SingleTabPanel, 타입, max-shadow) + `layout/Sidebar.tsx` 재수출. Vitest(`npm run test:unit`), `lib/solar-page-cache.test.ts`, CI `frontend-test`에 unit 단계 추가. 로컬 검증: `vitest run`, `next lint`, `next build` 통과.
+
+**npm audit:** Next/eslint-config 관련 high 4건 — `npm audit fix --force`는 메이저 업그레이드라 적용하지 않음(사용자 승인 전).
+
 ### 2025-10-20 - Task 1 완료 보고
 
 **완료 항목:**
