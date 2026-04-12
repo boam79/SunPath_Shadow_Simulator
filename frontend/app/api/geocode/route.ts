@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org';
-const UA = 'SunPath-Shadow-Simulator/0.1.17 (https://sunpathshadowsimulator.vercel.app)';
+const UA = 'SunPath-Shadow-Simulator/0.1.18 (https://sunpathshadowsimulator.vercel.app)';
 
 const MAX_Q = 200;
 

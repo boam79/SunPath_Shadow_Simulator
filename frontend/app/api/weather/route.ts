@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'date는 YYYY-MM-DD 형식이어야 합니다.' }, { status: 400 });
   }
 
+  // Open-Meteo: start_date/end_date 와 forecast_days 는 동시에 쓸 수 없음 (400)
   const params = new URLSearchParams({
     latitude: String(latN),
     longitude: String(lonN),
@@ -31,7 +32,6 @@ export async function GET(request: NextRequest) {
     timezone: 'auto',
     start_date: date,
     end_date: date,
-    forecast_days: '1',
   });
 
   try {
@@ -40,7 +40,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!res.ok) {
-      return NextResponse.json({ error: 'Open-Meteo 오류' }, { status: 502 });
+      const detail = await res.text().catch(() => '');
+      return NextResponse.json(
+        { error: 'Open-Meteo 오류', status: res.status, detail: detail.slice(0, 500) },
+        { status: 502 }
+      );
     }
 
     const data = await res.json();
