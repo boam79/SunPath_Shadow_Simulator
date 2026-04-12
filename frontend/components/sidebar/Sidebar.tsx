@@ -52,12 +52,12 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="w-full md:w-64 bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-      <div className="p-3 md:p-4 space-y-4">
-        <div className="mb-2">
+    <aside className="w-full overflow-y-auto border-b border-amber-100/90 bg-white/90 shadow-soft backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90 md:w-72 md:border-b-0 md:border-r">
+      <div className="space-y-4 p-3 md:p-4">
+        <div className="mb-1">
           <KakaoPayDonation
             isMobile={isMobile}
-            className="flex flex-col items-center justify-center space-y-1 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm cursor-pointer"
+            className="flex w-full cursor-pointer flex-col items-center justify-center space-y-1 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 px-4 py-2.5 text-sm font-bold text-stone-900 shadow-md transition hover:from-amber-500 hover:to-yellow-500"
             variant="button"
           />
         </div>
@@ -100,10 +100,10 @@ export default function Sidebar({
           </div>
         )}
 
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="border-t border-amber-100/80 pt-4 dark:border-slate-700">
           <KakaoPayDonation
             isMobile={isMobile}
-            className="flex flex-col items-center justify-center space-y-1 w-full px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium cursor-pointer"
+            className="flex w-full cursor-pointer flex-col items-center justify-center space-y-1 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 px-4 py-2.5 text-sm font-bold text-stone-900 shadow-md transition hover:from-amber-500 hover:to-yellow-500"
             variant="button"
           />
         </div>

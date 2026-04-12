@@ -96,8 +96,14 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900`}
+        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased text-stone-800 dark:text-stone-100`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(window.matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark')}catch(e){}",
+          }}
+        />
         <I18nWrapper>{children}</I18nWrapper>
       </body>
     </html>

@@ -1,11 +1,13 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import MainContent from '@/components/layout/MainContent';
+import MobileBottomNav, { type MobileNavId } from '@/components/layout/MobileBottomNav';
 import StructuredData from '@/components/StructuredData';
 import KakaoPayDonation from '@/components/KakaoPayDonation';
+import OnboardingModal from '@/components/OnboardingModal';
 import { useI18n } from '@/lib/i18n-context';
 import { useSolarPageState } from '@/lib/hooks/useSolarPageState';
 
@@ -19,6 +21,9 @@ export default function Home() {
 
 function HomeInner() {
   const { t } = useI18n();
+  const [mobilePanel, setMobilePanel] = useState<'map' | 'data'>('map');
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+
   const {
     location,
     setLocation,
@@ -36,8 +41,6 @@ function HomeInner() {
     compareHeight,
     setCompareHeight,
     lastSavedHint,
-    sidebarOpen,
-    setSidebarOpen,
     isLoading,
     loadingMs,
     error,
@@ -61,117 +64,157 @@ function HomeInner() {
     endTime: tlEnd,
   };
 
+  const coldStartText = t('loading.coldStart').replace(
+    '{{seconds}}',
+    String(Math.round(loadingMs / 1000))
+  );
+
+  const mainLayout = isMobile ? (mobilePanel === 'map' ? 'mapOnly' : 'dataOnly') : 'full';
+
+  const navActive: MobileNavId = moreSheetOpen ? 'more' : mobilePanel === 'data' ? 'data' : 'map';
+
+  const sidebarProps = {
+    location,
+    setLocation,
+    date,
+    setDate,
+    objectHeight,
+    setObjectHeight,
+    currentTime,
+    setCurrentTime,
+    solarData,
+    timeline: timelineProps,
+    compareEnabled,
+    setCompareEnabled,
+    compareHeight,
+    setCompareHeight,
+    solarDataB,
+  };
+
+  const handleMobileNav = (id: MobileNavId) => {
+    if (id === 'more') {
+      setMoreSheetOpen(true);
+      return;
+    }
+    setMoreSheetOpen(false);
+    if (id === 'map' || id === 'data') setMobilePanel(id);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="app-page-bg flex min-h-screen flex-col">
       <StructuredData />
+      <OnboardingModal />
       <Header
-        onReset={handleHeaderReset}
-        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        onReset={() => {
+          handleHeaderReset();
+          setMoreSheetOpen(false);
+          setMobilePanel('map');
+        }}
+        onToggleSidebar={() => setMoreSheetOpen(true)}
       />
 
       {isLoading && loadingMs > 5000 && (
-        <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700 px-4 py-2 text-sm text-amber-800 dark:text-amber-200 flex items-center gap-2">
-          <span className="animate-spin text-base">⏳</span>
-          <span>
-            서버가 깨어나는 중입니다… ({Math.round(loadingMs / 1000)}초 경과, 최대 50초 소요될 수 있습니다)
+        <div
+          className="flex items-center gap-3 border-b border-amber-200/90 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 text-sm font-medium text-amber-900 dark:border-amber-800/50 dark:from-amber-950/50 dark:to-orange-950/40 dark:text-amber-100"
+          role="status"
+        >
+          <span className="text-lg" aria-hidden>
+            ☀️
           </span>
+          <span>{coldStartText}</span>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-40 md:hidden">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-            <div className="absolute left-0 top-0 bottom-0 w-64 bg-white dark:bg-gray-800 shadow-xl">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row md:overflow-hidden">
+        <div className="hidden min-h-0 shrink-0 md:block md:w-72 md:overflow-y-auto">
+          <Sidebar {...sidebarProps} />
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col pb-20 md:min-h-0 md:pb-0">
+          <MainContent
+            location={location}
+            date={date}
+            objectHeight={objectHeight}
+            currentTime={currentTime}
+            onLocationChange={setLocation}
+            solarData={solarData}
+            isLoading={isLoading}
+            error={error}
+            onRetry={fetchSolarData}
+            layout={mainLayout}
+          />
+        </div>
+      </div>
+
+      <MobileBottomNav active={navActive} onSelect={handleMobileNav} />
+
+      {moreSheetOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-stone-900/45 backdrop-blur-sm"
+            aria-label={t('nav.closeSheet')}
+            onClick={() => setMoreSheetOpen(false)}
+          />
+          <div className="absolute bottom-0 left-0 right-0 flex max-h-[min(88dvh,640px)] flex-col overflow-hidden rounded-t-3xl border border-amber-100/90 bg-cream-50/98 shadow-2xl dark:border-slate-600 dark:bg-slate-900/98">
+            <div className="flex shrink-0 items-center justify-between border-b border-amber-100/80 px-4 py-3 dark:border-slate-700">
+              <span className="text-base font-bold text-stone-800 dark:text-white">{t('nav.more')}</span>
+              <button
+                type="button"
+                onClick={() => setMoreSheetOpen(false)}
+                className="rounded-full bg-sky-100 px-4 py-2 text-sm font-bold text-sky-900 dark:bg-sky-900/50 dark:text-sky-100"
+              >
+                {t('nav.closeSheet')}
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-0 pb-6 pt-1">
               <Sidebar
-                location={location}
-                setLocation={(v) => {
-                  setLocation(v);
-                  setSidebarOpen(false);
+                {...sidebarProps}
+                setLocation={(loc) => {
+                  setLocation(loc);
                 }}
-                date={date}
-                setDate={setDate}
-                objectHeight={objectHeight}
-                setObjectHeight={setObjectHeight}
-                currentTime={currentTime}
-                setCurrentTime={setCurrentTime}
-                solarData={solarData}
-                timeline={timelineProps}
-                compareEnabled={compareEnabled}
-                setCompareEnabled={setCompareEnabled}
-                compareHeight={compareHeight}
-                setCompareHeight={setCompareHeight}
-                solarDataB={solarDataB}
               />
             </div>
           </div>
-        )}
-
-        <div className="hidden md:block">
-          <Sidebar
-            location={location}
-            setLocation={setLocation}
-            date={date}
-            setDate={setDate}
-            objectHeight={objectHeight}
-            setObjectHeight={setObjectHeight}
-            currentTime={currentTime}
-            setCurrentTime={setCurrentTime}
-            solarData={solarData}
-            timeline={timelineProps}
-            compareEnabled={compareEnabled}
-            setCompareEnabled={setCompareEnabled}
-            compareHeight={compareHeight}
-            setCompareHeight={setCompareHeight}
-            solarDataB={solarDataB}
-          />
         </div>
+      )}
 
-        <MainContent
-          location={location}
-          date={date}
-          objectHeight={objectHeight}
-          currentTime={currentTime}
-          onLocationChange={setLocation}
-          solarData={solarData}
-          isLoading={isLoading}
-          error={error}
-          onRetry={fetchSolarData}
-        />
-      </div>
-
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400 gap-4">
-          <div className="flex items-center space-x-4 mb-2 md:mb-0">
-            <span>{t('footer.copyright')}</span>
+      <footer className="mt-auto border-t border-amber-100/90 bg-white/80 px-3 py-3 backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/80 md:px-8 md:py-5">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 pb-[max(4.5rem,env(safe-area-inset-bottom))] text-xs text-stone-600 dark:text-stone-300 md:flex-row md:justify-between md:gap-4 md:pb-0 md:text-sm">
+          <div className="flex flex-col items-center gap-2 md:mb-0 md:flex-row md:flex-wrap md:items-center md:gap-x-3">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-4 py-2 text-xs font-semibold text-sky-900 shadow-sm transition hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-100 md:text-xs"
+            >
+              <span aria-hidden>🔗</span>
+              <span>{copyToast ? t('footer.shareCopied') : t('footer.shareLink')}</span>
+            </button>
+            <span className="font-medium md:inline">{t('footer.copyright')}</span>
             {lastSavedHint && (
-              <span className="text-xs text-emerald-600 dark:text-emerald-400" role="status">
+              <span
+                className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 md:text-xs"
+                role="status"
+              >
                 {t('sidebar.lastSavedHint')}
               </span>
             )}
-            <span className="hidden md:inline">•</span>
-            <span>
-              {t('footer.createdBy')}: <strong className="text-gray-800 dark:text-gray-200">boam79</strong>
+            <span className="hidden text-stone-300 dark:text-stone-600 md:inline">·</span>
+            <span className="hidden md:inline">
+              {t('footer.createdBy')}: <strong className="text-stone-800 dark:text-white">boam79</strong>
             </span>
           </div>
-          <div className="flex items-center space-x-4 flex-wrap justify-center">
-            <button
-              onClick={handleShare}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs hover:bg-blue-100 transition-colors"
-            >
-              <span>🔗</span>
-              <span>{copyToast ? '복사됨!' : '현재 위치 공유'}</span>
-            </button>
+          <div className="hidden flex-wrap items-center justify-center gap-3 md:flex">
             <KakaoPayDonation
               isMobile={isMobile}
-              className="flex flex-col md:flex-row items-center justify-center space-y-0.5 md:space-y-0 md:space-x-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors shadow-sm text-sm font-medium cursor-pointer"
+              className="flex cursor-pointer flex-col items-center justify-center space-y-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400 px-4 py-2 text-sm font-bold text-stone-900 shadow-md transition hover:from-amber-500 hover:to-yellow-500 md:flex-row md:space-y-0 md:space-x-2"
               variant="link"
             />
-            <span className="hidden md:inline">•</span>
-            <span>{t('footer.contact')}:</span>
+            <span className="text-stone-300 dark:text-stone-600">·</span>
+            <span className="font-medium">{t('footer.contact')}:</span>
             <a
               href="mailto:ckadltmfxhrxhrxhr@gmail.com"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+              className="font-semibold text-sky-700 underline-offset-2 transition hover:text-sky-900 hover:underline dark:text-sky-400 dark:hover:text-sky-200"
             >
               ckadltmfxhrxhrxhr@gmail.com
             </a>

@@ -34,7 +34,6 @@ export function useSolarPageState() {
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [compareHeight, setCompareHeight] = useState(5);
   const [lastSavedHint, setLastSavedHint] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMs, setLoadingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -197,8 +196,6 @@ export function useSolarPageState() {
     compareHeight,
     setCompareHeight,
     lastSavedHint,
-    sidebarOpen,
-    setSidebarOpen,
     isLoading,
     loadingMs,
     error,

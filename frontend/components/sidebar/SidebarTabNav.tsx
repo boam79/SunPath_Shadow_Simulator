@@ -17,10 +17,10 @@ export default function SidebarTabNav({ tab, onTabChange }: SidebarTabNavProps) 
     <button
       type="button"
       onClick={() => onTabChange(id)}
-      className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+      className={`rounded-xl px-3 py-2.5 text-xs font-semibold transition-all ${
         tab === id
-          ? 'bg-blue-600 text-white'
-          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          ? 'bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-md shadow-sky-500/25'
+          : 'bg-white/90 text-stone-600 shadow-sm ring-1 ring-amber-100/80 hover:bg-amber-50/90 dark:bg-slate-800/90 dark:text-stone-200 dark:ring-slate-600 dark:hover:bg-slate-700'
       }`}
     >
       {icon}
@@ -29,7 +29,7 @@ export default function SidebarTabNav({ tab, onTabChange }: SidebarTabNavProps) 
   );
 
   return (
-    <div className="grid grid-cols-2 gap-2 mb-2">
+    <div className="mb-2 grid grid-cols-2 gap-2">
       {btn('single', t('sidebar.tabs.single'))}
       {btn(
         'batch',

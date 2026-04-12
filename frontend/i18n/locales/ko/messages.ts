@@ -6,16 +6,38 @@ export default {
     keywords: '태양 경로,그림자 시뮬레이터,일조량 계산,태양 위치,건축 설계,조경 설계,태양광,실시간 시뮬레이션,지오코딩,NREL SPA',
   },
   // Header
+  nav: {
+    aria: '주요 메뉴',
+    map: '지도',
+    data: '그래프',
+    more: '설정',
+    closeSheet: '닫기',
+  },
+
+  main: {
+    dataWaiting: '지도 탭에서 위치를 정하면 이곳에 그래프와 수치가 나타나요.',
+    dataLoading: '데이터를 불러오는 중이에요…',
+  },
+
+  onboarding: {
+    kicker: '처음이신가요?',
+    title: '이렇게 쓰면 돼요',
+    step1: '주소를 검색하거나 지도를 눌러 위치를 정해요.',
+    step2: '날짜와 시간을 바꾸면 해와 그림자가 같이 움직여요.',
+    step3: '「그래프」에서 수치와 차트를, 「설정」에서 물체 높이·보내기·고급 기능을 쓸 수 있어요.',
+    cta: '알겠어요, 시작할게요',
+  },
+
   header: {
-    title: 'SunPath & Shadow Simulator',
-    subtitle: '태양 경로 · 일조량 · 그림자 시뮬레이터',
+    title: 'SunPath & Shadow',
+    subtitle: '위치만 정하면, 오늘의 해와 그림자가 쉽게 보여요',
     openSidebar: '사이드바 열기',
     toggleDark: '다크모드 토글',
     selectLanguage: '언어 선택',
-    apiConnected: 'API 연결됨',
-    apiChecking: 'API 확인 중',
-    apiSlow: 'API 느림 (콜드스타트)',
-    apiError: 'API 연결 실패',
+    apiConnected: '연결 좋아요',
+    apiChecking: '잠깐 확인 중…',
+    apiSlow: '첫 연결은 조금 느릴 수 있어요',
+    apiError: '연결에 문제가 있어요',
     apiRecheck: 'API 상태 다시 확인',
   },
 
@@ -67,10 +89,10 @@ export default {
     printReport: '요약 인쇄 / PDF',
     lastSavedHint: '마지막 계산 요약이 이 기기에 저장되었습니다.',
     tabs: {
-      single: '단일 계산',
-      batch: '배치',
+      single: '하루 보기',
+      batch: '여러 번',
       season: '계절 비교',
-      tools: '도구',
+      tools: '더보기',
     },
   },
 
@@ -85,6 +107,13 @@ export default {
     copyright: '© 2025 SunPath & Shadow Simulator',
     createdBy: '제작자',
     contact: '문의사항',
+    shareLink: '이 화면 공유하기',
+    shareCopied: '링크를 복사했어요!',
+  },
+
+  loading: {
+    coldStart:
+      '첫 실행이라 서버가 잠에서 깨는 중이에요. ({{seconds}}초째 — 보통 1분 안쪽이면 돼요)',
   },
 
   // Map
@@ -105,7 +134,7 @@ export default {
     sunPosition: '태양 위치',
     currentShadow: '현재 그림자',
     shadowTrajectory: '하루 그림자 궤적',
-    clickToSelect: '지도를 클릭하여 위치를 선택하세요',
+    clickToSelect: '지도를 눌러 위치를 바꿀 수 있어요',
   },
 
   // Chart

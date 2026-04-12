@@ -6,16 +6,38 @@ export default {
     keywords: 'solar path,shadow simulator,irradiance calculator,sun position,architecture design,landscape design,solar energy,real-time simulation,geocoding,NREL SPA',
   },
   // Header
+  nav: {
+    aria: 'Main navigation',
+    map: 'Map',
+    data: 'Charts',
+    more: 'Settings',
+    closeSheet: 'Close',
+  },
+
+  main: {
+    dataWaiting: 'Pick a spot on the Map tab — charts and numbers will show up here.',
+    dataLoading: 'Loading your data…',
+  },
+
+  onboarding: {
+    kicker: 'New here?',
+    title: 'How it works',
+    step1: 'Search for a place or tap the map to set your spot.',
+    step2: 'Change the date and time — the sun and shadow move with you.',
+    step3: 'Use Charts for numbers and graphs; use Settings for height, export, and extras.',
+    cta: 'Got it, let’s go',
+  },
+
   header: {
-    title: 'SunPath & Shadow Simulator',
-    subtitle: 'Solar Path · Irradiance · Shadow Simulator',
+    title: 'SunPath & Shadow',
+    subtitle: 'Pick a place — see today’s sun and shadows, the friendly way',
     openSidebar: 'Open sidebar',
     toggleDark: 'Toggle dark mode',
     selectLanguage: 'Select language',
-    apiConnected: 'API Connected',
-    apiChecking: 'Checking API',
-    apiSlow: 'API slow (cold start)',
-    apiError: 'API unavailable',
+    apiConnected: 'All good',
+    apiChecking: 'Checking…',
+    apiSlow: 'Warming up (first load can be slow)',
+    apiError: 'Can’t reach the server',
     apiRecheck: 'Recheck API status',
   },
 
@@ -67,10 +89,10 @@ export default {
     printReport: 'Print summary / PDF',
     lastSavedHint: 'Last calculation summary saved on this device.',
     tabs: {
-      single: 'Single',
-      batch: 'Batch',
-      season: 'Season',
-      tools: 'Tools',
+      single: 'Today',
+      batch: 'Many runs',
+      season: 'Seasons',
+      tools: 'Extras',
     },
   },
 
@@ -85,6 +107,13 @@ export default {
     copyright: '© 2025 SunPath & Shadow Simulator',
     createdBy: 'Created by',
     contact: 'Contact',
+    shareLink: 'Share this view',
+    shareCopied: 'Link copied!',
+  },
+
+  loading: {
+    coldStart:
+      'The server is waking up — first visit can take a bit. ({{seconds}}s — usually under a minute)',
   },
 
   // Map
@@ -105,7 +134,7 @@ export default {
     sunPosition: 'Sun Position',
     currentShadow: 'Current Shadow',
     shadowTrajectory: 'Daily Shadow Trajectory',
-    clickToSelect: 'Click map to select location',
+    clickToSelect: 'Tap the map to pick a spot',
   },
 
   // Chart

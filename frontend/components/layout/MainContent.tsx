@@ -12,6 +12,9 @@ const Map = dynamic(() => import('@/components/Map'), {
   ssr: false
 });
 
+/** `mapOnly` / `dataOnly`: 모바일 하단 탭용. `full`: 기본(데스크톱 포함). */
+export type MainContentLayout = 'full' | 'mapOnly' | 'dataOnly';
+
 interface MainContentProps {
   location: {lat: number; lon: number} | null;
   date: string;
@@ -22,6 +25,7 @@ interface MainContentProps {
   isLoading: boolean;
   error: string | null;
   onRetry?: () => void;
+  layout?: MainContentLayout;
 }
 
 export default function MainContent({
@@ -32,9 +36,14 @@ export default function MainContent({
   solarData,
   isLoading,
   error,
-  onRetry
+  onRetry,
+  layout = 'full',
 }: MainContentProps) {
   const { t, locale } = useI18n();
+
+  const showMap = layout !== 'dataOnly';
+  const showData = layout !== 'mapOnly';
+  const mapOnly = layout === 'mapOnly';
 
   const handleLocationChange = (lat: number, lon: number) => {
     if (onLocationChange) {
@@ -187,81 +196,110 @@ export default function MainContent({
   }, [solarData?.summary?.sunset, locale]);
 
   return (
-    <div className="flex-1 overflow-hidden flex flex-col">
-      <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="w-full md:max-w-6xl mx-auto px-4 pt-4 pb-2">
-          <div className="bg-gray-100 dark:bg-gray-800 relative h-[60vh] md:h-[70vh] flex-none rounded-lg overflow-hidden">
-            <Map 
-              location={location} 
-              onLocationChange={handleLocationChange}
-              currentDataPoint={currentDataPoint || null}
-              solarSeries={solarData?.series || null}
-              currentTime={currentTime}
-            />
+    <div className={`flex flex-1 flex-col overflow-hidden ${mapOnly ? 'min-h-0' : ''}`}>
+      {showMap && (
+        <div
+          className={`z-20 border-b border-amber-100/80 bg-white/80 shadow-sm backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/80 ${
+            mapOnly ? 'flex min-h-0 flex-1 flex-col' : 'sticky top-0'
+          }`}
+        >
+          <div
+            className={`mx-auto w-full max-w-6xl ${
+              mapOnly
+                ? 'flex min-h-0 flex-1 flex-col px-2 pb-2 pt-2'
+                : 'px-3 pb-2 pt-3 md:px-4 md:pt-4'
+            }`}
+          >
+            <div
+              className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-50 via-white to-amber-50 p-1 shadow-card ring-2 ring-amber-100/70 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 dark:ring-slate-600 ${
+                mapOnly ? 'flex min-h-0 flex-1 flex-col' : 'h-[60vh] flex-none md:h-[70vh]'
+              }`}
+            >
+              <div className="relative h-full min-h-0 w-full flex-1 overflow-hidden rounded-[1.15rem] bg-stone-100 dark:bg-slate-950">
+                <Map
+                  location={location}
+                  onLocationChange={handleLocationChange}
+                  currentDataPoint={currentDataPoint || null}
+                  solarSeries={solarData?.series || null}
+                  currentTime={currentTime}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Error banner and retry */}
-      {error && (
-        <div className="w-full md:max-w-6xl mx-auto px-4 mt-3" role="alert" aria-live="assertive">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-center justify-between">
-            <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+      {showData && error && (
+        <div className="mx-auto mt-3 w-full max-w-6xl px-3 md:px-4" role="alert" aria-live="assertive">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50/95 p-3 dark:border-rose-800 dark:bg-rose-950/40">
+            <p className="text-sm font-medium text-rose-800 dark:text-rose-200">{error}</p>
             {onRetry && (
-              <button type="button" onClick={onRetry} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md">{t('optimization.retry')}</button>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="shrink-0 rounded-full bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700"
+              >
+                {t('optimization.retry')}
+              </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Scrollable Content: Data Display (safe minimal) */}
-      <div className="flex-1 overflow-y-auto w-full md:max-w-6xl mx-auto px-4">
-        <div className="bg-white dark:bg-gray-800 pt-4 pb-4">
+      {showData && (
+      <div className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-3 md:px-4">
+        <div className={`pb-6 ${mapOnly ? 'pt-2' : 'pt-3'}`}>
+          {layout === 'dataOnly' && (isLoading || !solarData || !location) && !error && (
+            <div className="rounded-2xl border border-amber-100/90 bg-white/90 px-4 py-12 text-center text-sm font-medium text-stone-600 dark:border-slate-600 dark:bg-slate-800/80 dark:text-stone-300">
+              {isLoading ? t('main.dataLoading') : t('main.dataWaiting')}
+            </div>
+          )}
           {location && solarData && !isLoading ? (
-            <div className="space-y-4 p-3 md:p-4">
+            <div className="space-y-4 p-2 md:p-4">
               <div className="grid grid-cols-3 gap-2 md:gap-3">
-                <div className="p-2 md:p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <div className="text-xs text-yellow-700 dark:text-yellow-400 mb-1">{t('map.solarAltitude')}</div>
-                  <div className="text-xl font-bold text-yellow-900 dark:text-yellow-300">
+                <div className="rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50 to-yellow-50 p-2 shadow-sm dark:border-amber-800/50 dark:from-amber-950/40 dark:to-yellow-950/30 md:p-3">
+                  <div className="mb-1 text-xs font-semibold text-amber-800 dark:text-amber-200">{t('map.solarAltitude')}</div>
+                  <div className="text-xl font-bold text-amber-950 dark:text-amber-100">
                     {currentDataPoint ? currentDataPoint.sun.altitude.toFixed(1) : solarData.summary.max_altitude.toFixed(1)}°
                   </div>
                 </div>
-                <div className="p-2 md:p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                  <div className="text-xs text-orange-700 dark:text-orange-400 mb-1">{t('map.irradiance')} (GHI)</div>
-                  <div className="text-xl font-bold text-orange-900 dark:text-orange-300">
+                <div className="rounded-2xl border border-orange-200/90 bg-gradient-to-br from-orange-50 to-amber-50 p-2 shadow-sm dark:border-orange-800/50 dark:from-orange-950/40 dark:to-amber-950/30 md:p-3">
+                  <div className="mb-1 text-xs font-semibold text-orange-800 dark:text-orange-200">{t('map.irradiance')} (GHI)</div>
+                  <div className="text-xl font-bold text-orange-950 dark:text-orange-100">
                     {currentDataPoint?.irradiance ? Math.round(currentDataPoint.irradiance.ghi) : '--'} W/m²
                   </div>
                 </div>
-                <div className="p-2 md:p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                  <div className="text-xs text-purple-700 dark:text-purple-400 mb-1">{t('map.shadowLength')}</div>
-                  <div className="text-xl font-bold text-purple-900 dark:text-purple-300">
+                <div className="rounded-2xl border border-violet-200/90 bg-gradient-to-br from-violet-50 to-purple-50 p-2 shadow-sm dark:border-violet-800/50 dark:from-violet-950/40 dark:to-purple-950/30 md:p-3">
+                  <div className="mb-1 text-xs font-semibold text-violet-800 dark:text-violet-200">{t('map.shadowLength')}</div>
+                  <div className="text-xl font-bold text-violet-950 dark:text-violet-100">
                     {typeof currentDataPoint?.shadow?.length === 'number' ? currentDataPoint.shadow.length.toFixed(2) : '--'} m
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 md:gap-3 text-sm">
-                <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">{t('optimization.sunrise')}</div>
-                  <div className="font-semibold text-gray-900 dark:text-white">{sunriseStr}</div>
+              <div className="grid grid-cols-2 gap-2 text-sm md:gap-3">
+                <div className="rounded-2xl border border-sky-100 bg-sky-50/90 p-2 dark:border-sky-900/40 dark:bg-sky-950/30 md:p-3">
+                  <div className="mb-1 text-xs font-semibold text-sky-800 dark:text-sky-200">{t('optimization.sunrise')}</div>
+                  <div className="font-bold text-sky-950 dark:text-sky-50">{sunriseStr}</div>
                 </div>
-                <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-gray-600 dark:text-gray-400 text-xs mb-1">{t('optimization.sunset')}</div>
-                  <div className="font-semibold text-gray-900 dark:text-white">{sunsetStr}</div>
+                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/90 p-2 dark:border-indigo-900/40 dark:bg-indigo-950/30 md:p-3">
+                  <div className="mb-1 text-xs font-semibold text-indigo-800 dark:text-indigo-200">{t('optimization.sunset')}</div>
+                  <div className="font-bold text-indigo-950 dark:text-indigo-50">{sunsetStr}</div>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="mt-4 border-t border-amber-100/90 pt-4 dark:border-slate-700">
                 <SolarChart solarData={solarData} currentTime={currentTime} />
               </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="mt-4 border-t border-amber-100/90 pt-4 dark:border-slate-700">
                 <OptimizationPanel solarData={solarData} />
               </div>
             </div>
           ) : null}
         </div>
       </div>
+      )}
     </div>
   );
 }
