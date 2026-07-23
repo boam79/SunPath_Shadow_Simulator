@@ -49,6 +49,7 @@ export function exportToCSV(data: SolarCalculationResponse, filename?: string): 
       safeToFixed(point.irradiance?.dni, 2),
       safeToFixed(point.irradiance?.dhi, 2),
       safeToFixed(point.irradiance?.par, 2),
+      safeToFixed(point.irradiance?.poa, 2),
       safeToFixed(point.shadow?.length, 2),
       safeToFixed(point.shadow?.direction, 2)
     ];

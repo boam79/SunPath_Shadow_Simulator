@@ -845,6 +845,18 @@
 
 ## 💬 Executor's Feedback or Assistance Requests
 
+### 2026-07-23 - Executor: 태양경로·데이터 고도화 S0–S3 전부 구현
+
+**역할:** Executor — 사용자 「전부 진행해」
+
+**구현:** Summary 계기판 · Timeline 툴팁 · 계절 GHI/그림자 · 리포트 · 진태양경로 vs tip · 기상 단파 병합 · elevation · interval/sky_model · POA/PAR · shadow polygon
+
+**검증:** vitest 13 · next build OK
+
+**사용자 확인 요청:** 차트·분석에서 Summary/기상/POA, 지도 경로 레전드, 패널 기울기>0.
+
+---
+
 ### 2026-07-23 - Executor: PC+모바일 유저스토리 전수 · 버그 수정
 
 **역할:** Executor
