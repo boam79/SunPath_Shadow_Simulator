@@ -10,6 +10,7 @@ import { useI18n } from '@/lib/i18n-context';
 import type { SolarCalculationResponse, SolarDataPoint } from '@/lib/api';
 import { wallClockInstant } from '@/lib/time-wallclock';
 import type { SeriesWithWeather } from '@/lib/weather-merge';
+import { pickFiniteNumber, resolveShadowLength } from '@/lib/shadow-display';
 
 // Dynamically import Map to avoid SSR issues
 const Map = dynamic(() => import('@/components/Map'), {
@@ -128,14 +129,23 @@ export default function MainContent({
     let interpolatedShadow = null;
     if (prev.p.shadow || next.p.shadow) {
       if (prev.p.shadow && next.p.shadow) {
-        const shadowLength =
-          typeof prev.p.shadow.length === 'number' && typeof next.p.shadow.length === 'number'
-            ? lerp(prev.p.shadow.length, next.p.shadow.length)
-            : undefined;
+        const prevLen = pickFiniteNumber(prev.p.shadow.length, undefined);
+        const nextLen = pickFiniteNumber(next.p.shadow.length, undefined);
+        let shadowLength: number | undefined;
+        if (prevLen != null && nextLen != null) {
+          shadowLength = lerp(prevLen, nextLen);
+        } else {
+          shadowLength = pickFiniteNumber(prevLen, nextLen);
+        }
+        if (shadowLength == null) {
+          const derived = resolveShadowLength(null, objectHeight, sunAlt);
+          shadowLength = derived ?? undefined;
+        }
+
         const shadowDirection =
           typeof prev.p.shadow.direction === 'number' && typeof next.p.shadow.direction === 'number'
             ? lerpAngle(prev.p.shadow.direction, next.p.shadow.direction)
-            : undefined;
+            : pickFiniteNumber(prev.p.shadow.direction, next.p.shadow.direction);
 
         let shadowCoordinates = null;
         if (
@@ -152,13 +162,40 @@ export default function MainContent({
           );
         }
 
+        const poly =
+          (prev.p.shadow.polygon && prev.p.shadow.polygon.length >= 3
+            ? prev.p.shadow.polygon
+            : null) ||
+          (next.p.shadow.polygon && next.p.shadow.polygon.length >= 3
+            ? next.p.shadow.polygon
+            : null);
+
         interpolatedShadow = {
           length: shadowLength,
           direction: shadowDirection,
           coordinates: shadowCoordinates,
+          polygon: poly,
         };
       } else {
-        interpolatedShadow = prev.p.shadow || next.p.shadow;
+        const side = prev.p.shadow || next.p.shadow;
+        const length =
+          pickFiniteNumber(side?.length, undefined) ??
+          resolveShadowLength(null, objectHeight, sunAlt) ??
+          undefined;
+        interpolatedShadow = side ? { ...side, length } : null;
+      }
+    } else {
+      const derived = resolveShadowLength(null, objectHeight, sunAlt);
+      if (derived != null) {
+        const dir = (sunAzi + 180) % 360;
+        interpolatedShadow = {
+          length: derived,
+          direction: dir,
+          coordinates:
+            location && derived > 0
+              ? calculateShadowEndpoint(location.lat, location.lon, derived, dir)
+              : null,
+        };
       }
     }
 
@@ -184,7 +221,7 @@ export default function MainContent({
           : null,
       shadow: interpolatedShadow,
     };
-  }, [solarData, date, currentTime, location]);
+  }, [solarData, date, currentTime, location, objectHeight]);
 
   const metricAltitude = currentDataPoint
     ? currentDataPoint.sun.altitude.toFixed(1)
@@ -192,10 +229,13 @@ export default function MainContent({
   const metricGhi = currentDataPoint?.irradiance
     ? Math.round(currentDataPoint.irradiance.ghi)
     : null;
-  const metricShadow =
-    typeof currentDataPoint?.shadow?.length === 'number'
-      ? currentDataPoint.shadow.length.toFixed(2)
-      : null;
+  const metricShadow = (() => {
+    const raw = currentDataPoint?.shadow?.length;
+    if (typeof raw === 'number' && Number.isFinite(raw)) return raw.toFixed(2);
+    if (!currentDataPoint) return null;
+    const fallback = resolveShadowLength(null, objectHeight, currentDataPoint.sun.altitude);
+    return fallback != null ? fallback.toFixed(2) : null;
+  })();
 
   const analyticsBody =
     location && solarData && !isLoading ? (

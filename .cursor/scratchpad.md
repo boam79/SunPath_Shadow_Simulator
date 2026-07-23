@@ -846,6 +846,25 @@
 
 ## 💬 Executor's Feedback or Assistance Requests
 
+### 2026-07-23 - Executor: 3D 빈 지도·그림자 — 확인/수정
+
+**역할:** Executor — 「Executor 확인해」
+
+**조사:**
+1. 모바일 3D 화면이 연한 파란 단색 → stage 배경 `#dbeaf5` 또는 sky fill이 basemap보다 먼저/과하게 보임. terrain을 style load 전에 걸면 MapLibre가 빈 화면처럼 보일 수 있음.
+2. 그림자 `—`/`null` → 보간 시 한쪽 length가 null이면 전체 length가 사라지고, tipMetrics도 API null이면 숨김.
+
+**수정:**
+- Map: style.load 후 terrain/sky, 모바일 soft sky·pitch↓·zoom↑, resize on 3D, DEM 오류 시 terrain 해제
+- `shadow-display` fallback + MainContent 보간/polygon 보존 + tipMetrics resolve
+- Timeline 그림자는 항상 표시(없으면 —)
+
+**검증:** vitest 13 · (빌드 진행)
+
+**사용자 확인:** 모바일 3D에서 지형/건물 보이고, 정오에 그림자 m 값이 나오는지.
+
+---
+
 ### 2026-07-23 - Executor: 다중 건물 레이캐스트 (벡터 타일 BIM proxy)
 
 **역할:** Executor — 「executor로 진행해」

@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import MainContent from '@/components/layout/MainContent';
+import { resolveShadowLength } from '@/lib/shadow-display';
 import MobileBottomNav, { type MobileNavId } from '@/components/layout/MobileBottomNav';
 import StructuredData from '@/components/StructuredData';
 import KakaoPayDonation from '@/components/KakaoPayDonation';
@@ -87,10 +88,11 @@ function HomeInner() {
     return {
       altitude: best.sun?.altitude ?? null,
       ghi: best.irradiance?.ghi ?? null,
-      shadowLength:
-        typeof best.shadow?.length === 'number' && Number.isFinite(best.shadow.length)
-          ? best.shadow.length
-          : null,
+      shadowLength: resolveShadowLength(
+        best.shadow?.length,
+        objectHeight,
+        best.sun?.altitude ?? 0
+      ),
     };
   })();
 

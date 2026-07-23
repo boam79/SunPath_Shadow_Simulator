@@ -350,11 +350,12 @@ export default function Timeline({
                   {t('timeline.tipGhi')} {Math.round(metrics.ghi)} W/m²
                 </span>
               )}
-              {metrics.shadowLength != null && Number.isFinite(metrics.shadowLength) && (
-                <span>
-                  {t('timeline.tipShadow')} {metrics.shadowLength.toFixed(1)} m
-                </span>
-              )}
+              <span>
+                {t('timeline.tipShadow')}{' '}
+                {metrics.shadowLength != null && Number.isFinite(metrics.shadowLength)
+                  ? `${metrics.shadowLength.toFixed(1)} m`
+                  : '—'}
+              </span>
             </div>
           )}
         </div>

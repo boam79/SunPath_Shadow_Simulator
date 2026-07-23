@@ -51,7 +51,8 @@ function applyTerrainAndSky(
   enabled: boolean,
   exaggeration: number,
   hm: string | undefined,
-  showBuildings: boolean
+  showBuildings: boolean,
+  softSky = false
 ) {
   try {
     if (enabled) {
@@ -66,7 +67,17 @@ function applyTerrainAndSky(
       }
       map.setTerrain({ source: TERRAIN_DEM.id, exaggeration });
       try {
-        map.setSky(skyForTime(hm));
+        const sky = skyForTime(hm);
+        if (softSky) {
+          map.setSky({
+            ...sky,
+            'sky-horizon-blend': Math.min(sky['sky-horizon-blend'], 0.55),
+            'horizon-fog-blend': Math.min(sky['horizon-fog-blend'], 0.35),
+            'fog-ground-blend': Math.min(sky['fog-ground-blend'], 0.12),
+          });
+        } else {
+          map.setSky(sky);
+        }
       } catch {
         /* sky unsupported */
       }
@@ -96,6 +107,11 @@ function applyTerrainAndSky(
   } catch (err) {
     if (process.env.NODE_ENV === 'development') {
       console.warn('[Map3D] terrain/sky', err);
+    }
+    try {
+      map.setTerrain(null);
+    } catch {
+      /* ignore */
     }
   }
 }
@@ -158,24 +174,48 @@ export default function MapComponent({
 
   const exaggeration = isNarrow ? 1.05 : 1.35;
   const terrainOn = view3d && showTerrain;
+  const softSky = isNarrow;
 
   const sync3d = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (!map || !mapReady) return;
-    applyTerrainAndSky(map, terrainOn, exaggeration, currentTime, showBuildings);
-  }, [terrainOn, exaggeration, currentTime, showBuildings, mapReady]);
+    try {
+      map.resize();
+    } catch {
+      /* ignore */
+    }
+    // Style must be loaded before terrain/sky or MapLibre can paint a blank sky fill
+    if (!map.isStyleLoaded()) {
+      map.once('style.load', () => {
+        applyTerrainAndSky(map, terrainOn, exaggeration, currentTime, showBuildings, softSky);
+      });
+      return;
+    }
+    applyTerrainAndSky(map, terrainOn, exaggeration, currentTime, showBuildings, softSky);
+  }, [terrainOn, exaggeration, currentTime, showBuildings, mapReady, softSky]);
 
   useEffect(() => {
     sync3d();
   }, [sync3d]);
 
   useEffect(() => {
+    const pitch = view3d ? (isNarrow ? 38 : 55) : 0;
+    const minZoom = view3d ? (isNarrow ? 15 : 14.5) : 0;
     setViewState((vs) => ({
       ...vs,
-      pitch: view3d ? (isNarrow ? 45 : 58) : 0,
+      pitch,
       bearing: view3d ? vs.bearing : 0,
-      zoom: Math.max(vs.zoom, view3d ? 14 : vs.zoom),
+      zoom: Math.max(vs.zoom, minZoom || vs.zoom),
     }));
+    // After pitch change, force a layout pass so canvas is not stuck on stage bg
+    const t = window.setTimeout(() => {
+      try {
+        mapRef.current?.getMap()?.resize();
+      } catch {
+        /* ignore */
+      }
+    }, 80);
+    return () => window.clearTimeout(t);
   }, [view3d, isNarrow]);
 
   const getTimeBasedColor = (timeString: string): string => {
@@ -402,15 +442,33 @@ export default function MapComponent({
           try {
             e.target.resize();
             setMapReady(true);
-            applyTerrainAndSky(
-              e.target,
-              terrainOn,
-              exaggeration,
-              currentTime,
-              showBuildings
-            );
+            const apply = () =>
+              applyTerrainAndSky(
+                e.target,
+                terrainOn,
+                exaggeration,
+                currentTime,
+                showBuildings,
+                isNarrow
+              );
+            if (e.target.isStyleLoaded()) apply();
+            else e.target.once('style.load', apply);
           } catch {
             setMapReady(true);
+          }
+        }}
+        onError={(e) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[Map] error', e);
+          }
+          // DEM/terrain failures often surface here — drop terrain so basemap stays visible
+          try {
+            const map = mapRef.current?.getMap();
+            if (map?.getTerrain()) {
+              map.setTerrain(null);
+            }
+          } catch {
+            /* ignore */
           }
         }}
       >
@@ -912,13 +970,21 @@ export default function MapComponent({
                     {currentDataPoint.shadow && (
                       <div className="mt-1 text-purple-700 dark:text-purple-400">
                         <span className="font-semibold">{t('map.shadow')}:</span>{' '}
-                        {showRaycast && raycastClip?.clippedLengthM != null
-                          ? `${raycastClip.clippedLengthM.toFixed(2)}m`
-                          : typeof currentDataPoint.shadow.length === 'number'
-                            ? currentDataPoint.shadow.length === Infinity
-                              ? t('map.infinite')
-                              : `${currentDataPoint.shadow.length.toFixed(2)}m`
-                            : 'N/A'}
+                        {(() => {
+                          const clipped =
+                            showRaycast && raycastClip?.clippedLengthM != null
+                              ? raycastClip.clippedLengthM
+                              : null;
+                          const len =
+                            clipped ??
+                            (typeof currentDataPoint.shadow.length === 'number' &&
+                            Number.isFinite(currentDataPoint.shadow.length)
+                              ? currentDataPoint.shadow.length
+                              : null);
+                          if (len == null) return '—';
+                          if (len === Infinity) return t('map.infinite');
+                          return `${len.toFixed(2)}m`;
+                        })()}
                         {typeof currentDataPoint.shadow.direction === 'number' &&
                           ` / ${currentDataPoint.shadow.direction.toFixed(0)}°`}
                         {showRaycast && raycastClip?.hit ? ` · ${t('map3d.shadowClipped')}` : ''}
