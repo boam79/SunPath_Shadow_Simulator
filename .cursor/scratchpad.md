@@ -171,6 +171,66 @@
 
 ---
 
+### 2026-07-23 — 지도 3D · 태양 시뮬레이션 고도화 (Planner)
+
+**역할:** Planner (분석·제안만, 코드 변경 없음)
+
+**현황:** MapLibre GL JS 5 + react-map-gl, Carto raster 2D만 사용. pitch/bearing·terrain·건물 extrusion·3D 태양 메시 없음. 태양/그림자는 평면 투영(마커·LineString·polygon fill).
+
+**목표:** “하루를 돌리면 태양이 하늘을 지나고 그림자가 지형·건물에 진다”는 체감. 스택은 **MapLibre 유지** 권장 (이미 의존성·모바일 검증됨). Cesium/Three 전면 교체는 비용 대비 이득이 낮음.
+
+#### A. 기술 선택지
+
+| 옵션 | 내용 | 장점 | 리스크 |
+|------|------|------|--------|
+| **A1 MapLibre 3D** (권장) | `pitch`/`bearing` + DEM terrain + `fill-extrusion` 건물 + Custom Layer(태양) | 기존 코드 재사용, 모바일 가능 | 타일·DEM 소스 비용/약관 |
+| A2 MapLibre + Three.js custom layer | 태양 구·광선·간단 shadow mesh | 시각 임팩트↑ | 유지보수·성능 |
+| A3 CesiumJS / deck.gl | 본격 globe·일식급 | 과설계, 번들·학습 비용 | MVP 이탈 |
+
+**타일/DEM 후보:** MapTiler / OpenFreeMap / AWS Terrain Tiles / MapLibre demotiles (프로토만). 건물: OpenMapTiles `building` height 또는 추정 `levels*3`.
+
+#### B. 기능 제안 (우선순위)
+
+| ID | 제안 | 성공 기준 | 침습도 |
+|----|------|-----------|--------|
+| **3D0** | 3D 카메라: pitch 45–60°, bearing 드래그, 「2D/3D」토글, 재생 중 미세 orbit(옵션) | PC·모바일에서 기울인 뷰 안정, 토글로 즉시 2D 복귀 | 소 |
+| **3D1** | Terrain DEM + exaggeration (1–1.5×) | 산지/구릉에서 지형이 보임, 사이트 핀이 지형 위 | 중 |
+| **3D2** | 건물 fill-extrusion (벡터 타일) | 도시 zoom≥14에서 박스 건물, 클릭 위치 유지 | 중 |
+| **3D3** | 3D 태양: 고도·방위를 구면/높이로 Custom Layer 또는 elevated Marker | 재생 시 태양이 하늘 호를 그림 (평면 오프셋 대체) | 중 |
+| **3D4** | 그림자를 지형/건물에 “붙인” 시각: (1) 평면 폴리곤을 terrain-follow 또는 (2) 건물 occlusion 근사 | 정오 짧은 그림자 / 저녁 긴 그림자가 3D에서 읽힘 | 중~대 |
+| **3D5** | 일출·일몰 스카이/안개·광량 톤 (atmosphere-ish CSS/레이어) | 시간에 따른 하늘 색 변화 (장식, 물리 아님) | 소 |
+| **3D6** | 성능 가드: 모바일은 3D0만 기본, terrain/건물은 PC 또는 「고품질」옵트인 | mid-range 모바일 30fps 유지 목표 | 소 |
+
+**비목표(1차):** 실시간 광선추적·정확한 건물 메시 BIM·다중 장애물 ray-cast (연구/유료 데이터).
+
+#### C. UX (D1 Instrument와 정합)
+
+- 지도 HUD에 **2D | 3D** 세그먼트 + (3D일 때) 「지형」「건물」체크
+- 첫 3D 진입 시 1회 코치: “드래그로 기울이기 / 재생으로 태양 이동”
+- `prefers-reduced-motion`: orbit·과장 애니메이션 끔
+- 범례: 태양 궤적(3D 호) / 그림자 발자국 / 건물
+
+#### D. 실행 묶음 (승인 후 Executor)
+
+1. **M0 — 3D 카메라** (3D0 + 3D5 톤 + 3D6 가드) — 즉시 체감, DEM/타일 계약 불필요  
+2. **M1 — 지형** (3D1) — DEM URL·약관 확정 후  
+3. **M2 — 도시 건물** (3D2) — 벡터 타일 소스 확정 후  
+4. **M3 — 태양·그림자 3D** (3D3 + 3D4 1단계 평면-on-terrain) — 시뮬레이션 핵심  
+
+**권장 순서:** M0 → M3(태양 높이) → M1 → M2.  
+건물 없이 태양만 올려도 “3D 시뮬레이션” 메시지가 선명함.
+
+#### E. 의존·리스크
+
+- Raster Carto만으로는 extrusion/terrain 불가 → **스타일·소스 교체** 필요 (M1/M2)
+- Free DEM/타일 쿼터·CORS·Attribution
+- 모바일 WebGL 메모리: exaggeration·건물 밀도 제한
+- Vercel 번들: three 추가 시 dynamic import
+
+**사용자 확인:** Executor로 **M0 / M1 / M2 / M3** 중 진행 범위 (복수 가능). 타일 벤더 선호(MapTiler 키 / 완전 무료 소스) 있으면 알려 주세요.
+
+---
+
 
 ### 2026-07-23 — UI/UX · 프론트 디자인 제안 (Planner)
 
@@ -844,6 +904,16 @@
 ---
 
 ## 💬 Executor's Feedback or Assistance Requests
+
+### 2026-07-23 - Planner: 지도 3D · 태양 시뮬레이션 고도화 제안
+
+**역할:** Planner — 코드 변경 없음. Key Challenges에 3D0–3D6 및 실행 묶음 M0–M3 기록.
+
+**한 줄:** MapLibre 유지 + 카메라3D → 태양 높이 → 지형 → 건물 순서 권장. Cesium 전면 교체 비권장.
+
+**사용자에게:** Executor로 **M0 / M1 / M2 / M3** 어디까지 진행할지 + 타일(MapTiler vs 무료) 선호.
+
+---
 
 ### 2026-07-23 - Executor: 태양경로·데이터 고도화 S0–S3 전부 구현
 
