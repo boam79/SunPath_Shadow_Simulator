@@ -61,6 +61,10 @@ class CalculationOptions(BaseModel):
     atmosphere: bool = Field(True, description="Apply atmospheric refraction correction")
     precision: str = Field("medium", description="Calculation precision: low, medium, high")
     include_weather: bool = Field(False, description="Include weather data")
+    sky_model: str = Field(
+        "isotropic",
+        description="Sky diffuse model for POA: isotropic, perez, klucher",
+    )
 
 class SolarCalculationRequest(BaseModel):
     """Solar calculation request"""
@@ -82,12 +86,16 @@ class Irradiance(BaseModel):
     dni: float = Field(..., description="Direct Normal Irradiance (W/m²)")
     dhi: float = Field(..., description="Diffuse Horizontal Irradiance (W/m²)")
     par: Optional[float] = Field(None, description="Photosynthetically Active Radiation (W/m²)")
+    poa: Optional[float] = Field(None, description="Plane of Array irradiance (W/m²)")
 
 class Shadow(BaseModel):
     """Shadow properties"""
     length: Optional[float] = Field(None, description="Shadow length in meters (None if not applicable)")
     direction: Optional[float] = Field(None, description="Shadow direction in degrees (may be None when sun below horizon)")
     coordinates: Optional[List[List[float]]] = Field(None, description="Shadow line coordinates [[lon1, lat1], [lon2, lat2]]. None when sun is below horizon or shadow is infinite.")
+    polygon: Optional[List[List[float]]] = Field(
+        None, description="Shadow footprint polygon [[lon, lat], ...] when computable"
+    )
 
 class SolarDataPoint(BaseModel):
     """Solar data at a specific timestamp"""

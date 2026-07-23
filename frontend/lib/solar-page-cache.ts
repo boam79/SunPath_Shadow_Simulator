@@ -4,8 +4,15 @@ import { wallClockHour } from '@/lib/time-wallclock';
 export const CACHE_PREFIX = 'sunpath_v2_';
 export const CACHE_TTL_MS = 30 * 60 * 1000;
 
-export function cacheKey(lat: number, lon: number, date: string, height: number): string {
-  return `${CACHE_PREFIX}${lat.toFixed(4)}_${lon.toFixed(4)}_${date}_${height}`;
+export function cacheKey(
+  lat: number,
+  lon: number,
+  date: string,
+  height: number,
+  extra: string = ''
+): string {
+  const base = `${CACHE_PREFIX}${lat.toFixed(4)}_${lon.toFixed(4)}_${date}_${height}`;
+  return extra ? `${base}_${extra}` : base;
 }
 
 export function readCache(key: string): SolarCalculationResponse | null {

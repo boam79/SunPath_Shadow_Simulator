@@ -24,6 +24,10 @@ interface SimulatePanelProps {
   objectHeight: number;
   setObjectHeight: (height: number) => void;
   timeline?: SidebarTimelineConfig;
+  panelTilt?: number;
+  setPanelTilt?: (n: number) => void;
+  panelAzimuth?: number;
+  setPanelAzimuth?: (n: number) => void;
 }
 
 /** D1 simulate: 위치 → 날짜 → 타임라인 → 높이만. 위경도/고급은 접기. */
@@ -35,6 +39,10 @@ export default function SimulatePanel({
   objectHeight,
   setObjectHeight,
   timeline,
+  panelTilt = 0,
+  setPanelTilt,
+  panelAzimuth = 180,
+  setPanelAzimuth,
 }: SimulatePanelProps) {
   const { t } = useI18n();
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -300,6 +308,7 @@ export default function SimulatePanel({
               isPlaying={timeline.isPlaying}
               onPlayPause={timeline.onPlayPause}
               variant="sidebar"
+              metrics={timeline.metrics}
             />
           </div>
         </section>
@@ -327,6 +336,39 @@ export default function SimulatePanel({
           <span>100m</span>
         </div>
       </section>
+
+      {setPanelTilt && setPanelAzimuth && (
+        <section className="space-y-2">
+          <h3 className="text-xs font-semibold text-ink-muted">{t('panelTilt.title')}</h3>
+          <p className="text-[11px] text-ink-muted">{t('panelTilt.hint')}</p>
+          <label className="flex items-center justify-between text-xs font-semibold text-ink-muted">
+            <span>{t('panelTilt.tilt')}</span>
+            <span className="font-display text-sm font-semibold text-ink">{panelTilt}°</span>
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={90}
+            value={panelTilt}
+            onChange={(e) => setPanelTilt(parseFloat(e.target.value))}
+            aria-label={t('panelTilt.tilt')}
+            className="w-full accent-[color:var(--sun)]"
+          />
+          <label className="flex items-center justify-between text-xs font-semibold text-ink-muted">
+            <span>{t('panelTilt.azimuth')}</span>
+            <span className="font-display text-sm font-semibold text-ink">{panelAzimuth}°</span>
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={359}
+            value={panelAzimuth}
+            onChange={(e) => setPanelAzimuth(parseFloat(e.target.value))}
+            aria-label={t('panelTilt.azimuth')}
+            className="w-full accent-sky-600"
+          />
+        </section>
+      )}
     </div>
   );
 }

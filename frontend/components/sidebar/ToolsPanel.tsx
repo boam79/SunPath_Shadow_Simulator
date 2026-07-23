@@ -24,6 +24,10 @@ interface ToolsPanelProps {
     date: string;
     objectHeight: number;
   }) => void;
+  intervalMinutes?: number;
+  setIntervalMinutes?: (n: number) => void;
+  skyModel?: 'isotropic' | 'perez' | 'klucher';
+  setSkyModel?: (m: 'isotropic' | 'perez' | 'klucher') => void;
 }
 
 export default function ToolsPanel({
@@ -34,6 +38,10 @@ export default function ToolsPanel({
   solarData,
   isMobile,
   onLoadPreset,
+  intervalMinutes = 60,
+  setIntervalMinutes,
+  skyModel = 'isotropic',
+  setSkyModel,
 }: ToolsPanelProps) {
   const { t } = useI18n();
   const [copySuccess, setCopySuccess] = useState(false);
@@ -129,7 +137,12 @@ export default function ToolsPanel({
         currentObjectHeight={objectHeight}
         onLoadPreset={onLoadPreset}
       />
-      <AdvancedOptions />
+      <AdvancedOptions
+        skyModel={skyModel}
+        interval={intervalMinutes}
+        onSkyModelChange={setSkyModel}
+        onIntervalChange={setIntervalMinutes}
+      />
 
       <KakaoPayDonation
         isMobile={isMobile}

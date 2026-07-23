@@ -23,6 +23,15 @@ export default function Sidebar({
   compareHeight = 5,
   setCompareHeight,
   solarDataB = null,
+  siteAltitude = 0,
+  intervalMinutes = 60,
+  setIntervalMinutes,
+  skyModel = 'isotropic',
+  setSkyModel,
+  panelTilt = 0,
+  setPanelTilt,
+  panelAzimuth = 180,
+  setPanelAzimuth,
 }: SidebarProps) {
   const [tab, setTab] = useState<SidebarMainTab>('simulate');
   const [isMobile, setIsMobile] = useState(false);
@@ -64,6 +73,10 @@ export default function Sidebar({
             objectHeight={objectHeight}
             setObjectHeight={setObjectHeight}
             timeline={timeline}
+            panelTilt={panelTilt}
+            setPanelTilt={setPanelTilt}
+            panelAzimuth={panelAzimuth}
+            setPanelAzimuth={setPanelAzimuth}
           />
         )}
         {tab === 'compare' && (
@@ -76,6 +89,7 @@ export default function Sidebar({
             setCompareHeight={setCompareHeight}
             solarData={solarData}
             solarDataB={solarDataB}
+            siteAltitude={siteAltitude}
           />
         )}
         {tab === 'tools' && (
@@ -87,6 +101,10 @@ export default function Sidebar({
             solarData={solarData}
             isMobile={isMobile}
             onLoadPreset={handleLoadPreset}
+            intervalMinutes={intervalMinutes}
+            setIntervalMinutes={setIntervalMinutes}
+            skyModel={skyModel}
+            setSkyModel={setSkyModel}
           />
         )}
       </div>

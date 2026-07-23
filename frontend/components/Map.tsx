@@ -233,32 +233,113 @@ export default function MapComponent({
           />
         )}
 
-        {/* Sun Path Polyline (if series available) */}
-        {location && solarSeries && solarSeries.length > 1 && (
-          <Source
-            type="geojson"
-            data={{
-              type: 'Feature',
-              properties: {},
-              geometry: {
-                type: 'LineString',
-                coordinates: solarSeries
-                  .filter(p => p.shadow && p.shadow.coordinates && p.shadow.coordinates.length > 1)
-                  .map(p => p.shadow!.coordinates![1])
-              }
-            }}
-          >
-            <Layer
-              type="line"
-              paint={{
-                'line-color': '#f59e0b',
-                'line-width': 2,
-                'line-opacity': 0.6,
-                'line-dasharray': [2, 2]
+        {/* True sun path (azimuth projection) */}
+        {location && solarSeries && solarSeries.length > 1 && (() => {
+          const sunCoords = solarSeries
+            .filter((p) => p.sun.altitude > 0)
+            .map((p) => {
+              const distance = ((90 - p.sun.altitude) / 90) * 0.012;
+              const azimuthRad = (p.sun.azimuth * Math.PI) / 180;
+              const latOffset = distance * Math.cos(azimuthRad);
+              const lonOffset =
+                (distance * Math.sin(azimuthRad)) /
+                Math.cos((location.lat * Math.PI) / 180);
+              return [location.lon + lonOffset, location.lat + latOffset];
+            });
+          if (sunCoords.length < 2) return null;
+          return (
+            <Source
+              id="sun-path"
+              type="geojson"
+              data={{
+                type: 'Feature',
+                properties: { kind: 'sun-path' },
+                geometry: { type: 'LineString', coordinates: sunCoords },
               }}
-            />
-          </Source>
-        )}
+            >
+              <Layer
+                id="sun-path-line"
+                type="line"
+                paint={{
+                  'line-color': '#f59e0b',
+                  'line-width': 3,
+                  'line-opacity': 0.85,
+                }}
+              />
+            </Source>
+          );
+        })()}
+
+        {/* Shadow tip trail (distinct from sun path) */}
+        {location && solarSeries && solarSeries.length > 1 && (() => {
+          const tipCoords = solarSeries
+            .filter((p) => p.shadow?.coordinates && p.shadow.coordinates.length > 1)
+            .map((p) => p.shadow!.coordinates![1]);
+          if (tipCoords.length < 2) return null;
+          return (
+            <Source
+              id="shadow-tip"
+              type="geojson"
+              data={{
+                type: 'Feature',
+                properties: { kind: 'shadow-tip' },
+                geometry: { type: 'LineString', coordinates: tipCoords },
+              }}
+            >
+              <Layer
+                id="shadow-tip-line"
+                type="line"
+                paint={{
+                  'line-color': '#64748b',
+                  'line-width': 2,
+                  'line-opacity': 0.55,
+                  'line-dasharray': [2, 2],
+                }}
+              />
+            </Source>
+          );
+        })()}
+
+        {/* Shadow footprint polygon */}
+        {location &&
+          currentDataPoint?.shadow?.polygon &&
+          currentDataPoint.shadow.polygon.length >= 3 && (
+            <Source
+              id="shadow-poly"
+              type="geojson"
+              data={{
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                  type: 'Polygon',
+                  coordinates: [
+                    [
+                      ...currentDataPoint.shadow.polygon,
+                      currentDataPoint.shadow.polygon[0],
+                    ],
+                  ],
+                },
+              }}
+            >
+              <Layer
+                id="shadow-poly-fill"
+                type="fill"
+                paint={{
+                  'fill-color': getCurrentShadowColor(),
+                  'fill-opacity': 0.22,
+                }}
+              />
+              <Layer
+                id="shadow-poly-outline"
+                type="line"
+                paint={{
+                  'line-color': getCurrentShadowColor(),
+                  'line-width': 1.5,
+                  'line-opacity': 0.7,
+                }}
+              />
+            </Source>
+          )}
 
         {/* Shadow Line (if available) */}
         {location && currentDataPoint?.shadow && currentDataPoint.shadow.coordinates && (
@@ -342,6 +423,14 @@ export default function MapComponent({
           <div className="flex items-center gap-2">
             <Sun className="h-4 w-4 text-yellow-500" />
             <span>{t('map.sunPosition')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-0.5 w-4 bg-amber-500" />
+            <span>{t('mapLegend.sunPath')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-0.5 w-4 border-t-2 border-dashed border-slate-500" />
+            <span>{t('mapLegend.shadowTip')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="h-0.5 w-4 bg-purple-600" />

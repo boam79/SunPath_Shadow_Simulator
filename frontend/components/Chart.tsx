@@ -1,26 +1,48 @@
 'use client';
 
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
 import type { SolarCalculationResponse } from '@/lib/api';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useI18n } from '@/lib/i18n-context';
 import { wallClockHm, hmToMinutes } from '@/lib/time-wallclock';
+import type { SeriesWithWeather } from '@/lib/weather-merge';
 
 interface SolarChartProps {
   solarData: SolarCalculationResponse | null;
   currentTime: string;
+  seriesOverride?: SeriesWithWeather[] | null;
 }
 
-export default function SolarChart({ solarData, currentTime }: SolarChartProps) {
+export default function SolarChart({
+  solarData,
+  currentTime,
+  seriesOverride = null,
+}: SolarChartProps) {
   const { t } = useI18n();
-  
-  // Transform data for charts — wall-clock HH:mm from ISO (locale-safe)
-  const chartData = useMemo(() => {
-    if (!solarData) return [];
+  const [showWeather, setShowWeather] = useState(true);
+  const [showPar, setShowPar] = useState(false);
+  const [showPoa, setShowPoa] = useState(true);
 
-    return solarData.series.map(point => {
+  const chartData = useMemo(() => {
+    const series = seriesOverride ?? solarData?.series ?? [];
+    return series.map((point) => {
       const timeStr = wallClockHm(point.timestamp);
-      
+      const weatherGhi =
+        'weatherGhi' in point && typeof point.weatherGhi === 'number' ? point.weatherGhi : null;
       return {
         time: timeStr,
         timestamp: Date.parse(point.timestamp),
@@ -29,24 +51,28 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
         ghi: point.irradiance?.ghi || 0,
         dni: point.irradiance?.dni || 0,
         dhi: point.irradiance?.dhi || 0,
-        shadowLength: typeof point.shadow?.length === 'number' && isFinite(point.shadow.length) 
-          ? point.shadow.length 
-          : null
+        par: point.irradiance?.par ?? null,
+        poa: point.irradiance?.poa ?? null,
+        weatherGhi,
+        shadowLength:
+          typeof point.shadow?.length === 'number' && isFinite(point.shadow.length)
+            ? point.shadow.length
+            : null,
       };
     });
-  }, [solarData]);
+  }, [seriesOverride, solarData]);
 
-  // Find current time index for reference line
+  const hasWeather = chartData.some((d) => d.weatherGhi != null);
+  const hasPoa = chartData.some((d) => d.poa != null && Number(d.poa) > 0);
+  const hasPar = chartData.some((d) => d.par != null);
+
   const currentTimeIndex = useMemo(() => {
     if (!solarData || !currentTime) return -1;
-    
     try {
       const targetMin = hmToMinutes(currentTime);
       if (!Number.isFinite(targetMin)) return -1;
-      
       let closestIndex = -1;
       let minDiff = Infinity;
-      
       chartData.forEach((d, index) => {
         const dMin = hmToMinutes(d.time);
         if (Number.isFinite(dMin)) {
@@ -57,7 +83,6 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
           }
         }
       });
-      
       return minDiff <= 5 ? closestIndex : -1;
     } catch {
       return -1;
@@ -70,65 +95,114 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
 
   return (
     <div className="space-y-6">
-      {/* Sun Altitude & Azimuth Chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+      <div className="flex flex-wrap gap-2">
+        {hasWeather && (
+          <button
+            type="button"
+            onClick={() => setShowWeather((v) => !v)}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+              showWeather
+                ? 'bg-sky-600 text-white'
+                : 'bg-stone-200 text-stone-700 dark:bg-slate-700 dark:text-stone-200'
+            }`}
+            aria-pressed={showWeather}
+          >
+            {t('chart.showWeather')}
+          </button>
+        )}
+        {hasPoa && (
+          <button
+            type="button"
+            onClick={() => setShowPoa((v) => !v)}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+              showPoa
+                ? 'bg-amber-600 text-white'
+                : 'bg-stone-200 text-stone-700 dark:bg-slate-700 dark:text-stone-200'
+            }`}
+            aria-pressed={showPoa}
+          >
+            {t('chart.showPoa')}
+          </button>
+        )}
+        {hasPar && (
+          <button
+            type="button"
+            onClick={() => setShowPar((v) => !v)}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+              showPar
+                ? 'bg-emerald-600 text-white'
+                : 'bg-stone-200 text-stone-700 dark:bg-slate-700 dark:text-stone-200'
+            }`}
+            aria-pressed={showPar}
+          >
+            {t('chart.showPar')}
+          </button>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
           {t('chart.altitudeAzimuth')}
         </h3>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis 
-              dataKey="time" 
-              stroke="#6b7280"
-              fontSize={12}
-              interval="preserveStartEnd"
-            />
-            <YAxis 
+            <XAxis dataKey="time" stroke="#6b7280" fontSize={12} interval="preserveStartEnd" />
+            <YAxis
               yAxisId="left"
-              label={{ value: `${t('chart.altitude')} (°)`, angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+              label={{
+                value: `${t('chart.altitude')} (°)`,
+                angle: -90,
+                position: 'insideLeft',
+                style: { textAnchor: 'middle' },
+              }}
               stroke="#f59e0b"
               fontSize={12}
             />
-            <YAxis 
+            <YAxis
               yAxisId="right"
               orientation="right"
-              label={{ value: `${t('chart.azimuth')} (°)`, angle: 90, position: 'insideRight', style: { textAnchor: 'middle' } }}
+              label={{
+                value: `${t('chart.azimuth')} (°)`,
+                angle: 90,
+                position: 'insideRight',
+                style: { textAnchor: 'middle' },
+              }}
               stroke="#3b82f6"
               fontSize={12}
             />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 border: '1px solid #e5e7eb',
-                borderRadius: '6px'
+                borderRadius: '6px',
               }}
             />
             <Legend />
-            <Line 
+            <Line
               yAxisId="left"
-              type="monotone" 
-              dataKey="altitude" 
-              stroke="#f59e0b" 
+              type="monotone"
+              dataKey="altitude"
+              stroke="#f59e0b"
               strokeWidth={2}
               dot={false}
               name={t('chart.altitude')}
               isAnimationActive={false}
             />
-            <Line 
+            <Line
               yAxisId="right"
-              type="monotone" 
-              dataKey="azimuth" 
-              stroke="#3b82f6" 
+              type="monotone"
+              dataKey="azimuth"
+              stroke="#3b82f6"
               strokeWidth={2}
               dot={false}
               name={t('chart.azimuth')}
               isAnimationActive={false}
             />
             {currentTimeIndex >= 0 && currentTimeIndex < chartData.length && (
-              <ReferenceLine 
-                x={chartData[currentTimeIndex]?.time} 
-                stroke="#ef4444" 
+              <ReferenceLine
+                x={chartData[currentTimeIndex]?.time}
+                stroke="#ef4444"
                 strokeWidth={2}
                 strokeDasharray="3 3"
                 label={{ value: t('chart.current'), position: 'top', fill: '#ef4444' }}
@@ -138,78 +212,103 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
         </ResponsiveContainer>
       </div>
 
-      {/* Irradiance Area Chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
           {t('chart.ghiArea')}
         </h3>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <defs>
               <linearGradient id="ghiGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#f97316" stopOpacity={0.1}/>
-              </linearGradient>
-              <linearGradient id="dniGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#ea580c" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#ea580c" stopOpacity={0.1}/>
-              </linearGradient>
-              <linearGradient id="dhiGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#fb923c" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#fb923c" stopOpacity={0.1}/>
+                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis 
-              dataKey="time" 
-              stroke="#6b7280"
-              fontSize={12}
-              interval="preserveStartEnd"
-            />
-            <YAxis 
-              label={{ value: t('chart.irradiance'), angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+            <XAxis dataKey="time" stroke="#6b7280" fontSize={12} interval="preserveStartEnd" />
+            <YAxis
+              label={{
+                value: t('chart.irradiance'),
+                angle: -90,
+                position: 'insideLeft',
+                style: { textAnchor: 'middle' },
+              }}
               stroke="#f97316"
               fontSize={12}
             />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 border: '1px solid #e5e7eb',
-                borderRadius: '6px'
+                borderRadius: '6px',
               }}
             />
             <Legend />
-            <Area 
-              type="monotone" 
-              dataKey="ghi" 
-              stroke="#f97316" 
+            <Area
+              type="monotone"
+              dataKey="ghi"
+              stroke="#f97316"
               strokeWidth={2}
               fill="url(#ghiGradient)"
               name={t('chart.ghi')}
               isAnimationActive={false}
             />
-            <Area 
-              type="monotone" 
-              dataKey="dni" 
-              stroke="#ea580c" 
-              strokeWidth={2}
-              fill="url(#dniGradient)"
+            <Area
+              type="monotone"
+              dataKey="dni"
+              stroke="#ea580c"
+              strokeWidth={1.5}
+              fillOpacity={0}
               name={t('chart.dni')}
               isAnimationActive={false}
             />
-            <Area 
-              type="monotone" 
-              dataKey="dhi" 
-              stroke="#fb923c" 
-              strokeWidth={2}
-              fill="url(#dhiGradient)"
+            <Area
+              type="monotone"
+              dataKey="dhi"
+              stroke="#fb923c"
+              strokeWidth={1.5}
+              fillOpacity={0}
               name={t('chart.dhi')}
               isAnimationActive={false}
             />
+            {showWeather && hasWeather && (
+              <Line
+                type="monotone"
+                dataKey="weatherGhi"
+                stroke="#0ea5e9"
+                strokeWidth={2}
+                dot={false}
+                name={t('chart.weatherGhi')}
+                isAnimationActive={false}
+              />
+            )}
+            {showPoa && hasPoa && (
+              <Line
+                type="monotone"
+                dataKey="poa"
+                stroke="#b45309"
+                strokeWidth={2}
+                strokeDasharray="4 2"
+                dot={false}
+                name={t('chart.poa')}
+                isAnimationActive={false}
+              />
+            )}
+            {showPar && hasPar && (
+              <Line
+                type="monotone"
+                dataKey="par"
+                stroke="#059669"
+                strokeWidth={2}
+                dot={false}
+                name={t('chart.par')}
+                isAnimationActive={false}
+              />
+            )}
             {currentTimeIndex >= 0 && currentTimeIndex < chartData.length && (
-              <ReferenceLine 
-                x={chartData[currentTimeIndex]?.time} 
-                stroke="#ef4444" 
+              <ReferenceLine
+                x={chartData[currentTimeIndex]?.time}
+                stroke="#ef4444"
                 strokeWidth={2}
                 strokeDasharray="3 3"
                 label={{ value: t('chart.current'), position: 'top', fill: '#ef4444' }}
@@ -219,55 +318,43 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
         </ResponsiveContainer>
       </div>
 
-      {/* Shadow Length Bar Chart */}
-      {chartData.some(d => d.shadowLength !== null) && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-            {t('chart.shadowVariation')}
-          </h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartData.filter(d => d.shadowLength !== null)} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="time" 
-                stroke="#6b7280"
-                fontSize={12}
-                interval="preserveStartEnd"
+      <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+          {t('chart.shadowVariation')}
+        </h3>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="time" stroke="#6b7280" fontSize={12} interval="preserveStartEnd" />
+            <YAxis
+              label={{
+                value: t('chart.shadowLength'),
+                angle: -90,
+                position: 'insideLeft',
+                style: { textAnchor: 'middle' },
+              }}
+              stroke="#7c3aed"
+              fontSize={12}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+              }}
+            />
+            <Bar dataKey="shadowLength" fill="#8b5cf6" name={t('chart.length')} isAnimationActive={false} />
+            {currentTimeIndex >= 0 && currentTimeIndex < chartData.length && (
+              <ReferenceLine
+                x={chartData[currentTimeIndex]?.time}
+                stroke="#ef4444"
+                strokeWidth={2}
+                strokeDasharray="3 3"
               />
-              <YAxis 
-                label={{ value: `${t('chart.length')} (m)`, angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
-                stroke="#6b21a8"
-                fontSize={12}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '6px'
-                }}
-                formatter={(value: number) => `${value.toFixed(2)} m`}
-              />
-              <Bar 
-                dataKey="shadowLength" 
-                fill="#6b21a8" 
-                name={t('chart.shadowLength').replace(' (m)', '')}
-                radius={[4, 4, 0, 0]}
-                isAnimationActive={false}
-              />
-              {currentTimeIndex >= 0 && currentTimeIndex < chartData.length && (
-                <ReferenceLine 
-                  x={chartData[currentTimeIndex]?.time} 
-                  stroke="#ef4444" 
-                  strokeWidth={2}
-                  strokeDasharray="3 3"
-                  label={{ value: t('chart.current'), position: 'top', fill: '#ef4444' }}
-                />
-              )}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+            )}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
-

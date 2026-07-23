@@ -49,9 +49,17 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
     interval = request.datetime.interval or 60
 
     object_height = request.object.height if request.object else None
+    surface_tilt = request.object.tilt if request.object else None
+    surface_azimuth = request.object.azimuth if request.object else None
     apply_refraction = request.options.atmosphere if request.options else True
     precision = request.options.precision if request.options else "medium"
-    sky_model = "ineichen"
+    poa_sky_model = (
+        request.options.sky_model if request.options and request.options.sky_model else "isotropic"
+    )
+    if poa_sky_model not in ("isotropic", "perez", "klucher"):
+        poa_sky_model = "isotropic"
+    # Clear-sky horizontal model stays Ineichen; sky_model applies to POA diffuse
+    clear_sky_model = "ineichen"
 
     cache_key = cache_manager.generate_cache_key(
         prefix="integrated",
@@ -66,7 +74,10 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
         tz=timezone_name or "",
         atmosphere=apply_refraction,
         precision=precision,
-        model=sky_model,
+        model=clear_sky_model,
+        sky=poa_sky_model,
+        tilt=surface_tilt if surface_tilt is not None else "",
+        saz=surface_azimuth if surface_azimuth is not None else "",
     )
 
     cached_result = cache_manager.get(cache_key)
@@ -82,7 +93,7 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
         end_time=end_time,
         interval_minutes=interval,
         altitude=altitude,
-        model=sky_model,
+        model=clear_sky_model,
         timezone_name=timezone_name,
         apply_refraction=apply_refraction,
     )
@@ -119,6 +130,31 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
 
         hour_angle = _solar._calculate_hour_angle(idx, sun_azi or 0)
 
+        poa_val = None
+        if (
+            surface_tilt is not None
+            and surface_tilt > 0
+            and ghi is not None
+            and dni is not None
+            and dhi is not None
+            and sun_zen is not None
+            and sun_azi is not None
+        ):
+            try:
+                poa = _irradiance.calculate_poa_irradiance(
+                    ghi=ghi,
+                    dni=dni,
+                    dhi=dhi,
+                    solar_zenith=sun_zen,
+                    solar_azimuth=sun_azi,
+                    surface_tilt=float(surface_tilt),
+                    surface_azimuth=float(surface_azimuth or 180.0),
+                    sky_model=poa_sky_model,
+                )
+                poa_val = _safe_number(poa.get("poa_global"))
+            except Exception:
+                poa_val = None
+
         data_point = {
             "timestamp": idx.isoformat(),
             "sun": {
@@ -133,6 +169,7 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
                 "dni": dni if dni is not None else 0.0,
                 "dhi": dhi if dhi is not None else 0.0,
                 "par": par_val,
+                "poa": poa_val,
             },
         }
 
@@ -165,12 +202,32 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
                 shadow_result["direction"] if shadow_result["direction"] is not None else None
             )
 
+            polygon = None
+            if (
+                length_val is not None
+                and direction_val is not None
+                and shadow_result["status"] == "normal"
+            ):
+                try:
+                    width = max(1.0, float(request.object.height) * 0.4)
+                    polygon = _shadow.calculate_shadow_polygon(
+                        center_lat=lat,
+                        center_lon=lon,
+                        object_height=float(request.object.height),
+                        object_width=width,
+                        shadow_length=float(length_val),
+                        shadow_direction=float(direction_val),
+                    )
+                except Exception:
+                    polygon = None
+
             data_point["shadow"] = {
                 "length": length_val,
                 "direction": direction_val,
                 "coordinates": [[lon, lat], [end_lon, end_lat]]
                 if (end_lon is not None and end_lat is not None)
                 else None,
+                "polygon": polygon,
             }
         else:
             data_point["shadow"] = None

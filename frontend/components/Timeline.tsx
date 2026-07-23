@@ -22,6 +22,12 @@ interface TimelineProps {
   isPlaying?: boolean;
   onPlayPause?: () => void;
   variant?: 'default' | 'sidebar';
+  /** Optional live metrics for scrub tooltip */
+  metrics?: {
+    altitude?: number | null;
+    ghi?: number | null;
+    shadowLength?: number | null;
+  } | null;
 }
 
 export default function Timeline({
@@ -31,7 +37,8 @@ export default function Timeline({
   endTime = '23:59',
   isPlaying = false,
   onPlayPause,
-  variant = 'default'
+  variant = 'default',
+  metrics = null,
 }: TimelineProps) {
   const { t } = useI18n();
   const [playSpeed, setPlaySpeed] = useState<number>(1);
@@ -328,6 +335,28 @@ export default function Timeline({
           <div className={`${isSidebar ? 'text-[11px]' : 'text-sm'} text-gray-500 dark:text-gray-400`}>
             {t('timeline.currentTime')}
           </div>
+          {metrics && (
+            <div
+              className={`${isSidebar ? 'mt-1 text-[10px]' : 'mt-1.5 text-xs'} flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-ink-muted`}
+              aria-live="polite"
+            >
+              {metrics.altitude != null && Number.isFinite(metrics.altitude) && (
+                <span>
+                  {t('timeline.tipAltitude')} {metrics.altitude.toFixed(1)}°
+                </span>
+              )}
+              {metrics.ghi != null && Number.isFinite(metrics.ghi) && (
+                <span>
+                  {t('timeline.tipGhi')} {Math.round(metrics.ghi)} W/m²
+                </span>
+              )}
+              {metrics.shadowLength != null && Number.isFinite(metrics.shadowLength) && (
+                <span>
+                  {t('timeline.tipShadow')} {metrics.shadowLength.toFixed(1)} m
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Controls */}

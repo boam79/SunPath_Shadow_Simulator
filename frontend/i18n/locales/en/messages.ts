@@ -160,6 +160,12 @@ export default {
     ghi: 'GHI',
     dni: 'DNI',
     dhi: 'DHI',
+    poa: 'POA',
+    par: 'PAR',
+    weatherGhi: 'Weather SW',
+    showPar: 'Show PAR',
+    showWeather: 'Show weather correction',
+    showPoa: 'Show POA',
   },
 
   // Optimization
@@ -193,6 +199,9 @@ export default {
     hourBack: '1 Hour Back',
     hourForward: '1 Hour Forward',
     last: 'Last',
+    tipAltitude: 'Altitude',
+    tipGhi: 'GHI',
+    tipShadow: 'Shadow',
   },
 
   // Errors
@@ -283,12 +292,15 @@ export default {
   // Season Comparison
   seasonComparison: {
     title: 'Season Comparison',
-    description: '🌍 Compare solar irradiance across Spring, Summer, Autumn, and Winter.',
+    description: 'Compare day length, altitude, irradiance, and shadow across equinoxes and solstices.',
     calculating: 'Calculating... (4 seasons)',
     calculateStart: 'Start Season Comparison',
     results: 'Comparison Results',
     maxAltitude: 'Max Solar Altitude',
     dayLength: 'Day Length',
+    totalGhi: 'Total irradiance (kWh/m²)',
+    maxGhi: 'Max GHI (W/m²)',
+    minShadow: 'Min shadow (m)',
     seasons: {
       spring: 'Spring',
       summer: 'Summer',
@@ -301,6 +313,30 @@ export default {
       autumn: '🍂',
       winter: '❄️',
     },
+  },
+
+  summary: {
+    aria: 'Daily sun and irradiance summary',
+    sunrise: 'Sunrise',
+    solarNoon: 'Solar noon',
+    sunset: 'Sunset',
+    dayLength: 'Day length',
+    maxAltitude: 'Max altitude',
+    totalIrradiance: 'Total GHI',
+    hoursSuffix: 'h',
+  },
+
+  mapLegend: {
+    sunPath: 'Sun path',
+    shadowTip: 'Shadow tip trail',
+    shadowPoly: 'Shadow area',
+  },
+
+  panelTilt: {
+    title: 'Panel tilt (POA)',
+    tilt: 'Tilt',
+    azimuth: 'Panel azimuth',
+    hint: 'Tilt above 0° enables POA irradiance.',
   },
 };
 

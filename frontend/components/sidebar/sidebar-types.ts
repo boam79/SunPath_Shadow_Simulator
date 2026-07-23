@@ -10,6 +10,11 @@ export interface SidebarTimelineConfig {
   onPlayPause: () => void;
   startTime?: string;
   endTime?: string;
+  metrics?: {
+    altitude?: number | null;
+    ghi?: number | null;
+    shadowLength?: number | null;
+  } | null;
 }
 
 export interface SidebarProps {
@@ -28,4 +33,13 @@ export interface SidebarProps {
   compareHeight?: number;
   setCompareHeight?: (h: number) => void;
   solarDataB?: SolarCalculationResponse | null;
+  siteAltitude?: number;
+  intervalMinutes?: number;
+  setIntervalMinutes?: (n: number) => void;
+  skyModel?: 'isotropic' | 'perez' | 'klucher';
+  setSkyModel?: (m: 'isotropic' | 'perez' | 'klucher') => void;
+  panelTilt?: number;
+  setPanelTilt?: (n: number) => void;
+  panelAzimuth?: number;
+  setPanelAzimuth?: (n: number) => void;
 }

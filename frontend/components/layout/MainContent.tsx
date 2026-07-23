@@ -5,9 +5,11 @@ import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import SolarChart from '@/components/Chart';
 import OptimizationPanel from '@/components/OptimizationPanel';
+import SolarSummaryStrip from '@/components/SolarSummaryStrip';
 import { useI18n } from '@/lib/i18n-context';
 import type { SolarCalculationResponse, SolarDataPoint } from '@/lib/api';
 import { wallClockInstant } from '@/lib/time-wallclock';
+import type { SeriesWithWeather } from '@/lib/weather-merge';
 
 // Dynamically import Map to avoid SSR issues
 const Map = dynamic(() => import('@/components/Map'), {
@@ -29,6 +31,7 @@ interface MainContentProps {
   currentTime: string;
   onLocationChange?: (loc: { lat: number; lon: number }) => void;
   solarData: SolarCalculationResponse | null;
+  seriesWithWeather?: SeriesWithWeather[] | null;
   isLoading: boolean;
   error: string | null;
   onRetry?: () => void;
@@ -41,12 +44,13 @@ export default function MainContent({
   currentTime,
   onLocationChange,
   solarData,
+  seriesWithWeather = null,
   isLoading,
   error,
   onRetry,
   layout = 'full',
 }: MainContentProps) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   const showMap = layout !== 'dataOnly';
@@ -181,36 +185,6 @@ export default function MainContent({
     };
   }, [solarData, date, currentTime, location]);
 
-  const sunriseStr = useMemo(() => {
-    const s = solarData?.summary?.sunrise;
-    if (typeof s === 'string' && s !== 'N/A') {
-      const d = new Date(s);
-      if (!isNaN(d.getTime())) {
-        return d.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-      }
-      return s;
-    }
-    return s || '--';
-  }, [solarData?.summary?.sunrise, locale]);
-
-  const sunsetStr = useMemo(() => {
-    const s = solarData?.summary?.sunset;
-    if (typeof s === 'string' && s !== 'N/A') {
-      const d = new Date(s);
-      if (!isNaN(d.getTime())) {
-        return d.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-      }
-      return s;
-    }
-    return s || '--';
-  }, [solarData?.summary?.sunset, locale]);
-
   const metricAltitude = currentDataPoint
     ? currentDataPoint.sun.altitude.toFixed(1)
     : solarData?.summary.max_altitude.toFixed(1);
@@ -225,18 +199,13 @@ export default function MainContent({
   const analyticsBody =
     location && solarData && !isLoading ? (
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-2 text-sm md:gap-3">
-          <div className="d1-glass rounded-xl px-3 py-2">
-            <div className="text-[11px] font-semibold text-ink-muted">{t('optimization.sunrise')}</div>
-            <div className="font-semibold text-ink dark:text-sky-50">{sunriseStr}</div>
-          </div>
-          <div className="d1-glass rounded-xl px-3 py-2">
-            <div className="text-[11px] font-semibold text-ink-muted">{t('optimization.sunset')}</div>
-            <div className="font-semibold text-ink dark:text-sky-50">{sunsetStr}</div>
-          </div>
-        </div>
+        <SolarSummaryStrip solarData={solarData} />
         <div className="border-t border-[color:var(--glass-border)] pt-3">
-          <SolarChart solarData={solarData} currentTime={currentTime} />
+          <SolarChart
+            solarData={solarData}
+            currentTime={currentTime}
+            seriesOverride={seriesWithWeather}
+          />
         </div>
         <div className="border-t border-[color:var(--glass-border)] pt-3">
           <OptimizationPanel solarData={solarData} />

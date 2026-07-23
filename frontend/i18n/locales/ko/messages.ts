@@ -160,6 +160,12 @@ export default {
     ghi: 'GHI',
     dni: 'DNI',
     dhi: 'DHI',
+    poa: 'POA',
+    par: 'PAR',
+    weatherGhi: '기상 단파',
+    showPar: 'PAR 표시',
+    showWeather: '기상 보정 표시',
+    showPoa: 'POA 표시',
   },
 
   // Optimization
@@ -193,6 +199,9 @@ export default {
     hourBack: '1시간 뒤로',
     hourForward: '1시간 앞으로',
     last: '마지막으로',
+    tipAltitude: '고도',
+    tipGhi: 'GHI',
+    tipShadow: '그림자',
   },
 
   // Errors
@@ -283,12 +292,15 @@ export default {
   // Season Comparison
   seasonComparison: {
     title: '계절별 비교',
-    description: '🌍 춘분, 하지, 추분, 동지의 일조량을 한 번에 비교합니다.',
+    description: '춘분·하지·추분·동지의 일장·고도·일사·그림자를 비교합니다.',
     calculating: '계산 중... (4개 계절)',
     calculateStart: '계절 비교 시작',
     results: '비교 결과',
     maxAltitude: '최대 태양 고도',
     dayLength: '일조 시간',
+    totalGhi: '총 일사량 (kWh/m²)',
+    maxGhi: '최대 GHI (W/m²)',
+    minShadow: '최소 그림자 (m)',
     seasons: {
       spring: '봄',
       summer: '여름',
@@ -301,6 +313,30 @@ export default {
       autumn: '🍂',
       winter: '❄️',
     },
+  },
+
+  summary: {
+    aria: '하루 태양·일사 요약',
+    sunrise: '일출',
+    solarNoon: '남중',
+    sunset: '일몰',
+    dayLength: '일장',
+    maxAltitude: '최대 고도',
+    totalIrradiance: '총 일사',
+    hoursSuffix: 'h',
+  },
+
+  mapLegend: {
+    sunPath: '태양 경로',
+    shadowTip: '그림자 끝 궤적',
+    shadowPoly: '그림자 면',
+  },
+
+  panelTilt: {
+    title: '패널 기울기 (POA)',
+    tilt: '기울기',
+    azimuth: '패널 방위',
+    hint: '0°보다 크면 POA 일사량을 계산합니다.',
   },
 };
 

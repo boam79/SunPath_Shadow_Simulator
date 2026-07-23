@@ -4,11 +4,26 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { calculateSolar, type SolarCalculationResponse } from '@/lib/api';
 import { cacheKey, readCache, writeCache, timelineRange } from '@/lib/solar-page-cache';
+import { fetchWeather } from '@/lib/weather';
+import { mergeWeatherIntoSeries, type SeriesWithWeather } from '@/lib/weather-merge';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const devLog = (...args: unknown[]) => {
   if (isDevelopment) console.log(...args);
 };
+
+async function fetchSiteAltitude(lat: number, lon: number): Promise<number> {
+  try {
+    const res = await fetch(`/api/elevation?lat=${lat}&lon=${lon}`);
+    if (!res.ok) return 0;
+    const data = (await res.json()) as { elevation?: number };
+    return typeof data.elevation === 'number' && Number.isFinite(data.elevation)
+      ? data.elevation
+      : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export function useSolarPageState() {
   const router = useRouter();
@@ -26,10 +41,17 @@ export function useSolarPageState() {
   const [objectHeight, setObjectHeight] = useState<number>(
     parseFloat(searchParams.get('height') ?? '10') || 10
   );
+  const [siteAltitude, setSiteAltitude] = useState(0);
+  const [intervalMinutes, setIntervalMinutes] = useState(60);
+  const [skyModel, setSkyModel] = useState<'isotropic' | 'perez' | 'klucher'>('isotropic');
+  const [panelTilt, setPanelTilt] = useState(0);
+  const [panelAzimuth, setPanelAzimuth] = useState(180);
+
   const [currentTime, setCurrentTime] = useState<string>('12:00');
   const [isPlaying, setIsPlaying] = useState(false);
 
   const [solarData, setSolarData] = useState<SolarCalculationResponse | null>(null);
+  const [seriesWithWeather, setSeriesWithWeather] = useState<SeriesWithWeather[] | null>(null);
   const [solarDataB, setSolarDataB] = useState<SolarCalculationResponse | null>(null);
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [compareHeight, setCompareHeight] = useState(5);
@@ -37,7 +59,6 @@ export function useSolarPageState() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMs, setLoadingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  /** null = 아직 미측정(SSR/첫 페인트). false로 시작하면 모바일에서 PC Sidebar가 잠깐 마운트됨 */
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [copyToast, setCopyToast] = useState(false);
 
@@ -67,6 +88,17 @@ export function useSolarPageState() {
   }, [location, date, objectHeight, router]);
 
   useEffect(() => {
+    if (!location) return;
+    let cancelled = false;
+    fetchSiteAltitude(location.lat, location.lon).then((alt) => {
+      if (!cancelled) setSiteAltitude(alt);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [location]);
+
+  useEffect(() => {
     return () => {
       if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -75,14 +107,54 @@ export function useSolarPageState() {
     };
   }, []);
 
+  const buildRequest = useCallback(
+    (height: number) => {
+      if (!location) return null;
+      const object: {
+        height: number;
+        tilt?: number;
+        azimuth?: number;
+      } = { height };
+      if (panelTilt > 0) {
+        object.tilt = panelTilt;
+        object.azimuth = panelAzimuth;
+      }
+      return {
+        location: {
+          lat: location.lat,
+          lon: location.lon,
+          altitude: siteAltitude,
+        },
+        datetime: {
+          date,
+          start_time: '00:00',
+          end_time: '23:59',
+          interval: intervalMinutes,
+        },
+        object,
+        options: {
+          atmosphere: true,
+          precision: 'high' as const,
+          sky_model: skyModel,
+        },
+      };
+    },
+    [location, date, siteAltitude, intervalMinutes, panelTilt, panelAzimuth, skyModel]
+  );
+
   const fetchSolarData = useCallback(async () => {
     if (!location) return;
+    const req = buildRequest(objectHeight);
+    if (!req) return;
 
-    const key = cacheKey(location.lat, location.lon, date, objectHeight);
+    const extra = `${intervalMinutes}_${skyModel}_${panelTilt}_${panelAzimuth}_${siteAltitude.toFixed(0)}`;
+    const key = cacheKey(location.lat, location.lon, date, objectHeight, extra);
     const cached = readCache(key);
     if (cached) {
       setSolarData(cached);
       setError(null);
+      const weather = await fetchWeather(location.lat, location.lon, date);
+      setSeriesWithWeather(mergeWeatherIntoSeries(cached, weather));
       devLog('✅ Cache hit');
       return;
     }
@@ -103,15 +175,13 @@ export function useSolarPageState() {
     }, 500);
 
     try {
-      const response = await calculateSolar({
-        location: { lat: location.lat, lon: location.lon, altitude: 0 },
-        datetime: { date, start_time: '00:00', end_time: '23:59', interval: 60 },
-        object: { height: objectHeight },
-        options: { atmosphere: true, precision: 'high' },
-      });
+      const response = await calculateSolar(req);
       if (gen !== fetchGenRef.current || ac.signal.aborted) return;
       setSolarData(response);
       writeCache(key, response);
+      const weather = await fetchWeather(location.lat, location.lon, date);
+      if (gen !== fetchGenRef.current || ac.signal.aborted) return;
+      setSeriesWithWeather(mergeWeatherIntoSeries(response, weather));
       try {
         localStorage.setItem(
           'sunpath_last_summary_v1',
@@ -124,6 +194,7 @@ export function useSolarPageState() {
             sunrise: response.summary.sunrise,
             sunset: response.summary.sunset,
             dayLenHours: response.summary.day_length,
+            totalIrradiance: response.summary.total_irradiance,
           })
         );
         setLastSavedHint(true);
@@ -142,7 +213,7 @@ export function useSolarPageState() {
         setIsLoading(false);
       }
     }
-  }, [location, date, objectHeight]);
+  }, [location, date, objectHeight, buildRequest, intervalMinutes, skyModel, panelTilt, panelAzimuth, siteAltitude]);
 
   useEffect(() => {
     if (!compareEnabled || !location) {
@@ -150,30 +221,25 @@ export function useSolarPageState() {
       return;
     }
     let cancelled = false;
-    const ac = new AbortController();
+    const req = buildRequest(compareHeight);
+    if (!req) return;
     (async () => {
       try {
-        const r = await calculateSolar({
-          location: { lat: location.lat, lon: location.lon, altitude: 0 },
-          datetime: { date, start_time: '00:00', end_time: '23:59', interval: 60 },
-          object: { height: compareHeight },
-          options: { atmosphere: true, precision: 'high' },
-        });
-        if (!cancelled && !ac.signal.aborted) setSolarDataB(r);
+        const r = await calculateSolar(req);
+        if (!cancelled) setSolarDataB(r);
       } catch {
         if (!cancelled) setSolarDataB(null);
       }
     })();
     return () => {
       cancelled = true;
-      ac.abort();
     };
-  }, [compareEnabled, compareHeight, location, date]);
+  }, [compareEnabled, compareHeight, buildRequest, location]);
 
   const isInitialMount = useRef(true);
   useEffect(() => {
     if (isInitialMount.current && !location) {
-      setLocation({ lat: 37.5665, lon: 126.9780 });
+      setLocation({ lat: 37.5665, lon: 126.978 });
     }
     isInitialMount.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -182,7 +248,7 @@ export function useSolarPageState() {
   useEffect(() => {
     if (location && date) fetchSolarData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location, date, objectHeight]);
+  }, [location, date, objectHeight, intervalMinutes, skyModel, panelTilt, panelAzimuth, siteAltitude]);
 
   const handlePlayPause = useCallback(() => setIsPlaying((p) => !p), []);
   const handleTimeChange = useCallback((time: string) => setCurrentTime(time), []);
@@ -198,19 +264,21 @@ export function useSolarPageState() {
         toastTimerRef.current = setTimeout(() => setCopyToast(false), 2000);
       })
       .catch(() => {
-        /* insecure context / permission */
+        /* ignore */
       });
   }, []);
 
   const handleHeaderReset = useCallback(() => {
-    setLocation({ lat: 37.5665, lon: 126.9780 });
+    setLocation({ lat: 37.5665, lon: 126.978 });
     setDate(new Date().toISOString().split('T')[0]);
     setObjectHeight(10);
     setCurrentTime('12:00');
     setIsPlaying(false);
     setSolarData(null);
+    setSeriesWithWeather(null);
     setSolarDataB(null);
     setCompareEnabled(false);
+    setPanelTilt(0);
     setError(null);
   }, []);
 
@@ -221,10 +289,20 @@ export function useSolarPageState() {
     setDate,
     objectHeight,
     setObjectHeight,
+    siteAltitude,
+    intervalMinutes,
+    setIntervalMinutes,
+    skyModel,
+    setSkyModel,
+    panelTilt,
+    setPanelTilt,
+    panelAzimuth,
+    setPanelAzimuth,
     currentTime,
     setCurrentTime,
     isPlaying,
     solarData,
+    seriesWithWeather,
     solarDataB,
     compareEnabled,
     setCompareEnabled,

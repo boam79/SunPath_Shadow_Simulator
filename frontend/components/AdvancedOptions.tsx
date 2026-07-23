@@ -1,50 +1,63 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 
 interface AdvancedOptionsProps {
+  skyModel?: 'isotropic' | 'perez' | 'klucher';
+  interval?: number;
   onSkyModelChange?: (model: 'isotropic' | 'perez' | 'klucher') => void;
   onIntervalChange?: (interval: number) => void;
   onUnitsChange?: (units: 'metric' | 'imperial') => void;
 }
 
 export default function AdvancedOptions({
+  skyModel: skyModelProp,
+  interval: intervalProp,
   onSkyModelChange,
   onIntervalChange,
-  onUnitsChange
+  onUnitsChange,
 }: AdvancedOptionsProps) {
   const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
-  const [skyModel, setSkyModel] = useState<'isotropic' | 'perez' | 'klucher'>('isotropic');
-  const [interval, setInterval] = useState(60);
+  const [skyModel, setSkyModel] = useState<'isotropic' | 'perez' | 'klucher'>(
+    skyModelProp ?? 'isotropic'
+  );
+  const [interval, setInterval] = useState(intervalProp ?? 60);
   const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
+
+  useEffect(() => {
+    if (skyModelProp) setSkyModel(skyModelProp);
+  }, [skyModelProp]);
+  useEffect(() => {
+    if (typeof intervalProp === 'number') setInterval(intervalProp);
+  }, [intervalProp]);
 
   const handleSkyModelChange = (model: 'isotropic' | 'perez' | 'klucher') => {
     setSkyModel(model);
-    if (onSkyModelChange) onSkyModelChange(model);
+    onSkyModelChange?.(model);
   };
 
   const handleIntervalChange = (value: number) => {
     setInterval(value);
-    if (onIntervalChange) onIntervalChange(value);
+    onIntervalChange?.(value);
   };
 
   const handleUnitsChange = (value: 'metric' | 'imperial') => {
     setUnits(value);
-    if (onUnitsChange) onUnitsChange(value);
+    onUnitsChange?.(value);
   };
 
   return (
     <div className="space-y-3">
-      {/* Toggle Button */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+        className="flex w-full items-center justify-between rounded-lg bg-gray-100 px-3 py-2 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
       >
         <div className="flex items-center space-x-2">
-          <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          <Settings className="h-4 w-4 text-gray-600 dark:text-gray-400" />
           <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
             {t('advancedOptions.title')}
           </span>
@@ -52,18 +65,18 @@ export default function AdvancedOptions({
         <span className={`text-xs transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
       </button>
 
-      {/* Options Panel */}
       {isOpen && (
-        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4">
-          {/* Sky Model */}
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900">
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
               {t('advancedOptions.skyModelLabel')}
             </label>
             <select
               value={skyModel}
-              onChange={(e) => handleSkyModelChange(e.target.value as 'isotropic' | 'perez' | 'klucher')}
-              className="w-full px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              onChange={(e) =>
+                handleSkyModelChange(e.target.value as 'isotropic' | 'perez' | 'klucher')
+              }
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             >
               <option value="isotropic">{t('advancedOptions.skyModels.isotropic')}</option>
               <option value="perez">{t('advancedOptions.skyModels.perez')}</option>
@@ -74,10 +87,10 @@ export default function AdvancedOptions({
             </p>
           </div>
 
-          {/* Time Interval */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('advancedOptions.intervalLabel')}: {interval}{t('advancedOptions.intervalMin')}
+            <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
+              {t('advancedOptions.intervalLabel')}: {interval}
+              {t('advancedOptions.intervalMin')}
             </label>
             <input
               type="range"
@@ -85,10 +98,10 @@ export default function AdvancedOptions({
               max="120"
               step="10"
               value={interval}
-              onChange={(e) => handleIntervalChange(parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              onChange={(e) => handleIntervalChange(parseInt(e.target.value, 10))}
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-blue-600 dark:bg-gray-700"
             />
-            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <div className="mt-1 flex justify-between text-xs text-gray-500 dark:text-gray-400">
               <span>{t('advancedOptions.intervalLabels.min')}</span>
               <span>{t('advancedOptions.intervalLabels.mid')}</span>
               <span>{t('advancedOptions.intervalLabels.max')}</span>
@@ -98,28 +111,29 @@ export default function AdvancedOptions({
             </p>
           </div>
 
-          {/* Units */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-xs font-medium text-gray-700 dark:text-gray-300">
               {t('advancedOptions.unitsLabel')}
             </label>
             <div className="flex space-x-2">
               <button
+                type="button"
                 onClick={() => handleUnitsChange('metric')}
-                className={`flex-1 px-3 py-2 text-xs rounded-lg transition-colors ${
+                className={`flex-1 rounded-lg px-3 py-2 text-xs transition-colors ${
                   units === 'metric'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
                 {t('advancedOptions.unitsMetric')}
               </button>
               <button
+                type="button"
                 onClick={() => handleUnitsChange('imperial')}
-                className={`flex-1 px-3 py-2 text-xs rounded-lg transition-colors ${
+                className={`flex-1 rounded-lg px-3 py-2 text-xs transition-colors ${
                   units === 'imperial'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
                 {t('advancedOptions.unitsImperial')}
@@ -128,18 +142,6 @@ export default function AdvancedOptions({
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
               {t('advancedOptions.unitsDescription')}
             </p>
-          </div>
-
-          {/* Info */}
-          <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p className="text-xs text-blue-800 dark:text-blue-400">
-              {t('advancedOptions.tips.title')}
-            </p>
-            <ul className="mt-1 space-y-0.5 text-xs text-blue-700 dark:text-blue-400 ml-4">
-              <li>• {t('advancedOptions.tips.precision')}</li>
-              <li>• {t('advancedOptions.tips.standard')}</li>
-              <li>• {t('advancedOptions.tips.quick')}</li>
-            </ul>
           </div>
         </div>
       )}

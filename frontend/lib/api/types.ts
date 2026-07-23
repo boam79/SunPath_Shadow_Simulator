@@ -22,6 +22,7 @@ export interface SolarCalculationRequest {
     atmosphere?: boolean;
     precision?: 'low' | 'medium' | 'high';
     include_weather?: boolean;
+    sky_model?: 'isotropic' | 'perez' | 'klucher';
   };
 }
 
@@ -57,12 +58,14 @@ export interface Irradiance {
   dni: number;
   dhi: number;
   par?: number;
+  poa?: number | null;
 }
 
 export interface Shadow {
   length?: number | null;
   direction?: number | null;
   coordinates?: number[][] | null;
+  polygon?: number[][] | null;
 }
 
 export interface SolarDataPoint {

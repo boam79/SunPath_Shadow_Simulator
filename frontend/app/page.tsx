@@ -32,10 +32,20 @@ function HomeInner() {
     setDate,
     objectHeight,
     setObjectHeight,
+    siteAltitude,
+    intervalMinutes,
+    setIntervalMinutes,
+    skyModel,
+    setSkyModel,
+    panelTilt,
+    setPanelTilt,
+    panelAzimuth,
+    setPanelAzimuth,
     currentTime,
     setCurrentTime,
     isPlaying,
     solarData,
+    seriesWithWeather,
     solarDataB,
     compareEnabled,
     setCompareEnabled,
@@ -56,6 +66,34 @@ function HomeInner() {
     handleHeaderReset,
   } = useSolarPageState();
 
+  // Prefer seriesWithWeather / nearest by wall-clock via MainContent logic — simple metrics from solarData
+  const tipMetrics = (() => {
+    if (!solarData?.series?.length) return null;
+    const target = currentTime;
+    let best = solarData.series[0];
+    let bestDiff = Infinity;
+    const [th, tm] = target.split(':').map(Number);
+    const tMin = th * 60 + (tm || 0);
+    for (const p of solarData.series) {
+      const part = p.timestamp.includes('T') ? p.timestamp.split('T')[1]?.slice(0, 5) : '';
+      if (!part) continue;
+      const [h, m] = part.split(':').map(Number);
+      const diff = Math.abs(h * 60 + m - tMin);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = p;
+      }
+    }
+    return {
+      altitude: best.sun?.altitude ?? null,
+      ghi: best.irradiance?.ghi ?? null,
+      shadowLength:
+        typeof best.shadow?.length === 'number' && Number.isFinite(best.shadow.length)
+          ? best.shadow.length
+          : null,
+    };
+  })();
+
   const timelineProps = {
     currentTime,
     onTimeChange: handleTimeChange,
@@ -63,6 +101,7 @@ function HomeInner() {
     onPlayPause: handlePlayPause,
     startTime: tlStart,
     endTime: tlEnd,
+    metrics: tipMetrics,
   };
 
   const coldStartText = t('loading.coldStart').replace(
@@ -93,6 +132,15 @@ function HomeInner() {
     compareHeight,
     setCompareHeight,
     solarDataB,
+    siteAltitude,
+    intervalMinutes,
+    setIntervalMinutes,
+    skyModel,
+    setSkyModel,
+    panelTilt,
+    setPanelTilt,
+    panelAzimuth,
+    setPanelAzimuth,
   };
 
   const handleMobileNav = (id: MobileNavId) => {
@@ -147,6 +195,7 @@ function HomeInner() {
             currentTime={currentTime}
             onLocationChange={setLocation}
             solarData={solarData}
+            seriesWithWeather={seriesWithWeather}
             isLoading={isLoading}
             error={error}
             onRetry={fetchSolarData}
@@ -165,6 +214,7 @@ function HomeInner() {
                   startTime={tlStart}
                   endTime={tlEnd}
                   variant="sidebar"
+                  metrics={tipMetrics}
                 />
               </div>
             </div>

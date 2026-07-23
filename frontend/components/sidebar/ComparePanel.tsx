@@ -15,6 +15,7 @@ interface ComparePanelProps {
   setCompareHeight?: (h: number) => void;
   solarData?: SolarCalculationResponse | null;
   solarDataB?: SolarCalculationResponse | null;
+  siteAltitude?: number;
 }
 
 export default function ComparePanel({
@@ -26,6 +27,7 @@ export default function ComparePanel({
   setCompareHeight,
   solarData,
   solarDataB = null,
+  siteAltitude = 0,
 }: ComparePanelProps) {
   const { t } = useI18n();
 
@@ -86,7 +88,7 @@ export default function ComparePanel({
 
       <section className="space-y-2">
         <h3 className="text-xs font-semibold text-ink-muted">{t('sidebar.tabs.season')}</h3>
-        <SeasonComparison location={location} objectHeight={objectHeight} />
+        <SeasonComparison location={location} objectHeight={objectHeight} siteAltitude={siteAltitude} />
       </section>
 
       <section className="space-y-2 border-t border-[color:var(--glass-border)] pt-4">
