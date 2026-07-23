@@ -859,7 +859,9 @@
 - proxy hop-by-hop/encoding 헤더 미복사
 - E2E: CSP 검증, Seoul 그림자 m, 3D/레이캐스트, proxy 완전 JSON
 
-**검증:** (빌드·E2E 진행 중)
+**검증:** Playwright **16 passed** (CSP·Seoul 그림자·3D/raycast·proxy JSON·weather soft-fail) · `master` `03cf434`
+
+**사용자 확인:** production 재배포 후 모바일 3D에서 지도 타일/건물이 보이는지.
 
 ---
 
