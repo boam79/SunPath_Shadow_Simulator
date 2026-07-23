@@ -858,9 +858,9 @@
 
 **한계(정직):** footprint+height 레이캐스트 — 풀 BIM 메시 RT 아님.
 
-**검증:** vitest building-raycast 9 · tsc OK · (빌드 진행 중)
+**검증:** vitest building-raycast 9 · tsc OK · next build OK · PR #11
 
-**사용자 확인 요청:** 도심에서 레이캐스트 ON → 주변 건물 그림자·물체 그림자 단축·음영 배너.
+**사용자 확인 요청:** 도심에서 레이캐스트 ON → 주변 건물 그림자·물체 그림자 단축·음영 배너. 확인 후 Planner에 완료 마킹·master 머지 요청.
 
 ---
 
