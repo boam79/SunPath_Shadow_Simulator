@@ -843,6 +843,21 @@
 
 ## 💬 Executor's Feedback or Assistance Requests
 
+### 2026-07-23 - Executor: PC map-first UX 재설계
+
+**문제(사용자 스크린샷):** 지도가 낮고 아래 흰 데이터 패널이 화면을 잠식 — D1 map-first 위반.
+
+**설계:**
+- PC `full` = 지도가 메인 열을 꽉 채움 (absolute fill)
+- 고도/일사/그림자는 지도 위 glass HUD
+- 차트·최적화는 「차트·분석 펼치기」드로어 (기본 접힘)
+- footer 슬림 바; 사이드바 폭 `w-80`/`22rem`
+- Map `overlayMode=hud`로 하단 중복 정보 카드 숨김
+- 교훈: `.d1-map-stage { relative }` + utility `absolute` Tailwind 충돌로 지도 240px 붕괴
+
+**검증:** 1440×900 mapH=774 fillRatio=1; 1280×720 mapH=594 dominant; overlap=false
+
+
 ### 2026-07-23 - Executor: PC 유저 스토리 검증·수정
 
 **방법:** Playwright Chromium 1440×900 / 1280×720로 production 유저 스토리 실행 (온보딩 닫기 → 검색 → 재생 → 날짜/높이 → 지도 클릭 → 차트 → 공유).
@@ -1442,6 +1457,11 @@ Task 12 (차트)를 건너뛰고 핵심 기능 테스트 후 최종 정리합니
 ---
 
 ## 📚 Lessons Learned
+
+### 2026-07-23 PC map-first
+- Tailwind에서 같은 요소에 `relative`+`absolute`를 같이 넣으면 생성 CSS 순서로 한쪽이 이김 → position은 조건부 단일 클래스만
+- 컴포넌트 `@apply relative`도 utility absolute를 이길 수 있음 → 레이아웃 position은 컴포넌트 CSS에 고정하지 말 것
+- PC에서 지도 아래 문서 플로우로 차트를 쌓으면 map-first가 깨짐 → 오버레이/드로어로 분리
 
 ### 2026-07-23 PC 검증
 - 모바일용 `100vh` 지도 높이를 데스크톱에 그대로 쓰면 footer가 document flow에 있을 때 반드시 겹침 → `100dvh - (header+footer)` 또는 flex 자식 높이 사용

@@ -73,7 +73,8 @@ h1, h2, .font-display {
   }
 
   .d1-map-stage {
-    @apply relative overflow-hidden;
+    /* position은 레이아웃(absolute fill vs flow)에서 지정 — 여기서 relative 고정하면 absolute가 깨짐 */
+    @apply overflow-hidden;
     box-shadow: 0 12px 40px -16px rgba(28, 36, 48, 0.28);
   }
 
@@ -98,6 +99,10 @@ h1, h2, .font-display {
 
   .d1-timeline-dock {
     @apply d1-glass rounded-2xl px-3 py-2;
+  }
+
+  .d1-analytics-drawer {
+    will-change: max-height, opacity;
   }
 }
 

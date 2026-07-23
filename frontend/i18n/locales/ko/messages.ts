@@ -17,6 +17,8 @@ export default {
   main: {
     dataWaiting: '지도 탭에서 위치를 정하면 이곳에 그래프와 수치가 나타나요.',
     dataLoading: '데이터를 불러오는 중이에요…',
+    expandAnalytics: '차트·분석 펼치기',
+    collapseAnalytics: '지도만 보기',
   },
 
   onboarding: {

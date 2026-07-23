@@ -52,7 +52,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="w-full overflow-y-auto border-b border-amber-100/90 bg-white/90 shadow-soft backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90 md:w-72 md:border-b-0 md:border-r">
+    <aside className="w-full overflow-y-auto border-b border-amber-100/90 bg-white/90 shadow-soft backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90 md:border-b-0 md:border-r-0">
       <div className="space-y-4 p-3 md:p-4">
         <div className="mb-1">
           <KakaoPayDonation

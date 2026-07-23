@@ -17,6 +17,8 @@ export default {
   main: {
     dataWaiting: 'Pick a spot on the Map tab — charts and numbers will show up here.',
     dataLoading: 'Loading your data…',
+    expandAnalytics: 'Show charts & analysis',
+    collapseAnalytics: 'Map only',
   },
 
   onboarding: {

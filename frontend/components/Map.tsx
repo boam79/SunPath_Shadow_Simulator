@@ -15,9 +15,18 @@ interface MapComponentProps {
   currentDataPoint?: SolarDataPoint | null;
   solarSeries?: SolarDataPoint[] | null;
   currentTime?: string;
+  /** `hud`: 데스크톱 MainContent HUD와 겹치지 않게 하단 정보 카드 숨김 */
+  overlayMode?: 'default' | 'hud';
 }
 
-export default function MapComponent({ location, onLocationChange, currentDataPoint, solarSeries, currentTime }: MapComponentProps) {
+export default function MapComponent({
+  location,
+  onLocationChange,
+  currentDataPoint,
+  solarSeries,
+  currentTime,
+  overlayMode = 'default',
+}: MapComponentProps) {
   const { t } = useI18n();
   const mapRef = useRef<MapRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -318,24 +327,28 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
         )}
       </Map>
 
-      {/* Map Legend */}
-      <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg text-xs z-10">
-        <div className="font-semibold text-gray-900 dark:text-white mb-2 text-center">{t('map.legend')}</div>
+      {/* Map Legend — hud 모드에서는 하단 HUD와 겹치지 않게 좌상단 */}
+      <div
+        className={`absolute z-10 rounded-lg bg-white/90 px-3 py-2 text-xs shadow-lg backdrop-blur-sm dark:bg-gray-800/90 ${
+          overlayMode === 'hud' ? 'left-3 top-3' : 'bottom-4 right-4'
+        }`}
+      >
+        <div className="mb-2 text-center font-semibold text-gray-900 dark:text-white">{t('map.legend')}</div>
         <div className="space-y-1.5 text-gray-700 dark:text-gray-300">
           <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-red-500" fill="red" />
+            <MapPin className="h-4 w-4 text-red-500" fill="red" />
             <span>{t('map.referencePoint')}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Sun className="w-4 h-4 text-yellow-500" />
+            <Sun className="h-4 w-4 text-yellow-500" />
             <span>{t('map.sunPosition')}</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-0.5 bg-purple-600" />
+            <div className="h-0.5 w-4 bg-purple-600" />
             <span>{t('map.currentShadow')}</span>
           </div>
           <div className="flex items-center gap-2">
-            <svg className="w-4 h-1" viewBox="0 0 16 2" preserveAspectRatio="none">
+            <svg className="h-1 w-4" viewBox="0 0 16 2" preserveAspectRatio="none">
               <line x1="0" y1="1" x2="16" y2="1" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="2 2" strokeOpacity="0.7" />
             </svg>
             <span>{t('map.shadowTrajectory')}</span>
@@ -343,9 +356,10 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
         </div>
       </div>
 
-      {/* Map Info Overlay */}
-      <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-4 py-3 rounded-lg shadow-lg text-xs max-w-sm">
-        <div className="text-gray-700 dark:text-gray-300 space-y-1">
+      {/* Map Info Overlay — 데스크톱 HUD가 수치를 담당할 때는 숨김 */}
+      {overlayMode !== 'hud' && (
+      <div className="absolute bottom-4 left-4 z-10 max-w-sm rounded-lg bg-white/90 px-4 py-3 text-xs shadow-lg backdrop-blur-sm dark:bg-gray-800/90">
+        <div className="space-y-1 text-gray-700 dark:text-gray-300">
           {location ? (
             <>
               <div>
@@ -354,21 +368,21 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
                 {Math.abs(location.lon).toFixed(6)}°{location.lon >= 0 ? 'E' : 'W'}
               </div>
               {addressName && (
-                <div className="text-gray-600 dark:text-gray-400 truncate">
+                <div className="truncate text-gray-600 dark:text-gray-400">
                   <span className="font-semibold">🏠 {t('map.address')}:</span>{' '}
                   {addressName}
                 </div>
               )}
               {currentDataPoint && (
                 <>
-                  <div className="border-t border-gray-300 dark:border-gray-600 my-2 pt-2">
+                  <div className="my-2 border-t border-gray-300 pt-2 dark:border-gray-600">
                     <div className="text-yellow-700 dark:text-yellow-400">
                       <span className="font-semibold">☀️ {t('map.sun')}:</span>{' '}
                       {t('map.altitude')} {currentDataPoint.sun.altitude.toFixed(1)}° / 
                       {t('map.direction')} {currentDataPoint.sun.azimuth.toFixed(1)}°
                     </div>
                     {currentDataPoint.shadow && (
-                      <div className="text-purple-700 dark:text-purple-400 mt-1">
+                      <div className="mt-1 text-purple-700 dark:text-purple-400">
                         <span className="font-semibold">🌒 {t('map.shadow')}:</span>{' '}
                         {typeof currentDataPoint.shadow.length === 'number' 
                         ? (currentDataPoint.shadow.length === Infinity 
@@ -388,6 +402,7 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

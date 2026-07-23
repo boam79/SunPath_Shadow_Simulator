@@ -125,7 +125,7 @@ function HomeInner() {
       )}
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
-        <div className="hidden min-h-0 shrink-0 md:block md:w-72 md:overflow-y-auto md:border-r md:border-[color:var(--glass-border)] md:bg-[color:var(--glass)] md:backdrop-blur-md">
+        <div className="hidden min-h-0 shrink-0 md:block md:w-80 md:overflow-y-auto md:border-r md:border-[color:var(--glass-border)] md:bg-[color:var(--glass)] md:backdrop-blur-md lg:w-[22rem]">
           <Sidebar {...sidebarProps} />
         </div>
 
@@ -195,44 +195,39 @@ function HomeInner() {
         </div>
       )}
 
-      <footer className="mt-auto hidden shrink-0 border-t border-[color:var(--glass-border)] bg-[color:var(--glass)] px-3 py-2.5 backdrop-blur-md md:block md:px-8 md:py-3">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 text-xs text-ink-muted md:flex-row md:justify-between md:gap-4 md:text-sm">
-          <div className="flex flex-col items-center gap-2 md:mb-0 md:flex-row md:flex-wrap md:items-center md:gap-x-3">
+      {/* Desktop: thin chrome bar — map keeps the stage, footer no longer fights for height */}
+      <footer className="mt-auto hidden shrink-0 border-t border-[color:var(--glass-border)] bg-[color:var(--glass)]/95 px-4 py-1.5 backdrop-blur-md md:block md:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 text-[11px] text-ink-muted md:text-xs">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <button
               type="button"
               onClick={handleShare}
-              className="inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-4 py-2 text-xs font-semibold text-sky-900 shadow-sm transition hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-100 md:text-xs"
+              className="inline-flex items-center gap-1 rounded-full bg-sky-100/90 px-2.5 py-1 text-[11px] font-semibold text-sky-900 transition hover:bg-sky-200 dark:bg-sky-900/40 dark:text-sky-100"
             >
               <span aria-hidden>🔗</span>
               <span>{copyToast ? t('footer.shareCopied') : t('footer.shareLink')}</span>
             </button>
-            <span className="font-medium md:inline">{t('footer.copyright')}</span>
+            <span className="truncate font-medium">{t('footer.copyright')}</span>
             {lastSavedHint && (
               <span
-                className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 md:text-xs"
+                className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
                 role="status"
               >
                 {t('sidebar.lastSavedHint')}
               </span>
             )}
-            <span className="hidden text-stone-300 dark:text-stone-600 md:inline">·</span>
-            <span className="hidden md:inline">
-              {t('footer.createdBy')}: <strong className="text-stone-800 dark:text-white">boam79</strong>
-            </span>
           </div>
-          <div className="hidden flex-wrap items-center justify-center gap-3 md:flex">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             <KakaoPayDonation
               isMobile={isMobile}
-              className="flex cursor-pointer flex-col items-center justify-center space-y-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400 px-4 py-2 text-sm font-bold text-stone-900 shadow-md transition hover:from-amber-500 hover:to-yellow-500 md:flex-row md:space-y-0 md:space-x-2"
+              className="inline-flex cursor-pointer items-center rounded-full bg-gradient-to-r from-amber-400 to-yellow-400 px-2.5 py-1 text-[11px] font-bold text-stone-900 shadow-sm transition hover:from-amber-500 hover:to-yellow-500"
               variant="link"
             />
-            <span className="text-stone-300 dark:text-stone-600">·</span>
-            <span className="font-medium">{t('footer.contact')}:</span>
             <a
               href="mailto:ckadltmfxhrxhrxhr@gmail.com"
-              className="font-semibold text-sky-700 underline-offset-2 transition hover:text-sky-900 hover:underline dark:text-sky-400 dark:hover:text-sky-200"
+              className="font-semibold text-sky-700 underline-offset-2 transition hover:underline dark:text-sky-400"
             >
-              ckadltmfxhrxhrxhr@gmail.com
+              {t('footer.contact')}
             </a>
           </div>
         </div>
