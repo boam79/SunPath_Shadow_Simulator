@@ -859,7 +859,7 @@
 - `shadow-display` fallback + MainContent 보간/polygon 보존 + tipMetrics resolve
 - Timeline 그림자는 항상 표시(없으면 —)
 
-**검증:** vitest 13 · (빌드 진행)
+**검증:** vitest 13 · next build OK · `master` `2d58fa7` 푸시 (Vercel production 재배포)
 
 **사용자 확인:** 모바일 3D에서 지형/건물 보이고, 정오에 그림자 m 값이 나오는지.
 
