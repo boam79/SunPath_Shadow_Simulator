@@ -1,13 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import KakaoPayDonation from '@/components/KakaoPayDonation';
-import BatchCalculator from '@/components/BatchCalculator';
-import AdvancedOptions from '@/components/AdvancedOptions';
-import PresetManager from '@/components/PresetManager';
-import SeasonComparison from '@/components/SeasonComparison';
 import SidebarTabNav from './SidebarTabNav';
-import SingleTabPanel from './SingleTabPanel';
+import SimulatePanel from './SimulatePanel';
+import ComparePanel from './ComparePanel';
+import ToolsPanel from './ToolsPanel';
 import type { SidebarMainTab, SidebarProps } from './sidebar-types';
 
 export default function Sidebar({
@@ -27,7 +24,7 @@ export default function Sidebar({
   setCompareHeight,
   solarDataB = null,
 }: SidebarProps) {
-  const [tab, setTab] = useState<SidebarMainTab>('single');
+  const [tab, setTab] = useState<SidebarMainTab>('simulate');
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -48,65 +45,50 @@ export default function Sidebar({
     setLocation(preset.location);
     setDate(preset.date);
     setObjectHeight(preset.objectHeight);
-    setTab('single');
+    setTab('simulate');
   };
 
   return (
-    <aside className="w-full overflow-y-auto border-b border-amber-100/90 bg-white/90 shadow-soft backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90 md:border-b-0 md:border-r-0">
-      <div className="space-y-4 p-3 md:p-4">
-        <div className="mb-1">
-          <KakaoPayDonation
-            isMobile={isMobile}
-            className="flex w-full cursor-pointer flex-col items-center justify-center space-y-1 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 px-4 py-2.5 text-sm font-bold text-stone-900 shadow-md transition hover:from-amber-500 hover:to-yellow-500"
-            variant="button"
-          />
-        </div>
-
+    <aside className="flex h-full min-h-0 w-full flex-col bg-white/90 backdrop-blur-sm dark:bg-slate-900/90">
+      <div className="shrink-0 space-y-3 border-b border-[color:var(--glass-border)] px-3 pb-3 pt-3 md:px-4">
         <SidebarTabNav tab={tab} onTabChange={setTab} />
+      </div>
 
-        {tab === 'single' && (
-          <SingleTabPanel
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
+        {tab === 'simulate' && (
+          <SimulatePanel
             location={location}
             setLocation={setLocation}
             date={date}
             setDate={setDate}
             objectHeight={objectHeight}
             setObjectHeight={setObjectHeight}
-            currentTime={currentTime}
-            setCurrentTime={setCurrentTime}
-            solarData={solarData}
             timeline={timeline}
+          />
+        )}
+        {tab === 'compare' && (
+          <ComparePanel
+            location={location}
+            objectHeight={objectHeight}
             compareEnabled={compareEnabled}
             setCompareEnabled={setCompareEnabled}
             compareHeight={compareHeight}
             setCompareHeight={setCompareHeight}
+            solarData={solarData}
             solarDataB={solarDataB}
           />
         )}
-
-        {tab === 'batch' && <BatchCalculator />}
-
-        {tab === 'season' && <SeasonComparison location={location} objectHeight={objectHeight} />}
-
         {tab === 'tools' && (
-          <div className="space-y-4">
-            <PresetManager
-              currentLocation={location}
-              currentDate={date}
-              currentObjectHeight={objectHeight}
-              onLoadPreset={handleLoadPreset}
-            />
-            <AdvancedOptions />
-          </div>
-        )}
-
-        <div className="border-t border-amber-100/80 pt-4 dark:border-slate-700">
-          <KakaoPayDonation
+          <ToolsPanel
+            location={location}
+            date={date}
+            objectHeight={objectHeight}
+            currentTime={currentTime}
+            solarData={solarData}
             isMobile={isMobile}
-            className="flex w-full cursor-pointer flex-col items-center justify-center space-y-1 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 px-4 py-2.5 text-sm font-bold text-stone-900 shadow-md transition hover:from-amber-500 hover:to-yellow-500"
-            variant="button"
+            onLoadPreset={handleLoadPreset}
           />
-        </div>
+        )}
       </div>
     </aside>
   );

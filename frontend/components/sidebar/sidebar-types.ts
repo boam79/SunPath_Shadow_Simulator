@@ -1,6 +1,7 @@
 import type { SolarCalculationResponse } from '@/lib/api';
 
-export type SidebarMainTab = 'single' | 'batch' | 'season' | 'tools';
+/** D1: 시뮬레이트 | 비교 | 도구 */
+export type SidebarMainTab = 'simulate' | 'compare' | 'tools';
 
 export interface SidebarTimelineConfig {
   currentTime: string;

@@ -87,8 +87,7 @@ h1, h2, .font-display {
   }
 
   .friendly-input {
-    @apply rounded-xl border bg-white/90 text-[color:var(--ink)] shadow-sm transition-shadow placeholder:text-[color:var(--ink-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--sun)]/35 dark:bg-slate-900/80 dark:text-stone-100;
-    border-color: var(--glass-border);
+    @apply rounded-xl border border-amber-100/90 bg-white/90 text-ink shadow-sm transition-shadow placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-sky-400 dark:border-stone-600 dark:bg-slate-900/80 dark:text-stone-100;
   }
 
   .friendly-card {

@@ -125,7 +125,7 @@ function HomeInner() {
       )}
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
-        <div className="hidden min-h-0 shrink-0 md:block md:w-80 md:overflow-y-auto md:border-r md:border-[color:var(--glass-border)] md:bg-[color:var(--glass)] md:backdrop-blur-md lg:w-[22rem]">
+        <div className="hidden min-h-0 shrink-0 md:flex md:w-80 md:flex-col md:overflow-hidden md:border-r md:border-[color:var(--glass-border)] md:bg-[color:var(--glass)] md:backdrop-blur-md lg:w-[22rem]">
           <Sidebar {...sidebarProps} />
         </div>
 

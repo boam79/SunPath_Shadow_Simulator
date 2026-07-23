@@ -1,7 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { Layers } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import type { SidebarMainTab } from './sidebar-types';
 
@@ -10,34 +8,36 @@ interface SidebarTabNavProps {
   onTabChange: (tab: SidebarMainTab) => void;
 }
 
+const TABS: SidebarMainTab[] = ['simulate', 'compare', 'tools'];
+
 export default function SidebarTabNav({ tab, onTabChange }: SidebarTabNavProps) {
   const { t } = useI18n();
 
-  const btn = (id: SidebarMainTab, label: string, icon?: ReactNode) => (
-    <button
-      type="button"
-      onClick={() => onTabChange(id)}
-      className={`rounded-xl px-3 py-2.5 text-xs font-semibold transition-all ${
-        tab === id
-          ? 'bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-md shadow-sky-500/25'
-          : 'bg-white/90 text-stone-600 shadow-sm ring-1 ring-amber-100/80 hover:bg-amber-50/90 dark:bg-slate-800/90 dark:text-stone-200 dark:ring-slate-600 dark:hover:bg-slate-700'
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-
   return (
-    <div className="mb-2 grid grid-cols-2 gap-2">
-      {btn('single', t('sidebar.tabs.single'))}
-      {btn(
-        'batch',
-        t('sidebar.tabs.batch'),
-        <Layers className="w-3 h-3 inline mr-1" />
-      )}
-      {btn('season', t('sidebar.tabs.season'))}
-      {btn('tools', t('sidebar.tabs.tools'))}
+    <div
+      className="grid grid-cols-3 gap-1 rounded-2xl bg-sky/40 p-1 ring-1 ring-[color:var(--glass-border)] dark:bg-slate-800/60"
+      role="tablist"
+      aria-label={t('sidebar.tabsAria')}
+    >
+      {TABS.map((id) => {
+        const active = tab === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onTabChange(id)}
+            className={`rounded-xl px-2 py-2 text-[11px] font-semibold transition-all md:text-xs ${
+              active
+                ? 'bg-white text-ink shadow-sm dark:bg-slate-700 dark:text-white'
+                : 'text-ink-muted hover:text-ink dark:text-stone-400 dark:hover:text-stone-100'
+            }`}
+          >
+            {t(`sidebar.tabs.${id}`)}
+          </button>
+        );
+      })}
     </div>
   );
 }
