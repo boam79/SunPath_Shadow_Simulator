@@ -664,6 +664,7 @@
 - [x] Task 13: 프론트엔드 - 데이터 내보내기 기능 (완료!)
 - [ ] Task 18: 배포 파이프라인 및 애플리케이션 배포
 - [x] **PC+모바일 유저스토리 E2E · Timeline 이중마운트/a11y 버그픽스** (검증 완료, 사용자 확인 대기)
+- [x] **다중 건물 레이캐스트** (유틸+Map 연동 완료, 사용자 확인 대기)
 
 ### 🟢 Completed (완료)
 
@@ -844,6 +845,24 @@
 ---
 
 ## 💬 Executor's Feedback or Assistance Requests
+
+### 2026-07-23 - Executor: 다중 건물 레이캐스트 (벡터 타일 BIM proxy)
+
+**역할:** Executor — 「executor로 진행해」
+
+**구현:**
+- `lib/building-raycast.ts`: 그림자 레이 캐스트, 건물 클리핑, 사이트 가림(고도각), 건물 footprint 그림자 GeoJSON
+- Map: `openmaptiles` building 쿼리 → 주변 건물 그림자 면 + 물체 그림자 단축선 + 가림/클리핑 배너 + 토글
+- `MainContent` → Map `objectHeight` 전달
+- i18n `map3d.raycast` 등
+
+**한계(정직):** footprint+height 레이캐스트 — 풀 BIM 메시 RT 아님.
+
+**검증:** vitest building-raycast 9 · tsc OK · (빌드 진행 중)
+
+**사용자 확인 요청:** 도심에서 레이캐스트 ON → 주변 건물 그림자·물체 그림자 단축·음영 배너.
+
+---
 
 ### 2026-07-23 - Executor: 지도 3D 태양 시뮬 M0–M3 전부
 

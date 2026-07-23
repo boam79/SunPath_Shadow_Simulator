@@ -5,7 +5,7 @@ import Map, { Marker, NavigationControl, GeolocateControl, Source, Layer } from 
 import type { MapRef } from 'react-map-gl/maplibre';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { MapPin, Sun, Box, Mountain } from 'lucide-react';
+import { MapPin, Sun, Box, Mountain, Crosshair } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { reverseGeocode } from '@/lib/geocoding';
 import type { SolarDataPoint } from '@/lib/api';
@@ -19,6 +19,14 @@ import {
   skyForTime,
   prefersReducedMotion,
 } from '@/lib/map-3d-config';
+import {
+  buildingsFromMapFeatures,
+  buildingShadowsGeoJSON,
+  clipShadowByBuildings,
+  filterBuildingsNear,
+  siteShadedByBuildings,
+  type BuildingObstacle,
+} from '@/lib/building-raycast';
 
 interface MapComponentProps {
   location: { lat: number; lon: number } | null;
@@ -26,6 +34,7 @@ interface MapComponentProps {
   currentDataPoint?: SolarDataPoint | null;
   solarSeries?: SolarDataPoint[] | null;
   currentTime?: string;
+  objectHeight?: number;
   overlayMode?: 'default' | 'hud';
 }
 
@@ -97,6 +106,7 @@ export default function MapComponent({
   currentDataPoint,
   solarSeries,
   currentTime,
+  objectHeight = 10,
   overlayMode = 'default',
 }: MapComponentProps) {
   const { t } = useI18n();
@@ -107,7 +117,9 @@ export default function MapComponent({
   const [view3d, setView3d] = useState(false);
   const [showTerrain, setShowTerrain] = useState(true);
   const [showBuildings, setShowBuildings] = useState(true);
+  const [showRaycast, setShowRaycast] = useState(true);
   const [mapReady, setMapReady] = useState(false);
+  const [buildings, setBuildings] = useState<BuildingObstacle[]>([]);
 
   const [viewState, setViewState] = useState<ViewState>({
     longitude: location?.lon || 126.978,
@@ -235,6 +247,118 @@ export default function MapComponent({
     if (!poly || poly.length < 3) return null;
     return shadowSlabFeature(poly, view3d ? 3.5 : 0.5);
   }, [currentDataPoint, view3d]);
+
+  const refreshBuildings = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || !mapReady || !location) {
+      setBuildings([]);
+      return;
+    }
+    try {
+      let feats = map.querySourceFeatures('openmaptiles', { sourceLayer: 'building' });
+      if (!feats.length) {
+        const layers = ['building', 'building-3d'].filter((id) => !!map.getLayer(id));
+        feats = layers.length ? map.queryRenderedFeatures({ layers }) : [];
+      }
+      const all = buildingsFromMapFeatures(
+        feats.map((f) => ({
+          id: f.id,
+          properties: f.properties as Record<string, unknown> | null,
+          geometry: f.geometry as GeoJSON.Geometry,
+        }))
+      );
+      const next = filterBuildingsNear({ lon: location.lon, lat: location.lat }, all, 550, 64);
+      setBuildings((prev) => {
+        if (
+          prev.length === next.length &&
+          prev.every(
+            (b, i) =>
+              b.id === next[i].id &&
+              b.heightM === next[i].heightM &&
+              b.ring.length === next[i].ring.length
+          )
+        ) {
+          return prev;
+        }
+        return next;
+      });
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Map] building query', err);
+      }
+      setBuildings([]);
+    }
+  }, [location, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || !mapReady || !showRaycast) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => refreshBuildings(), 200);
+    };
+    schedule();
+    map.on('moveend', schedule);
+    map.on('zoomend', schedule);
+    const onSource = (e: { isSourceLoaded?: boolean; sourceId?: string }) => {
+      if (e.isSourceLoaded && e.sourceId === 'openmaptiles') schedule();
+    };
+    map.on('sourcedata', onSource);
+    return () => {
+      if (timer) clearTimeout(timer);
+      map.off('moveend', schedule);
+      map.off('zoomend', schedule);
+      map.off('sourcedata', onSource);
+    };
+  }, [mapReady, showRaycast, location, refreshBuildings, currentTime]);
+
+  const nearBuildings = buildings;
+
+  const raycastClip = useMemo(() => {
+    if (!showRaycast || !location || !currentDataPoint || currentDataPoint.sun.altitude <= 0.1) {
+      return null;
+    }
+    return clipShadowByBuildings(
+      { lon: location.lon, lat: location.lat },
+      objectHeight,
+      currentDataPoint.sun.altitude,
+      currentDataPoint.sun.azimuth,
+      nearBuildings
+    );
+  }, [showRaycast, location, currentDataPoint, objectHeight, nearBuildings]);
+
+  const siteShade = useMemo(() => {
+    if (!showRaycast || !location || !currentDataPoint || currentDataPoint.sun.altitude <= 0.1) {
+      return null;
+    }
+    return siteShadedByBuildings(
+      { lon: location.lon, lat: location.lat },
+      currentDataPoint.sun.altitude,
+      currentDataPoint.sun.azimuth,
+      nearBuildings
+    );
+  }, [showRaycast, location, currentDataPoint, nearBuildings]);
+
+  const buildingShadows = useMemo(() => {
+    if (!showRaycast || !currentDataPoint || currentDataPoint.sun.altitude <= 0.1) {
+      return { type: 'FeatureCollection' as const, features: [] };
+    }
+    return buildingShadowsGeoJSON(
+      nearBuildings,
+      currentDataPoint.sun.altitude,
+      currentDataPoint.sun.azimuth,
+      40
+    );
+  }, [showRaycast, currentDataPoint, nearBuildings]);
+
+  const clippedShadowCoords = useMemo(() => {
+    if (!location || !raycastClip?.endpoint) return null;
+    return [
+      [location.lon, location.lat] as [number, number],
+      [raycastClip.endpoint.lon, raycastClip.endpoint.lat] as [number, number],
+    ];
+  }, [location, raycastClip]);
 
   useEffect(() => {
     if (location) {
@@ -479,6 +603,29 @@ export default function MapComponent({
           </Source>
         )}
 
+        {/* Multi-building ground shadows (vector-tile raycast) */}
+        {showRaycast && buildingShadows.features.length > 0 && (
+          <Source id="building-shadows" type="geojson" data={buildingShadows}>
+            <Layer
+              id="building-shadows-fill"
+              type="fill"
+              paint={{
+                'fill-color': '#1e293b',
+                'fill-opacity': 0.28,
+              }}
+            />
+            <Layer
+              id="building-shadows-outline"
+              type="line"
+              paint={{
+                'line-color': '#334155',
+                'line-width': 1,
+                'line-opacity': 0.45,
+              }}
+            />
+          </Source>
+        )}
+
         {location && currentDataPoint?.shadow?.coordinates && (
           <Source
             id="shadow-line"
@@ -488,7 +635,10 @@ export default function MapComponent({
               properties: {},
               geometry: {
                 type: 'LineString',
-                coordinates: currentDataPoint.shadow.coordinates,
+                coordinates:
+                  showRaycast && clippedShadowCoords
+                    ? clippedShadowCoords
+                    : currentDataPoint.shadow.coordinates,
               },
             }}
           >
@@ -496,20 +646,61 @@ export default function MapComponent({
               id="shadow-line-l"
               type="line"
               paint={{
-                'line-color': getCurrentShadowColor(),
+                'line-color':
+                  showRaycast && raycastClip?.hit ? '#7c3aed' : getCurrentShadowColor(),
                 'line-width': 4,
-                'line-opacity': 0.75,
+                'line-opacity': 0.85,
               }}
             />
           </Source>
         )}
 
-        {location &&
+        {showRaycast &&
+          location &&
+          raycastClip?.freeLengthM != null &&
+          raycastClip.hit &&
           currentDataPoint?.shadow?.coordinates &&
           currentDataPoint.shadow.coordinates.length > 1 && (
+            <Source
+              id="shadow-line-free"
+              type="geojson"
+              data={{
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                  type: 'LineString',
+                  coordinates: currentDataPoint.shadow.coordinates,
+                },
+              }}
+            >
+              <Layer
+                id="shadow-line-free-l"
+                type="line"
+                paint={{
+                  'line-color': '#a78bfa',
+                  'line-width': 2,
+                  'line-opacity': 0.35,
+                  'line-dasharray': [2, 2],
+                }}
+              />
+            </Source>
+          )}
+
+        {location &&
+          ((showRaycast && clippedShadowCoords) ||
+            (currentDataPoint?.shadow?.coordinates &&
+              currentDataPoint.shadow.coordinates.length > 1)) && (
             <Marker
-              longitude={currentDataPoint.shadow.coordinates[1][0]}
-              latitude={currentDataPoint.shadow.coordinates[1][1]}
+              longitude={
+                showRaycast && clippedShadowCoords
+                  ? clippedShadowCoords[1][0]
+                  : currentDataPoint!.shadow!.coordinates![1][0]
+              }
+              latitude={
+                showRaycast && clippedShadowCoords
+                  ? clippedShadowCoords[1][1]
+                  : currentDataPoint!.shadow!.coordinates![1][1]
+              }
               anchor="center"
             >
               <div className="h-3 w-3 rounded-full border-2 border-white bg-violet-700 shadow-lg" />
@@ -596,9 +787,61 @@ export default function MapComponent({
               <Box className="h-3.5 w-3.5" aria-hidden />
               {t('map3d.buildings')}
             </button>
+            <button
+              type="button"
+              onClick={() => setShowRaycast((v) => !v)}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold ${
+                showRaycast
+                  ? 'bg-violet-100 text-violet-900 dark:bg-violet-900/40 dark:text-violet-100'
+                  : 'text-ink-muted'
+              }`}
+              aria-pressed={showRaycast}
+            >
+              <Crosshair className="h-3.5 w-3.5" aria-hidden />
+              {t('map3d.raycast')}
+            </button>
           </div>
         )}
+        {!view3d && (
+          <button
+            type="button"
+            onClick={() => setShowRaycast((v) => !v)}
+            className={`inline-flex items-center gap-1.5 rounded-xl bg-white/95 px-2.5 py-1.5 text-[10px] font-semibold shadow-lg ring-1 ring-black/5 dark:bg-slate-900/95 ${
+              showRaycast
+                ? 'text-violet-800 dark:text-violet-200'
+                : 'text-ink-muted'
+            }`}
+            aria-pressed={showRaycast}
+          >
+            <Crosshair className="h-3.5 w-3.5" aria-hidden />
+            {t('map3d.raycast')}
+          </button>
+        )}
       </div>
+
+      {showRaycast && siteShade?.shaded && (
+        <div
+          className={`absolute z-20 max-w-xs rounded-lg bg-slate-900/90 px-3 py-2 text-[11px] font-semibold text-amber-100 shadow-lg ${
+            overlayMode === 'hud' ? 'left-3 top-14' : 'left-3 top-14'
+          }`}
+          role="status"
+        >
+          {t('map3d.siteShaded')}
+        </div>
+      )}
+      {showRaycast && raycastClip?.hit && !siteShade?.shaded && (
+        <div
+          className={`absolute z-20 max-w-xs rounded-lg bg-violet-900/85 px-3 py-2 text-[11px] font-medium text-violet-50 shadow-lg ${
+            overlayMode === 'hud' ? 'left-3 top-14' : 'left-3 top-14'
+          }`}
+          role="status"
+        >
+          {t('map3d.shadowClipped')}
+          {raycastClip.clippedLengthM != null &&
+            raycastClip.freeLengthM != null &&
+            ` (${raycastClip.clippedLengthM.toFixed(1)}m / ${raycastClip.freeLengthM.toFixed(1)}m)`}
+        </div>
+      )}
 
       <div
         className={`absolute z-10 rounded-lg bg-white/90 px-3 py-2 text-xs shadow-lg backdrop-blur-sm dark:bg-gray-800/90 ${
@@ -635,6 +878,12 @@ export default function MapComponent({
             <div className="h-0.5 w-4 bg-violet-700" />
             <span>{t('map.currentShadow')}</span>
           </div>
+          {showRaycast && (
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-4 bg-slate-800/40" />
+              <span>{t('map3d.buildingShadows')}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -663,13 +912,16 @@ export default function MapComponent({
                     {currentDataPoint.shadow && (
                       <div className="mt-1 text-purple-700 dark:text-purple-400">
                         <span className="font-semibold">{t('map.shadow')}:</span>{' '}
-                        {typeof currentDataPoint.shadow.length === 'number'
-                          ? currentDataPoint.shadow.length === Infinity
-                            ? t('map.infinite')
-                            : `${currentDataPoint.shadow.length.toFixed(2)}m`
-                          : 'N/A'}
+                        {showRaycast && raycastClip?.clippedLengthM != null
+                          ? `${raycastClip.clippedLengthM.toFixed(2)}m`
+                          : typeof currentDataPoint.shadow.length === 'number'
+                            ? currentDataPoint.shadow.length === Infinity
+                              ? t('map.infinite')
+                              : `${currentDataPoint.shadow.length.toFixed(2)}m`
+                            : 'N/A'}
                         {typeof currentDataPoint.shadow.direction === 'number' &&
                           ` / ${currentDataPoint.shadow.direction.toFixed(0)}°`}
+                        {showRaycast && raycastClip?.hit ? ` · ${t('map3d.shadowClipped')}` : ''}
                       </div>
                     )}
                   </div>

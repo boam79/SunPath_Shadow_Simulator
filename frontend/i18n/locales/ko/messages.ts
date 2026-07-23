@@ -337,6 +337,11 @@ export default {
     terrain: '지형',
     buildings: '건물',
     sunColumn: '태양 높이',
+    raycast: '건물 레이캐스트',
+    siteShaded: '건물 가림 — 이 지점은 음영',
+    shadowClipped: '물체 그림자: 건물에 막혀 단축',
+    buildingShadows: '주변 건물 그림자',
+    freeShadow: '가림 없는 그림자',
   },
 
   panelTilt: {

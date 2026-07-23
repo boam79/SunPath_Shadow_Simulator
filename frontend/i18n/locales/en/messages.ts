@@ -337,6 +337,11 @@ export default {
     terrain: 'Terrain',
     buildings: 'Buildings',
     sunColumn: 'Sun height',
+    raycast: 'Building raycast',
+    siteShaded: 'Occluded — site in building shade',
+    shadowClipped: 'Object shadow clipped by building',
+    buildingShadows: 'Nearby building shadows',
+    freeShadow: 'Unobstructed shadow',
   },
 
   panelTilt: {

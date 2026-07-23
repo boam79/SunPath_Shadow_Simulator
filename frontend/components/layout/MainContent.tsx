@@ -41,6 +41,7 @@ interface MainContentProps {
 export default function MainContent({
   location,
   date,
+  objectHeight,
   currentTime,
   onLocationChange,
   solarData,
@@ -232,6 +233,7 @@ export default function MainContent({
                   currentDataPoint={currentDataPoint || null}
                   solarSeries={solarData?.series || null}
                   currentTime={currentTime}
+                  objectHeight={objectHeight}
                   overlayMode={desktopHud ? 'hud' : 'default'}
                 />
               </div>
