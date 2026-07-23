@@ -167,11 +167,15 @@ async function proxyRequest(
       );
     }
 
+    // Non-standard JSON tokens from some Python serializers
+    const sanitized = data.replace(/\bNaN\b/g, 'null').replace(/\b-?Infinity\b/g, 'null');
+
     let jsonData: unknown;
     try {
-      jsonData = JSON.parse(data);
+      jsonData = JSON.parse(sanitized);
     } catch {
-      jsonData = data;
+      jsonData = { error: 'Invalid JSON from backend', preview: sanitized.slice(0, 200) };
+      return NextResponse.json(jsonData, { status: 502 });
     }
 
     // 504 Gateway Timeout 에러 처리
@@ -202,23 +206,16 @@ async function proxyRequest(
       );
     }
 
-    // CORS 헤더 추가
-    const headers = new Headers();
-    headers.set('Access-Control-Allow-Origin', request.headers.get('Origin') || '*');
-    headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    headers.set('Access-Control-Allow-Credentials', 'true');
-    
-    // 원본 응답 헤더 복사
-    response.headers.forEach((value, key) => {
-      if (!key.toLowerCase().startsWith('access-control-')) {
-        headers.set(key, value);
-      }
-    });
-
+    // Do not forward upstream body framing headers — we rebuild JSON.
     return NextResponse.json(jsonData, {
       status: response.status,
-      headers,
+      headers: {
+        'Access-Control-Allow-Origin': request.headers.get('Origin') || '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+        'Content-Type': 'application/json',
+      },
     });
   } catch (error) {
     clearTimeout(timeoutId);

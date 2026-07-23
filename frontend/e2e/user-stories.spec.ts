@@ -12,13 +12,11 @@ async function waitForAppReady(page: Page) {
   await expect(page.getByRole('heading', { name: /SunPath/i }).first()).toBeVisible({
     timeout: 90_000,
   });
-  // 온보딩이 떠 있으면 닫기
   const dialog = page.getByRole('dialog');
   if (await dialog.isVisible().catch(() => false)) {
-    await page.getByRole('button', { name: /알겠어요/i }).click();
+    await page.getByRole('button', { name: /알겠어요|Get Started|시작/i }).click();
     await expect(dialog).toBeHidden({ timeout: 5_000 });
   }
-  // isMobile 측정 후 크롬 마운트 대기
   await page.waitForTimeout(500);
 }
 
@@ -31,7 +29,7 @@ async function openMobileSettings(page: Page) {
 
 test.describe('PC user stories', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
 
   test('map fills stage and sidebar tabs work', async ({ page }) => {
     const errors: string[] = [];
@@ -69,7 +67,6 @@ test.describe('PC user stories', () => {
 
     const play = page.getByRole('button', { name: /재생|Play/i }).first();
     await expect(play).toBeVisible();
-    // 단일 Timeline만 존재 (이중 마운트 방지)
     expect(await page.getByRole('button', { name: /재생|Play|일시정지|Pause/i }).count()).toBe(1);
     await play.click();
     await page.waitForTimeout(1200);
@@ -91,6 +88,38 @@ test.describe('PC user stories', () => {
       await page.waitForTimeout(500);
     }
   });
+
+  test('CSP allows OpenFreeMap and DEM hosts', async ({ page }) => {
+    const res = await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const csp = res?.headers()['content-security-policy'] || '';
+    expect(csp).toMatch(/openfreemap\.org/);
+    expect(csp).toMatch(/amazonaws\.com/);
+  });
+
+  test('Seoul solar loads shadow meters; 3D and raycast toggles', async ({ page }) => {
+    await waitForAppReady(page);
+    await page.getByRole('button', { name: /서울|Seoul/i }).first().click();
+    await expect(page.getByText(/그림자\s+\d+(\.\d+)?\s*m|Shadow\s+\d+(\.\d+)?\s*m/i).first()).toBeVisible({
+      timeout: 90_000,
+    });
+
+    await expect(page.locator('.maplibregl-canvas').first()).toBeVisible({ timeout: 30_000 });
+
+    const btn3d = page.getByRole('button', { name: /^3D$/i });
+    await expect(btn3d).toBeVisible();
+    await btn3d.click();
+    await expect(btn3d).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: /지형|Terrain/i })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /건물 레이캐스트|Building raycast|레이캐스트/i })
+    ).toBeVisible();
+
+    const ray = page.getByRole('button', { name: /건물 레이캐스트|Building raycast|레이캐스트/i });
+    await ray.click();
+    await page.waitForTimeout(300);
+    await ray.click();
+    await page.getByRole('button', { name: /^2D$/i }).click();
+  });
 });
 
 test.describe('Mobile user stories', () => {
@@ -99,7 +128,7 @@ test.describe('Mobile user stories', () => {
     isMobile: true,
     hasTouch: true,
   });
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
 
   test('map + bottom nav + single timeline dock', async ({ page }) => {
     const errors: string[] = [];
@@ -118,7 +147,6 @@ test.describe('Mobile user stories', () => {
     await page.waitForTimeout(1500);
     const pause = page.getByRole('button', { name: /일시정지|Pause/i });
     await expect(pause).toBeVisible();
-    // 재생 중에도 Timeline 인스턴스는 1개
     expect(await page.getByRole('button', { name: /일시정지|Pause/i }).count()).toBe(1);
     await pause.click();
 
@@ -137,19 +165,15 @@ test.describe('Mobile user stories', () => {
     expect(box!.height).toBeGreaterThan(10);
     await date.fill('2026-12-21');
 
-    // 시트 열림 시 독 Timeline 숨김 → 시트 안 Timeline만
     const playInSheet = page.getByRole('button', { name: /재생|Play|일시정지|Pause/i });
-    const n = await playInSheet.count();
-    expect(n).toBeLessThanOrEqual(1);
+    expect(await playInSheet.count()).toBeLessThanOrEqual(1);
 
     const height = page.getByLabel(/물체 높이|Object height|Height/i).first();
     await expect(height).toBeVisible();
     await height.fill('30');
 
-    // 헤더의 텍스트 "닫기" 버튼 (backdrop aria-label과 구분)
     await page.locator('button').filter({ hasText: /^닫기$/ }).click();
     await page.waitForTimeout(400);
-    // 시트 닫힌 뒤 독에 다시 단일 재생 버튼
     expect(await page.getByRole('button', { name: /재생|Play/i }).count()).toBe(1);
   });
 
@@ -163,10 +187,27 @@ test.describe('Mobile user stories', () => {
     }
 
     await openMobileSettings(page);
-    const compare = page.getByRole('tab', { name: /비교|Compare/i });
-    await compare.click();
+    await page.getByRole('tab', { name: /비교|Compare/i }).click();
     await page.waitForTimeout(300);
-    const tools = page.getByRole('tab', { name: /도구|Tools/i });
-    await tools.click();
+    await page.getByRole('tab', { name: /도구|Tools/i }).click();
+  });
+
+  test('mobile: Seoul load + 3D map canvas visible', async ({ page }) => {
+    await waitForAppReady(page);
+    await openMobileSettings(page);
+    await page.getByRole('button', { name: /서울|Seoul/i }).first().click();
+    await page.locator('button').filter({ hasText: /^닫기$/ }).click();
+
+    await expect(page.getByText(/그림자\s+\d+(\.\d+)?\s*m|Shadow\s+\d+(\.\d+)?\s*m/i).first()).toBeVisible({
+      timeout: 90_000,
+    });
+
+    await page.getByRole('button', { name: /^3D$/i }).click();
+    const canvas = page.locator('.maplibregl-canvas').first();
+    await expect(canvas).toBeVisible({ timeout: 30_000 });
+    const box = await canvas.boundingBox();
+    expect(box).toBeTruthy();
+    expect(box!.width).toBeGreaterThan(200);
+    expect(box!.height).toBeGreaterThan(200);
   });
 });

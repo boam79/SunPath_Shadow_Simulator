@@ -140,7 +140,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (outOfRange) {
+    // Future / out-of-window / transient upstream errors → soft empty (never 502 spam)
+    if (outOfRange || !isPastDate(date)) {
       return NextResponse.json(emptyWeather('date_out_of_forecast_range'), {
         headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600' },
       });

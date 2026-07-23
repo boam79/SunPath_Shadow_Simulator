@@ -1,6 +1,33 @@
 /** @type {import('next').NextConfig} */
 const RENDER_URL = 'https://sunpath-shadow-simulator.onrender.com';
 
+/** MapLibre OpenFreeMap + Terrarium DEM hosts used by the map */
+const MAP_IMG = [
+  'https://*.tile.openstreetmap.org',
+  'https://tile.openstreetmap.org',
+  'https://*.openstreetmap.org',
+  'https://*.basemaps.cartocdn.com',
+  'https://basemaps.cartocdn.com',
+  'https://tiles.openfreemap.org',
+  'https://*.openfreemap.org',
+  'https://s3.amazonaws.com',
+  'https://*.amazonaws.com',
+].join(' ');
+
+const MAP_CONNECT = [
+  'https://vercel.live',
+  'https://tile.openstreetmap.org',
+  'https://*.tile.openstreetmap.org',
+  'https://*.openstreetmap.org',
+  'https://*.basemaps.cartocdn.com',
+  'https://basemaps.cartocdn.com',
+  'https://tiles.openfreemap.org',
+  'https://*.openfreemap.org',
+  'https://s3.amazonaws.com',
+  'https://*.amazonaws.com',
+  'https://sunpath-shadow-simulator.onrender.com',
+].join(' ');
+
 const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || RENDER_URL,
@@ -30,10 +57,11 @@ const nextConfig = {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.openstreetmap.org https://*.basemaps.cartocdn.com https://basemaps.cartocdn.com",
-      "connect-src 'self' https://vercel.live https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://*.basemaps.cartocdn.com https://basemaps.cartocdn.com",
+      `img-src 'self' data: blob: ${MAP_IMG}`,
+      `connect-src 'self' ${MAP_CONNECT}`,
       "font-src 'self' data:",
       "worker-src 'self' blob:",
+      "child-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",
     ].join('; ');

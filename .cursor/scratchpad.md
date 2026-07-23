@@ -846,6 +846,23 @@
 
 ## 💬 Executor's Feedback or Assistance Requests
 
+### 2026-07-23 - Executor: 유저스토리 직접 검증 → CSP/프록시 버그 수정
+
+**역할:** Executor — 「유저스토리를 직접해서 버그를 찾아 수정해」
+
+**재현:**
+1. Production CSP에 OpenFreeMap·AWS DEM 없음 → 지도 타일 connect/img 차단 → 연한 파란 빈 지도
+2. `/api/proxy`가 upstream `content-encoding: gzip` + `content-length`를 새 JSON 바디에 복사 → 응답 잘림(3411B incomplete JSON)
+
+**수정:**
+- `next.config.mjs` CSP에 openfreemap / amazonaws 허용
+- proxy hop-by-hop/encoding 헤더 미복사
+- E2E: CSP 검증, Seoul 그림자 m, 3D/레이캐스트, proxy 완전 JSON
+
+**검증:** (빌드·E2E 진행 중)
+
+---
+
 ### 2026-07-23 - Executor: 3D 빈 지도·그림자 — 확인/수정
 
 **역할:** Executor — 「Executor 확인해」

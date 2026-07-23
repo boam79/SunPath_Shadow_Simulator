@@ -24,4 +24,23 @@ test.describe('API routes', () => {
     const data = await res.json();
     expect(Array.isArray(data) || typeof data === 'object').toBeTruthy();
   });
+
+  test('legacy /api/proxy returns complete integrated JSON (no truncation)', async ({ request }) => {
+    const res = await request.post('/api/proxy/api/v1/integrated/calculate', {
+      data: {
+        location: { lat: 37.5665, lon: 126.978 },
+        datetime: { date: '2026-06-21', interval: 60 },
+        object: { height: 10 },
+      },
+    });
+    expect(res.ok(), await res.text()).toBeTruthy();
+    const data = await res.json();
+    expect(Array.isArray(data.series)).toBeTruthy();
+    expect(data.series.length).toBeGreaterThan(10);
+    const noon = data.series.find((p: { timestamp?: string }) =>
+      String(p.timestamp || '').includes('12:00')
+    );
+    expect(noon?.sun?.altitude).toBeGreaterThan(50);
+    expect(typeof noon?.shadow?.length === 'number' || noon?.shadow?.length == null).toBeTruthy();
+  });
 });
