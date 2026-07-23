@@ -342,6 +342,7 @@ export default {
     shadowClipped: 'Object shadow clipped by building',
     buildingShadows: 'Nearby building shadows',
     freeShadow: 'Unobstructed shadow',
+    resetView: 'Frame view',
   },
 
   panelTilt: {

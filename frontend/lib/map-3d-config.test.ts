@@ -4,6 +4,7 @@ import {
   sunColumnFeature,
   skyForTime,
   shadowSlabFeature,
+  cinematicViewpoint,
 } from './map-3d-config';
 
 describe('map-3d-config', () => {
@@ -38,5 +39,13 @@ describe('map-3d-config', () => {
     expect(f).not.toBeNull();
     const ring = (f!.geometry as GeoJSON.Polygon).coordinates[0];
     expect(ring[0]).toEqual(ring[ring.length - 1]);
+  });
+
+  it('cinematicViewpoint uses steep pitch and sun-aware bearing', () => {
+    const v = cinematicViewpoint({ narrow: true, sunAzimuthDeg: 180, currentZoom: 14 });
+    expect(v.pitch).toBeGreaterThanOrEqual(55);
+    expect(v.zoom).toBeGreaterThanOrEqual(16);
+    expect(v.bearing).toBeCloseTo(235, 0);
+    expect(v.padding.bottom).toBeGreaterThan(180);
   });
 });

@@ -342,6 +342,7 @@ export default {
     shadowClipped: '물체 그림자: 건물에 막혀 단축',
     buildingShadows: '주변 건물 그림자',
     freeShadow: '가림 없는 그림자',
+    resetView: '시점 맞추기',
   },
 
   panelTilt: {

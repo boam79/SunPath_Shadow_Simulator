@@ -151,3 +151,36 @@ export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) return false;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
+
+export type CinematicViewpoint = {
+  pitch: number;
+  bearing: number;
+  zoom: number;
+  padding: { top: number; bottom: number; left: number; right: number };
+};
+
+/**
+ * Default 3D camera for reading building volumes + ground shadows.
+ * Bearing is offset from sun azimuth so the shadow stretches across the frame
+ * instead of pointing straight at/away from the camera.
+ */
+export function cinematicViewpoint(opts: {
+  narrow: boolean;
+  sunAzimuthDeg?: number | null;
+  currentZoom?: number;
+}): CinematicViewpoint {
+  const { narrow, sunAzimuthDeg, currentZoom = 14 } = opts;
+  const pitch = narrow ? 58 : 62;
+  const minZoom = narrow ? 16.2 : 15.6;
+  const zoom = Math.max(currentZoom, minZoom);
+  const bearing =
+    typeof sunAzimuthDeg === 'number' && Number.isFinite(sunAzimuthDeg)
+      ? (sunAzimuthDeg + 55 + 360) % 360
+      : narrow
+        ? -32
+        : -28;
+  const padding = narrow
+    ? { top: 56, bottom: 220, left: 10, right: 10 }
+    : { top: 48, bottom: 140, left: 24, right: 24 };
+  return { pitch, bearing, zoom, padding };
+}

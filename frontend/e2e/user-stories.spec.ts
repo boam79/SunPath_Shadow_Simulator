@@ -113,6 +113,8 @@ test.describe('PC user stories', () => {
     await expect(
       page.getByRole('button', { name: /건물 레이캐스트|Building raycast|레이캐스트/i })
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: /시점 맞추기|Frame view/i })).toBeVisible();
+    await page.getByRole('button', { name: /시점 맞추기|Frame view/i }).click();
 
     const ray = page.getByRole('button', { name: /건물 레이캐스트|Building raycast|레이캐스트/i });
     await ray.click();

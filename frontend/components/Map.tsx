@@ -5,7 +5,7 @@ import Map, { Marker, NavigationControl, GeolocateControl, Source, Layer } from 
 import type { MapRef } from 'react-map-gl/maplibre';
 import type { Map as MaplibreMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { MapPin, Sun, Box, Mountain, Crosshair } from 'lucide-react';
+import { MapPin, Sun, Box, Mountain, Crosshair, RotateCcw } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { reverseGeocode } from '@/lib/geocoding';
 import type { SolarDataPoint } from '@/lib/api';
@@ -18,6 +18,7 @@ import {
   shadowSlabFeature,
   skyForTime,
   prefersReducedMotion,
+  cinematicViewpoint,
 } from '@/lib/map-3d-config';
 import {
   buildingsFromMapFeatures,
@@ -198,25 +199,79 @@ export default function MapComponent({
     sync3d();
   }, [sync3d]);
 
+  const applyCinematicView = useCallback(
+    (animate: boolean) => {
+      const map = mapRef.current?.getMap();
+      if (!map || !mapReady) return;
+      const cam = cinematicViewpoint({
+        narrow: isNarrow,
+        sunAzimuthDeg: currentDataPoint?.sun?.azimuth,
+        currentZoom: viewState.zoom,
+      });
+      const center = location
+        ? ({ lng: location.lon, lat: location.lat } as { lng: number; lat: number })
+        : undefined;
+      const duration = animate && !prefersReducedMotion() ? 900 : 0;
+      try {
+        map.easeTo({
+          ...(center ? { center } : {}),
+          pitch: cam.pitch,
+          bearing: cam.bearing,
+          zoom: cam.zoom,
+          padding: cam.padding,
+          duration,
+          essential: true,
+        });
+      } catch {
+        setViewState((vs) => ({
+          ...vs,
+          pitch: cam.pitch,
+          bearing: cam.bearing,
+          zoom: cam.zoom,
+          ...(location ? { longitude: location.lon, latitude: location.lat } : {}),
+        }));
+      }
+    },
+    [
+      mapReady,
+      isNarrow,
+      currentDataPoint?.sun?.azimuth,
+      viewState.zoom,
+      location,
+    ]
+  );
+
   useEffect(() => {
-    const pitch = view3d ? (isNarrow ? 38 : 55) : 0;
-    const minZoom = view3d ? (isNarrow ? 15 : 14.5) : 0;
-    setViewState((vs) => ({
-      ...vs,
-      pitch,
-      bearing: view3d ? vs.bearing : 0,
-      zoom: Math.max(vs.zoom, minZoom || vs.zoom),
-    }));
-    // After pitch change, force a layout pass so canvas is not stuck on stage bg
+    if (!mapReady) return;
+    if (!view3d) {
+      const map = mapRef.current?.getMap();
+      const duration = prefersReducedMotion() ? 0 : 500;
+      try {
+        map?.easeTo({
+          pitch: 0,
+          bearing: 0,
+          padding: { top: 0, bottom: 0, left: 0, right: 0 },
+          duration,
+          essential: true,
+        });
+      } catch {
+        setViewState((vs) => ({ ...vs, pitch: 0, bearing: 0 }));
+      }
+      return;
+    }
+    // Entering 3D: cinematic oblique view (pin above timeline dock via padding)
+    applyCinematicView(true);
     const t = window.setTimeout(() => {
       try {
         mapRef.current?.getMap()?.resize();
       } catch {
         /* ignore */
       }
-    }, 80);
+    }, 100);
     return () => window.clearTimeout(t);
-  }, [view3d, isNarrow]);
+    // Only re-run when mode / layout changes — not every sun tick
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view3d, isNarrow, mapReady]);
 
   const getTimeBasedColor = (timeString: string): string => {
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -406,8 +461,29 @@ export default function MapComponent({
         ...vs,
         longitude: location.lon,
         latitude: location.lat,
-        zoom: Math.max(vs.zoom, 14),
+        zoom: Math.max(vs.zoom, view3d ? (isNarrow ? 16.2 : 15.6) : 14),
       }));
+      if (view3d && mapReady) {
+        try {
+          const map = mapRef.current?.getMap();
+          const cam = cinematicViewpoint({
+            narrow: isNarrow,
+            sunAzimuthDeg: currentDataPoint?.sun?.azimuth,
+            currentZoom: Math.max(viewState.zoom, isNarrow ? 16.2 : 15.6),
+          });
+          map?.easeTo({
+            center: [location.lon, location.lat],
+            zoom: cam.zoom,
+            pitch: map.getPitch() || cam.pitch,
+            bearing: map.getBearing(),
+            padding: cam.padding,
+            duration: prefersReducedMotion() ? 0 : 600,
+            essential: true,
+          });
+        } catch {
+          /* ignore */
+        }
+      }
       let cancelled = false;
       reverseGeocode(location.lat, location.lon).then((address) => {
         if (!cancelled && address) setAddressName(address);
@@ -416,6 +492,7 @@ export default function MapComponent({
         cancelled = true;
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
   const handleMapClick = (event: { lngLat: { lng: number; lat: number } }) => {
@@ -857,6 +934,15 @@ export default function MapComponent({
             >
               <Crosshair className="h-3.5 w-3.5" aria-hidden />
               {t('map3d.raycast')}
+            </button>
+            <button
+              type="button"
+              onClick={() => applyCinematicView(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold text-ink-muted hover:bg-sky/40"
+              aria-label={t('map3d.resetView')}
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+              {t('map3d.resetView')}
             </button>
           </div>
         )}

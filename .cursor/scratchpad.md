@@ -846,6 +846,21 @@
 
 ## 💬 Executor's Feedback or Assistance Requests
 
+### 2026-07-23 - Executor: 3D 시점 UX (피치·패딩·태양 방위)
+
+**역할:** Executor — 「시점을 ux 측면에서 생각해서 수정해」
+
+**문제:** 3D인데 거의 탑다운 → 건물 높이·그림자가 안 읽힘. 하단 타임라인에 핀이 가림.
+
+**수정:**
+- `cinematicViewpoint`: 모바일 pitch 58° / PC 62°, zoom↑, 태양 방위+55° bearing
+- 하단 padding(~220px)으로 핀을 독 위 가시 영역에 배치
+- 3D 진입 시 easeTo 애니메이션 + 「시점 맞추기」버튼
+
+**검증:** (진행 중)
+
+---
+
 ### 2026-07-23 - Executor: 유저스토리 직접 검증 → CSP/프록시 버그 수정
 
 **역할:** Executor — 「유저스토리를 직접해서 버그를 찾아 수정해」
