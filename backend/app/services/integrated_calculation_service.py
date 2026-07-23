@@ -40,7 +40,8 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
     """캐시 조회 → 미스 시 계산 → 캐시 저장 후 응답."""
     lat = request.location.lat
     lon = request.location.lon
-    altitude = request.location.altitude or 0
+    altitude = request.location.altitude if request.location.altitude is not None else 0
+    timezone_name = request.location.timezone
 
     date = request.datetime.date
     start_time = request.datetime.start_time or "00:00"
@@ -48,6 +49,9 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
     interval = request.datetime.interval or 60
 
     object_height = request.object.height if request.object else None
+    apply_refraction = request.options.atmosphere if request.options else True
+    precision = request.options.precision if request.options else "medium"
+    sky_model = "ineichen"
 
     cache_key = cache_manager.generate_cache_key(
         prefix="integrated",
@@ -58,6 +62,11 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
         end=end_time,
         interval=interval,
         height=object_height,
+        altitude=altitude,
+        tz=timezone_name or "",
+        atmosphere=apply_refraction,
+        precision=precision,
+        model=sky_model,
     )
 
     cached_result = cache_manager.get(cache_key)
@@ -73,7 +82,9 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
         end_time=end_time,
         interval_minutes=interval,
         altitude=altitude,
-        model="ineichen",
+        model=sky_model,
+        timezone_name=timezone_name,
+        apply_refraction=apply_refraction,
     )
 
     daily_totals = _irradiance.calculate_daily_total_irradiance(
@@ -81,32 +92,46 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
         interval_minutes=interval,
     )
 
-    sun_times = _solar.calculate_sunrise_sunset(lat, lon, date)
-    max_altitude = _solar.get_max_solar_altitude(irradiance_data)
+    sun_times = _solar.calculate_sunrise_sunset(
+        lat, lon, date, timezone_name=timezone_name
+    )
+    max_altitude = _solar.get_max_solar_altitude(
+        irradiance_data, apply_refraction=apply_refraction
+    )
+
+    alt_col = "apparent_elevation" if apply_refraction else "elevation"
+    zen_col = "apparent_zenith" if apply_refraction else "zenith"
+    if alt_col not in irradiance_data.columns:
+        alt_col = "apparent_elevation"
+    if zen_col not in irradiance_data.columns:
+        zen_col = "apparent_zenith"
 
     series_data = []
     for idx, row in irradiance_data.iterrows():
-        sun_alt = _safe_number(row["apparent_elevation"])
+        sun_alt = _safe_number(row[alt_col])
         sun_azi = _safe_number(row["azimuth"])
-        sun_zen = _safe_number(row["apparent_zenith"])
+        sun_zen = _safe_number(row[zen_col])
 
         ghi = _safe_number(row["ghi"])
         dni = _safe_number(row["dni"])
         dhi = _safe_number(row["dhi"])
         par_val = _safe_number(_irradiance.calculate_par(row["ghi"]))
 
+        hour_angle = _solar._calculate_hour_angle(idx, sun_azi or 0)
+
         data_point = {
             "timestamp": idx.isoformat(),
             "sun": {
-                "altitude": sun_alt,
-                "azimuth": sun_azi,
-                "zenith": sun_zen,
-                "hour_angle": 0,
+                # Pydantic SunPosition requires float — coerce missing to 0
+                "altitude": sun_alt if sun_alt is not None else 0.0,
+                "azimuth": sun_azi if sun_azi is not None else 0.0,
+                "zenith": sun_zen if sun_zen is not None else 90.0,
+                "hour_angle": hour_angle,
             },
             "irradiance": {
-                "ghi": ghi,
-                "dni": dni,
-                "dhi": dhi,
+                "ghi": ghi if ghi is not None else 0.0,
+                "dni": dni if dni is not None else 0.0,
+                "dhi": dhi if dhi is not None else 0.0,
                 "par": par_val,
             },
         }
@@ -114,7 +139,7 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
         if request.object and request.object.height:
             shadow_result = _shadow.calculate_shadow(
                 object_height=request.object.height,
-                sun_altitude=row["apparent_elevation"],
+                sun_altitude=row[alt_col],
                 sun_azimuth=row["azimuth"],
             )
 
@@ -128,9 +153,17 @@ def run_integrated_calculation(request: SolarCalculationRequest) -> SolarCalcula
                 )
 
             length_val = (
-                None if math.isinf(shadow_result["length"]) else _safe_number(shadow_result["length"])
+                None
+                if shadow_result["length"] is None
+                or (
+                    isinstance(shadow_result["length"], float)
+                    and math.isinf(shadow_result["length"])
+                )
+                else _safe_number(shadow_result["length"])
             )
-            direction_val = shadow_result["direction"] if shadow_result["direction"] is not None else None
+            direction_val = (
+                shadow_result["direction"] if shadow_result["direction"] is not None else None
+            )
 
             data_point["shadow"] = {
                 "length": length_val,

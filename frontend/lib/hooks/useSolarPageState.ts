@@ -40,6 +40,12 @@ export function useSolarPageState() {
   const [isMobile, setIsMobile] = useState(false);
   const [copyToast, setCopyToast] = useState(false);
 
+  const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchGenRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     const check = () =>
       setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768);
@@ -59,7 +65,14 @@ export function useSolarPageState() {
     router.replace(`?${params.toString()}`, { scroll: false });
   }, [location, date, objectHeight, router]);
 
-  const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      if (savedHintTimerRef.current) clearTimeout(savedHintTimerRef.current);
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const fetchSolarData = useCallback(async () => {
     if (!location) return;
@@ -68,15 +81,22 @@ export function useSolarPageState() {
     const cached = readCache(key);
     if (cached) {
       setSolarData(cached);
+      setError(null);
       devLog('✅ Cache hit');
       return;
     }
+
+    const gen = ++fetchGenRef.current;
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
 
     setIsLoading(true);
     setLoadingMs(0);
     setError(null);
 
     const startAt = Date.now();
+    if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
     loadingTimerRef.current = setInterval(() => {
       setLoadingMs(Date.now() - startAt);
     }, 500);
@@ -88,6 +108,7 @@ export function useSolarPageState() {
         object: { height: objectHeight },
         options: { atmosphere: true, precision: 'high' },
       });
+      if (gen !== fetchGenRef.current || ac.signal.aborted) return;
       setSolarData(response);
       writeCache(key, response);
       try {
@@ -101,20 +122,24 @@ export function useSolarPageState() {
             height: objectHeight,
             sunrise: response.summary.sunrise,
             sunset: response.summary.sunset,
-            dayLenMin: response.summary.day_length,
+            dayLenHours: response.summary.day_length,
           })
         );
         setLastSavedHint(true);
-        setTimeout(() => setLastSavedHint(false), 6000);
+        if (savedHintTimerRef.current) clearTimeout(savedHintTimerRef.current);
+        savedHintTimerRef.current = setTimeout(() => setLastSavedHint(false), 6000);
       } catch {
         /* storage full */
       }
       devLog('✅ Fetched', response.series.length, 'points');
     } catch (err) {
+      if (gen !== fetchGenRef.current || ac.signal.aborted) return;
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
-      if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
-      setIsLoading(false);
+      if (gen === fetchGenRef.current) {
+        if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
+        setIsLoading(false);
+      }
     }
   }, [location, date, objectHeight]);
 
@@ -124,6 +149,7 @@ export function useSolarPageState() {
       return;
     }
     let cancelled = false;
+    const ac = new AbortController();
     (async () => {
       try {
         const r = await calculateSolar({
@@ -132,13 +158,14 @@ export function useSolarPageState() {
           object: { height: compareHeight },
           options: { atmosphere: true, precision: 'high' },
         });
-        if (!cancelled) setSolarDataB(r);
+        if (!cancelled && !ac.signal.aborted) setSolarDataB(r);
       } catch {
         if (!cancelled) setSolarDataB(null);
       }
     })();
     return () => {
       cancelled = true;
+      ac.abort();
     };
   }, [compareEnabled, compareHeight, location, date]);
 
@@ -162,10 +189,16 @@ export function useSolarPageState() {
   const { start: tlStart, end: tlEnd } = timelineRange(solarData);
 
   const handleShare = useCallback(() => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      setCopyToast(true);
-      setTimeout(() => setCopyToast(false), 2000);
-    });
+    navigator.clipboard
+      .writeText(window.location.href)
+      .then(() => {
+        setCopyToast(true);
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = setTimeout(() => setCopyToast(false), 2000);
+      })
+      .catch(() => {
+        /* insecure context / permission */
+      });
   }, []);
 
   const handleHeaderReset = useCallback(() => {
@@ -177,6 +210,7 @@ export function useSolarPageState() {
     setSolarData(null);
     setSolarDataB(null);
     setCompareEnabled(false);
+    setError(null);
   }, []);
 
   return {

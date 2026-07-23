@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     DEFAULT_PRESSURE: float = 1013.25  # Standard atmospheric pressure (mbar)
     DEFAULT_TEMPERATURE: float = 15.0   # Standard temperature (°C)
     MAX_OBJECT_HEIGHT: float = 1000.0   # Maximum object height (meters)
+
+    # Cache admin (POST /api/cache/clear). If unset, clear is denied.
+    CACHE_ADMIN_TOKEN: str = ""
+    ENVIRONMENT: str = "production"
     
     class Config:
         case_sensitive = True

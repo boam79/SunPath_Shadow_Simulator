@@ -30,7 +30,7 @@ th{background:#f3f4f6;}
 <h1>${title}</h1>
 <p>위치: ${lat.toFixed(4)}, ${lon.toFixed(4)} · 날짜: ${date} · 물체 높이: ${objectHeightM} m</p>
 <p>일출: ${new Date(s.sunrise).toLocaleString('ko-KR')} · 일몰: ${new Date(s.sunset).toLocaleString('ko-KR')}</p>
-<p>일조 시간: ${(s.day_length / 60).toFixed(1)} 시간 · 최대 태양 고도: ${s.max_altitude.toFixed(2)}°</p>
+<p>일조 시간: ${s.day_length.toFixed(1)} 시간 · 최대 태양 고도: ${s.max_altitude.toFixed(2)}°</p>
 <table><thead><tr><th>시각</th><th>태양 고도(°)</th><th>그림자(m)</th></tr></thead><tbody>${rows}</tbody></table>
 <p style="margin-top:16px;font-size:11px;color:#666;">SunPath & Shadow Simulator — 브라우저 인쇄 또는 PDF 저장을 사용하세요.</p>
 </body></html>`);

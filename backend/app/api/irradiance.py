@@ -19,7 +19,7 @@ async def calculate_irradiance(
     start_time: str = Query("00:00", description="Start time in HH:MM format"),
     end_time: str = Query("23:59", description="End time in HH:MM format"),
     interval: int = Query(60, ge=1, le=1440, description="Time interval in minutes"),
-    altitude: float = Query(0, ge=0, description="Elevation in meters"),
+    altitude: float = Query(0, ge=-500, le=9000, description="Elevation in meters"),
     model: str = Query("ineichen", description="Clear sky model (ineichen, haurwitz, simplified_solis)"),
     include_par: bool = Query(False, description="Include PAR calculation"),
     surface_tilt: Optional[float] = Query(None, ge=0, le=90, description="Surface tilt angle (degrees)"),

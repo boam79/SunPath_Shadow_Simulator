@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Lightbulb, TrendingUp, Sun, Moon, AlertTriangle } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { optimizePeriods, type SolarCalculationResponse, type OptimizationResult } from '@/lib/api';
+import { wallClockHm, hmToMinutes } from '@/lib/time-wallclock';
 
 interface OptimizationPanelProps {
   solarData: SolarCalculationResponse | null;
@@ -30,8 +31,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
     const shadowPeriods: Array<{ time: string; shadow_length: number; ghi: number }> = [];
 
     series.forEach((point) => {
-      const time = new Date(point.timestamp);
-      const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = wallClockHm(point.timestamp);
 
       // Max irradiance
       if (point.irradiance?.ghi && point.irradiance.ghi > maxGhi) {
@@ -86,11 +86,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
     // Find continuous periods
     const findContinuous = (periods: Array<{ time: string; ghi: number }>) => {
       if (periods.length === 0) return [];
-      const sorted = [...periods].sort((a, b) => {
-        const [h1, m1] = a.time.split(':').map(Number);
-        const [h2, m2] = b.time.split(':').map(Number);
-        return (h1 * 60 + m1) - (h2 * 60 + m2);
-      });
+      const sorted = [...periods].sort((a, b) => hmToMinutes(a.time) - hmToMinutes(b.time));
 
       const continuous: Array<{ start: string; end: string; average_ghi: number; duration_hours: number }> = [];
       let start = sorted[0].time;
@@ -99,9 +95,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
       let count = 1;
 
       for (let i = 1; i < sorted.length; i++) {
-        const [h1, m1] = sorted[i - 1].time.split(':').map(Number);
-        const [h2, m2] = sorted[i].time.split(':').map(Number);
-        const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+        const diff = hmToMinutes(sorted[i].time) - hmToMinutes(sorted[i - 1].time);
 
         if (diff <= 120) {
           end = sorted[i].time;
@@ -109,9 +103,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
           count++;
         } else {
           if (count > 0) {
-            const [sh, sm] = start.split(':').map(Number);
-            const [eh, em] = end.split(':').map(Number);
-            const duration = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+            const duration = (hmToMinutes(end) - hmToMinutes(start)) / 60;
             continuous.push({
               start,
               end,
@@ -127,9 +119,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
       }
 
       if (count > 0) {
-        const [sh, sm] = start.split(':').map(Number);
-        const [eh, em] = end.split(':').map(Number);
-        const duration = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+        const duration = (hmToMinutes(end) - hmToMinutes(start)) / 60;
         continuous.push({
           start,
           end,
@@ -155,34 +145,35 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
 
   useEffect(() => {
     if (solarData && solarData.series.length > 0) {
-      // Try backend first, fallback to local calculation
+      let cancelled = false;
       if (useBackend) {
         setIsLoading(true);
         
         optimizePeriods(solarData)
           .then((result) => {
+            if (cancelled) return;
             setOptimization(result);
             setIsLoading(false);
           })
           .catch((err) => {
-            // Silently fallback to local calculation
-            // 개발 모드에서만 경고 출력
+            if (cancelled) return;
             if (process.env.NODE_ENV === 'development') {
               console.warn('최적화 API 실패, 로컬 계산으로 전환:', err);
             }
             setUseBackend(false);
             setIsLoading(false);
-            // Use local calculation immediately
             if (localOptimization) {
               setOptimization(localOptimization);
             }
           });
       } else {
-        // Use local calculation
         if (localOptimization) {
           setOptimization(localOptimization);
         }
       }
+      return () => {
+        cancelled = true;
+      };
     } else {
       setOptimization(null);
     }

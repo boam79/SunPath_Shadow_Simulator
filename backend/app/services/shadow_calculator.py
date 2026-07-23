@@ -34,10 +34,10 @@ class ShadowCalculator:
         Returns:
             Dictionary with shadow length, direction, and status
         """
-        # Check for special cases
+        # JSON-safe: use None instead of Infinity (non-standard JSON)
         if sun_altitude <= 0:
             return {
-                'length': float('inf'),
+                'length': None,
                 'direction': None,
                 'status': 'no_sun',
                 'message': '태양이 지평선 아래에 있습니다.'
@@ -45,7 +45,7 @@ class ShadowCalculator:
         
         if sun_altitude <= self.EPSILON:
             return {
-                'length': float('inf'),
+                'length': None,
                 'direction': (sun_azimuth + 180) % 360,
                 'status': 'infinite_shadow',
                 'message': f'태양 고도가 매우 낮습니다 ({sun_altitude:.2f}°). 그림자가 무한대로 길어집니다.'
@@ -95,7 +95,7 @@ class ShadowCalculator:
         Returns:
             Tuple of (end_latitude, end_longitude)
         """
-        if math.isinf(shadow_length):
+        if shadow_length is None or (isinstance(shadow_length, float) and math.isinf(shadow_length)):
             return None, None
         
         # Earth radius in meters
@@ -152,7 +152,7 @@ class ShadowCalculator:
         Returns:
             List of [lon, lat] coordinates forming shadow polygon
         """
-        if math.isinf(shadow_length):
+        if shadow_length is None or (isinstance(shadow_length, float) and math.isinf(shadow_length)):
             return None
         
         # Calculate perpendicular direction
@@ -247,7 +247,9 @@ class ShadowCalculator:
         result = self.calculate_shadow(object_height, sun_altitude, 0)
         calculated_length = result['length']
         
-        if math.isinf(calculated_length):
+        if calculated_length is None or (
+            isinstance(calculated_length, float) and math.isinf(calculated_length)
+        ):
             return {
                 'status': 'skipped',
                 'message': 'Shadow is infinite (sun too low)'
@@ -285,7 +287,7 @@ class ShadowCalculator:
         Returns:
             Descriptive string
         """
-        if math.isinf(shadow_length):
+        if shadow_length is None or (isinstance(shadow_length, float) and math.isinf(shadow_length)):
             return "그림자가 무한대로 길어집니다 (태양이 매우 낮음)"
         
         ratio = shadow_length / object_height

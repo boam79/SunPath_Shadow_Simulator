@@ -127,7 +127,7 @@ async def calculate_shadow(
                 'endpoint': {
                     'lat': end_lat,
                     'lon': end_lon
-                } if end_lat else None,
+                } if end_lat is not None else None,
                 'polygon': polygon,
                 'description': description
             },

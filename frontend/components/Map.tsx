@@ -138,12 +138,15 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
         zoom: 14
       });
 
-      // Reverse geocode to get address
+      let cancelled = false;
       reverseGeocode(location.lat, location.lon).then((address) => {
-        if (address) {
+        if (!cancelled && address) {
           setAddressName(address);
         }
       });
+      return () => {
+        cancelled = true;
+      };
     }
   }, [location]);
 
@@ -317,7 +320,8 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
             <>
               <div>
                 <span className="font-semibold">📍 {t('map.coordinates')}:</span>{' '}
-                {location.lat.toFixed(6)}°N, {location.lon.toFixed(6)}°E
+                {Math.abs(location.lat).toFixed(6)}°{location.lat >= 0 ? 'N' : 'S'},{' '}
+                {Math.abs(location.lon).toFixed(6)}°{location.lon >= 0 ? 'E' : 'W'}
               </div>
               {addressName && (
                 <div className="text-gray-600 dark:text-gray-400 truncate">

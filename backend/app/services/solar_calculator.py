@@ -5,10 +5,11 @@ NREL SPA (Solar Position Algorithm) implementation
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 import pvlib
 from pvlib import solarposition, irradiance
 from app.core.config import settings
+from app.services.timezone_utils import resolve_timezone, timezone_label
 
 class SolarCalculator:
     """
@@ -31,7 +32,8 @@ class SolarCalculator:
         altitude: float = 0,
         pressure: float = None,
         temperature: float = None,
-        apply_refraction: bool = True
+        apply_refraction: bool = True,
+        timezone_name: Optional[str] = None,
     ) -> pd.DataFrame:
         """
         Calculate solar positions for a given location and time range
@@ -46,28 +48,26 @@ class SolarCalculator:
             altitude: Elevation above sea level in meters
             pressure: Atmospheric pressure in mbar (default: 1013.25)
             temperature: Temperature in Celsius (default: 15)
-            apply_refraction: Apply atmospheric refraction correction
+            apply_refraction: Prefer apparent_* (True) vs geometric elevation/zenith
+            timezone_name: Optional IANA timezone
             
         Returns:
             DataFrame with columns: timestamp, apparent_zenith, zenith, 
                                    apparent_elevation, elevation, azimuth
+            Plus attrs: used_timezone, apply_refraction
         """
-        # Use defaults if not provided
         if pressure is None:
             pressure = self.pressure
         if temperature is None:
             temperature = self.temperature
         
-        # Parse date and create time range
         date_obj = datetime.fromisoformat(date)
         start_dt = datetime.combine(date_obj.date(), 
                                     datetime.strptime(start_time, "%H:%M").time())
         end_dt = datetime.combine(date_obj.date(), 
                                  datetime.strptime(end_time, "%H:%M").time())
         
-        # Create timestamp range
-        # Estimate timezone from longitude: UTC + (longitude / 15) hours
-        tz_offset_hours = int(round(longitude / 15))
+        tz = resolve_timezone(latitude, longitude, timezone_name)
         
         times = pd.date_range(
             start=start_dt,
@@ -75,17 +75,13 @@ class SolarCalculator:
             freq=f'{interval_minutes}min'
         )
         
-        # Apply timezone offset for local solar time
         try:
-            from datetime import timezone, timedelta
-            tz = timezone(timedelta(hours=tz_offset_hours))
             times = times.tz_localize(tz)
         except (ValueError, TypeError) as e:
-            # Fallback to UTC if timezone localization fails
             print(f"⚠️ Timezone localization failed: {e}. Using UTC.")
             times = times.tz_localize('UTC')
+            tz = resolve_timezone(0, 0, 'UTC')
         
-        # Calculate solar position using NREL SPA
         solar_pos = solarposition.get_solarposition(
             time=times,
             latitude=latitude,
@@ -93,21 +89,21 @@ class SolarCalculator:
             altitude=altitude,
             pressure=pressure,
             temperature=temperature,
-            method='nrel_numpy'  # NREL SPA algorithm
+            method='nrel_numpy'
         )
         
-        # Note: pvlib's get_solarposition always applies atmospheric refraction correction
-        # The 'apparent_elevation' and 'apparent_zenith' columns include refraction
-        # The 'elevation' and 'zenith' columns are geometric (without refraction)
-        # The apply_refraction parameter determines which values are used in responses
-
+        # Expose which columns consumers should prefer
+        solar_pos.attrs['apply_refraction'] = apply_refraction
+        solar_pos.attrs['used_timezone'] = timezone_label(tz)
+        
         return solar_pos
     
     def calculate_sunrise_sunset(
         self,
         latitude: float,
         longitude: float,
-        date: str
+        date: str,
+        timezone_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Calculate sunrise, sunset, and solar noon times
@@ -116,23 +112,19 @@ class SolarCalculator:
             latitude: Latitude in degrees
             longitude: Longitude in degrees
             date: Date in ISO 8601 format (YYYY-MM-DD)
+            timezone_name: Optional IANA timezone
             
         Returns:
             Dictionary with sunrise, sunset, solar_noon, and day_length
         """
-        # Create timestamp for the date with timezone
-        # Estimate timezone from longitude
-        tz_offset_hours = int(round(longitude / 15))
+        tz = resolve_timezone(latitude, longitude, timezone_name)
         
         try:
-            from datetime import timezone as dt_timezone, timedelta
-            tz = dt_timezone(timedelta(hours=tz_offset_hours))
             date_obj = pd.Timestamp(date).tz_localize(tz)
         except (ValueError, TypeError) as e:
             print(f"⚠️ Timezone localization failed in sunrise_sunset: {e}. Using UTC.")
             date_obj = pd.Timestamp(date).tz_localize('UTC')
         
-        # Calculate sunrise and sunset
         times = pd.DatetimeIndex([date_obj])
         sun_times = solarposition.sun_rise_set_transit_spa(
             times,
@@ -144,17 +136,20 @@ class SolarCalculator:
         sunset = sun_times['sunset'].iloc[0]
         solar_noon = sun_times['transit'].iloc[0]
         
-        # Calculate day length in hours
         if pd.notna(sunrise) and pd.notna(sunset):
             day_length = (sunset - sunrise).total_seconds() / 3600
         elif pd.isna(sunrise) and pd.isna(sunset):
-            # Both sunrise and sunset are NaN - polar day or polar night
-            # Need to check solar altitude to determine which
-            # For now, default to 0.0 (polar night)
-            # TODO: Calculate actual solar altitude to determine polar day (24.0) vs polar night (0.0)
-            day_length = 0.0
+            # Polar day vs polar night: check noon elevation
+            noon_dt = pd.Timestamp(f"{date}T12:00:00").tz_localize(tz)
+            noon_pos = solarposition.get_solarposition(
+                time=pd.DatetimeIndex([noon_dt]),
+                latitude=latitude,
+                longitude=longitude,
+                method='nrel_numpy',
+            )
+            noon_alt = float(noon_pos['apparent_elevation'].iloc[0])
+            day_length = 24.0 if noon_alt > 0 else 0.0
         else:
-            # Only one of sunrise/sunset is NaN - anomalous case
             print(f"⚠️ Anomalous sun times: sunrise={sunrise}, sunset={sunset}")
             day_length = 0.0
         
@@ -162,46 +157,46 @@ class SolarCalculator:
             'sunrise': sunrise.isoformat() if pd.notna(sunrise) else None,
             'sunset': sunset.isoformat() if pd.notna(sunset) else None,
             'solar_noon': solar_noon.isoformat() if pd.notna(solar_noon) else None,
-            'day_length': day_length
+            'day_length': day_length,
+            'timezone': timezone_label(tz),
         }
     
     def get_max_solar_altitude(
         self,
-        solar_positions: pd.DataFrame
+        solar_positions: pd.DataFrame,
+        apply_refraction: bool = True,
     ) -> float:
         """
         Get maximum solar altitude from positions DataFrame
-        
-        Args:
-            solar_positions: DataFrame from calculate_solar_positions
-            
-        Returns:
-            Maximum solar altitude in degrees
         """
-        return float(solar_positions['apparent_elevation'].max())
+        col = 'apparent_elevation' if apply_refraction else 'elevation'
+        if col not in solar_positions.columns:
+            col = 'apparent_elevation'
+        return float(solar_positions[col].max())
     
     def format_solar_position_series(
         self,
-        solar_positions: pd.DataFrame
+        solar_positions: pd.DataFrame,
+        apply_refraction: bool = True,
     ) -> List[Dict[str, Any]]:
         """
         Format solar positions DataFrame into list of dictionaries
-        
-        Args:
-            solar_positions: DataFrame from calculate_solar_positions
-            
-        Returns:
-            List of solar position data points
         """
         result = []
+        alt_col = 'apparent_elevation' if apply_refraction else 'elevation'
+        zen_col = 'apparent_zenith' if apply_refraction else 'zenith'
+        if alt_col not in solar_positions.columns:
+            alt_col = 'apparent_elevation'
+        if zen_col not in solar_positions.columns:
+            zen_col = 'apparent_zenith'
         
         for idx, row in solar_positions.iterrows():
             data_point = {
                 'timestamp': idx.isoformat(),
                 'sun': {
-                    'altitude': float(row['apparent_elevation']),
+                    'altitude': float(row[alt_col]),
                     'azimuth': float(row['azimuth']),
-                    'zenith': float(row['apparent_zenith']),
+                    'zenith': float(row[zen_col]),
                     'hour_angle': self._calculate_hour_angle(idx, row['azimuth'])
                 }
             }
@@ -211,21 +206,13 @@ class SolarCalculator:
     
     def _calculate_hour_angle(self, timestamp: pd.Timestamp, azimuth: float) -> float:
         """
-        Calculate hour angle from timestamp
-        
-        Args:
-            timestamp: Time
-            azimuth: Solar azimuth in degrees
-            
-        Returns:
-            Hour angle in degrees
+        Approximate hour angle from local clock time (15°/hour from noon).
+        azimuth kept for API compatibility.
         """
-        # Hour angle: 15° per hour from solar noon
+        _ = azimuth
         hour_of_day = timestamp.hour + timestamp.minute / 60
-        solar_noon = 12.0  # Simplified, should account for equation of time
-        hour_angle = (hour_of_day - solar_noon) * 15
-        
-        return hour_angle
+        solar_noon = 12.0
+        return (hour_of_day - solar_noon) * 15
     
     def validate_extreme_conditions(
         self,
@@ -234,31 +221,21 @@ class SolarCalculator:
     ) -> Dict[str, Any]:
         """
         Check for extreme conditions (polar day/night, etc.)
-        
-        Args:
-            latitude: Latitude in degrees
-            date: Date in ISO 8601 format
-            
-        Returns:
-            Dictionary with condition flags
         """
         abs_lat = abs(latitude)
         date_obj = datetime.fromisoformat(date)
         day_of_year = date_obj.timetuple().tm_yday
         
-        # Check for polar regions
         is_polar = abs_lat > 66.5
         
-        # Check for polar day/night conditions
-        # Simplified check - should use more precise calculation
         is_polar_day = False
         is_polar_night = False
         
         if is_polar:
-            if latitude > 0:  # Northern hemisphere
-                is_polar_day = 152 <= day_of_year <= 213  # ~June solstice
-                is_polar_night = 335 <= day_of_year or day_of_year <= 59  # ~December solstice
-            else:  # Southern hemisphere
+            if latitude > 0:
+                is_polar_day = 152 <= day_of_year <= 213
+                is_polar_night = 335 <= day_of_year or day_of_year <= 59
+            else:
                 is_polar_day = 335 <= day_of_year or day_of_year <= 59
                 is_polar_night = 152 <= day_of_year <= 213
         

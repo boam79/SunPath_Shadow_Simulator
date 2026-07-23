@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Loader2, BarChart3, Calendar } from 'lucide-react';
 import { calculateBatch, type SolarCalculationRequest, type SolarSummary } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
+import { seasonalDates } from '@/lib/time-wallclock';
 
 interface SeasonComparisonProps {
   location?: { lat: number; lon: number } | null;
@@ -19,11 +20,12 @@ export default function SeasonComparison({
   const [results, setResults] = useState<Array<{season: {name: string; date: string; emoji: string}; summary: SolarSummary; maxAltitude: number; dayLength: number}>>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const dates = seasonalDates();
   const seasons = [
-    { name: t('seasonComparison.seasons.spring'), date: '2025-03-20', emoji: t('seasonComparison.seasonEmojis.spring') },
-    { name: t('seasonComparison.seasons.summer'), date: '2025-06-21', emoji: t('seasonComparison.seasonEmojis.summer') },
-    { name: t('seasonComparison.seasons.autumn'), date: '2025-09-23', emoji: t('seasonComparison.seasonEmojis.autumn') },
-    { name: t('seasonComparison.seasons.winter'), date: '2025-12-21', emoji: t('seasonComparison.seasonEmojis.winter') }
+    { name: t('seasonComparison.seasons.spring'), date: dates.spring, emoji: t('seasonComparison.seasonEmojis.spring') },
+    { name: t('seasonComparison.seasons.summer'), date: dates.summer, emoji: t('seasonComparison.seasonEmojis.summer') },
+    { name: t('seasonComparison.seasons.autumn'), date: dates.autumn, emoji: t('seasonComparison.seasonEmojis.autumn') },
+    { name: t('seasonComparison.seasons.winter'), date: dates.winter, emoji: t('seasonComparison.seasonEmojis.winter') }
   ];
 
   const handleCompare = async () => {
@@ -59,8 +61,8 @@ export default function SeasonComparison({
       
       const seasonResults = response.results
         .filter(item => item.success && item.result)
-        .map((item, index) => ({
-          season: seasons[index],
+        .map((item) => ({
+          season: seasons[item.index] ?? seasons[0],
           summary: item.result!.summary,
           maxAltitude: Math.max(...item.result!.series.map(s => s.sun.altitude)),
           dayLength: item.result!.summary.day_length

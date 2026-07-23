@@ -4,6 +4,7 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cartesia
 import type { SolarCalculationResponse } from '@/lib/api';
 import { useMemo } from 'react';
 import { useI18n } from '@/lib/i18n-context';
+import { wallClockHm, hmToMinutes } from '@/lib/time-wallclock';
 
 interface SolarChartProps {
   solarData: SolarCalculationResponse | null;
@@ -11,19 +12,18 @@ interface SolarChartProps {
 }
 
 export default function SolarChart({ solarData, currentTime }: SolarChartProps) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   
-  // Transform data for charts
+  // Transform data for charts — wall-clock HH:mm from ISO (locale-safe)
   const chartData = useMemo(() => {
     if (!solarData) return [];
 
     return solarData.series.map(point => {
-      const time = new Date(point.timestamp);
-      const timeStr = time.toLocaleTimeString(locale === 'ko' ? 'ko-KR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = wallClockHm(point.timestamp);
       
       return {
         time: timeStr,
-        timestamp: time.getTime(),
+        timestamp: Date.parse(point.timestamp),
         altitude: point.sun?.altitude || 0,
         azimuth: point.sun?.azimuth || 0,
         ghi: point.irradiance?.ghi || 0,
@@ -34,25 +34,23 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
           : null
       };
     });
-  }, [solarData, locale]);
+  }, [solarData]);
 
   // Find current time index for reference line
   const currentTimeIndex = useMemo(() => {
     if (!solarData || !currentTime) return -1;
     
     try {
-      // Parse current time more reliably
-      const [hours, minutes] = currentTime.split(':').map(Number);
-      if (isNaN(hours) || isNaN(minutes)) return -1;
+      const targetMin = hmToMinutes(currentTime);
+      if (!Number.isFinite(targetMin)) return -1;
       
-      // Find the closest data point
       let closestIndex = -1;
       let minDiff = Infinity;
       
       chartData.forEach((d, index) => {
-        const [dHours, dMinutes] = d.time.split(':').map(Number);
-        if (!isNaN(dHours) && !isNaN(dMinutes)) {
-          const diff = Math.abs((hours * 60 + minutes) - (dHours * 60 + dMinutes));
+        const dMin = hmToMinutes(d.time);
+        if (Number.isFinite(dMin)) {
+          const diff = Math.abs(targetMin - dMin);
           if (diff < minDiff) {
             minDiff = diff;
             closestIndex = index;
@@ -60,7 +58,6 @@ export default function SolarChart({ solarData, currentTime }: SolarChartProps) 
         }
       });
       
-      // Only return valid index if within reasonable range (5 minutes)
       return minDiff <= 5 ? closestIndex : -1;
     } catch {
       return -1;

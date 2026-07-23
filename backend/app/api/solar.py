@@ -60,7 +60,8 @@ async def calculate_solar_position(
         # Extract parameters
         lat = request.location.lat
         lon = request.location.lon
-        altitude = request.location.altitude or 0
+        altitude = request.location.altitude if request.location.altitude is not None else 0
+        timezone_name = request.location.timezone
         
         date = request.datetime.date
         start_time = request.datetime.start_time or "00:00"
@@ -81,17 +82,24 @@ async def calculate_solar_position(
             end_time=end_time,
             interval_minutes=interval,
             altitude=altitude,
-            apply_refraction=apply_refraction
+            apply_refraction=apply_refraction,
+            timezone_name=timezone_name,
         )
         
         # Calculate sunrise/sunset
-        sun_times = solar_calculator.calculate_sunrise_sunset(lat, lon, date)
+        sun_times = solar_calculator.calculate_sunrise_sunset(
+            lat, lon, date, timezone_name=timezone_name
+        )
         
         # Get maximum altitude
-        max_altitude = solar_calculator.get_max_solar_altitude(solar_positions)
+        max_altitude = solar_calculator.get_max_solar_altitude(
+            solar_positions, apply_refraction=apply_refraction
+        )
         
         # Format series data
-        series_data = solar_calculator.format_solar_position_series(solar_positions)
+        series_data = solar_calculator.format_solar_position_series(
+            solar_positions, apply_refraction=apply_refraction
+        )
         
         # Create response
         response = SolarCalculationResponse(

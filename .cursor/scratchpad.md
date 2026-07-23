@@ -26,6 +26,11 @@
 - **pvlib-python**: NREL 검증된 태양 위치 계산 라이브러리
 - **Redis**: 계산 결과 캐싱으로 응답 시간 단축
 
+### 2026-07-23 Planner: 고도화 제안·버그 감사
+
+코드베이스 정적 분석으로 **확정 버그 18건**과 **고도화 제안(P0~P2)** 을 식별함.
+목표는 MVP 정확도(타임존)·클라이언트 호환성·보안(캐시) 결함을 우선 정리하고, UX/테스트 고도화로 이어가는 것.
+
 ### 차별화 포인트
 - 기존 CAD/BIM 도구 대비 낮은 진입 장벽
 - 단순 일출/일몰 시간 제공 서비스를 넘어선 동적 시뮬레이션
@@ -106,6 +111,63 @@
 - AWS Systems Manager Parameter Store 또는 Secrets Manager를 활용한 비밀 관리
 - GitHub Actions 기반 CI/CD 파이프라인을 AWS용으로 재구성하고 블루/그린 또는 카나리 전환 시나리오 준비
 - Cutover 전에 스테이징 환경에서 부하 테스트 및 헬스체크 자동화
+
+---
+
+
+### 2026-07-23 — 버그·고도화 감사 결과 (Planner)
+
+#### A. 확정 버그 (우선 수정 권장)
+
+| ID | 영역 | 심각도 | 요약 |
+|----|------|--------|------|
+| B1 | Backend | P0 | 타임존 `lon/15` 추정 → 서울 UTC+8(실제 +9), 태양/일출몰 체계적 오차 |
+| B2 | Backend | P0 | 통합 캐시 키에 `altitude`/`options` 누락 → 잘못된 캐시 히트 |
+| B3 | Backend | P0 | Shadow API `length: Infinity` (비표준 JSON); 통합 API는 null |
+| B4 | Backend | P0 | `POST /api/cache/clear` 무인증 + Redis `KEYS` 블로킹 |
+| B5 | Backend | P1 | `cache.py` HTTPException(400)이 Exception에 잡혀 500으로 덮임 |
+| B6 | Backend | P1 | `if end_lat else None` → 적도(lat=0)에서 endpoint 유실 |
+| B7 | Backend | P1 | 극주간(polar day)인데 `day_length=0` (TODO 미구현) |
+| B8 | Backend | P1 | `apply_refraction`/`atmosphere` 옵션 no-op; integrated `hour_angle` 항상 0 |
+| B9 | Frontend | P0 | 브라우저 TZ vs 위치 TZ 불일치 → 태양/그림자/타임라인 매칭 왜곡 |
+| B10 | Frontend | P0 | Chart `toLocaleTimeString` → ko/en에서 NaN, ReferenceLine 미작동 |
+| B11 | Frontend | P0 | `printReport.ts`에서 `day_length/60` (hours를 분으로 오해) |
+| B12 | Frontend | P1 | Timeline "끝으로" 버튼이 재생을 멈추지 않음 |
+| B13 | Frontend | P1 | 캐시 hit 시 이전 error 잔존; 메인 fetch 레이스(Abort 없음) |
+| B14 | Frontend | P1 | 주소/역지오코딩 검색 레이스 |
+| B15 | Frontend | P1 | SeasonComparison: filter 후 index로 계절 매핑 → 실패 시 어긋남 |
+| B16 | Frontend | P2 | 지도 좌표 라벨 항상 °N/°E (남/서반구 오류) |
+| B17 | Frontend | P2 | AdvancedOptions UI만 연결, 실제 interval/model 미반영 |
+| B18 | Frontend | P2 | 퀵 절기 날짜 2025 하드코딩 |
+
+#### B. 고도화 제안
+
+**P0 (정확성·보안)**
+1. IANA timezone (`location.timezone` 또는 timezonefinder) — `lon/15` 제거/폴백만
+2. 프론트·백 시각을 위치 wall-clock으로 통일 (API timezone 전달 + 파싱 규칙 단일화)
+3. 캐시 키에 altitude/options 포함; Shadow `inf`→`null`
+4. 캐시 clear 인증/비활성 + SCAN; Chart/printReport 시간·일조시간 수정
+
+**P1 (안정성·UX)**
+5. fetch/geocode AbortController·세대 토큰; 캐시 hit 시 error clear; End 시 pause
+6. DateTimeRange HH:MM·start≤end 검증; polar day/night 구분; end_lat is not None
+7. 모바일 지도 하단 컴팩트 Timeline; AdvancedOptions 실연결 또는 제거
+8. rate limit Redis화; `/test` non-prod만; 예외 메시지 일반화
+9. 단위 테스트: TZ, 그림자 edge, 캐시 키, Chart 로케일, printReport
+
+**P2 (품질·제품)**
+10. Perez Sky / Open-Meteo 실측 보정 (기존 Phase 2)
+11. 태양 하루 궤적선·그림자 폴리곤 시각화 강화
+12. E2E: play→sunset, 로케일 차트, 빠른 위치 변경 레이스
+13. 절기 동적 계산; export/print 영문화; CSP/죽은 proxy 정리
+14. Task 14 테스트 커버리지·Task 19 DNS/SSL (기존 보드)
+
+#### C. 다음 실행 제안 (승인 후 Executor)
+
+1. **핫픽스 묶음 A**: B11 printReport, B10 Chart hour12:false, B5 cache HTTPException, B6 end_lat, B12 Timeline End pause, B13 cache error clear
+2. **정확도 묶음 B**: B1+B9 timezone (백엔드 IANA + 프론트 파싱)
+3. **캐시/보안 묶음 C**: B2+B3+B4
+4. 이후 P1 레이스/검증/모바일 Timeline
 
 ---
 
@@ -540,10 +602,14 @@
 ## 📊 Project Status Board
 
 ### 🔵 To Do (대기 중)
+- [ ] **[Planner 2026-07-23] 버그 핫픽스 A** (printReport/Chart/cache 400/end_lat/Timeline End/error clear) — 승인 대기
+- [ ] **[Planner 2026-07-23] 타임존 정확도 B** (IANA + 프론트 wall-clock)
+- [ ] **[Planner 2026-07-23] 캐시·보안 C** (키 altitude, Shadow null, clear 인증)
 - [ ] Task 12: 프론트엔드 - 차트 및 데이터 표시 (선택적)
 - [ ] Task 14: 테스트 작성 및 검증
 - [ ] Task 15: 배포 및 CI/CD 설정
 - [ ] Task 19: DNS/SSL 및 전환 계획 수립
+
 
 ### 🟡 In Progress (진행 중)
 - [x] Task 13: 프론트엔드 - 데이터 내보내기 기능 (완료!)
@@ -728,6 +794,31 @@
 ---
 
 ## 💬 Executor's Feedback or Assistance Requests
+
+### 2026-07-23 - Executor: 버그픽스·고도화 전부 구현
+
+**완료 묶음:** A(핫픽스) + B(타임존) + C(캐시/보안) + 주요 P1
+
+**검증:** backend pytest 10 passed · frontend vitest 10 passed · next lint OK
+
+**Git:** 브랜치 `cursor/bugfix-enhancement-3539` → `master` 머지·푸시 진행
+
+**사용자 확인:** Render에 `CACHE_ADMIN_TOKEN` 설정 권장. Planner 최종 완료 확인 요청.
+
+
+### 2026-07-23 - Planner: 고도화 제안·버그 감사 완료
+
+**역할:** Planner (분석만, 코드 변경 없음)
+
+**산출물:** Key Challenges에 확정 버그 B1–B18 및 P0~P2 고도화 제안 기록.
+
+**사용자 확인 필요:**
+1. Executor 모드로 **핫픽스 묶음 A**부터 진행할지
+2. 타임존(B)과 캐시/보안(C) 중 우선순위
+3. 구현 범위: 핫픽스만 / 정확도까지 / 전부
+
+**참고:** AWS EC2는 비가동, Render 백엔드가 운영 경로. 무인증 cache clear는 운영 Redis에 직접 영향 가능.
+
 
 ### 2026-04-04 - 백엔드 상태 확인 및 AWS→Render 운영 정합성
 
@@ -1273,6 +1364,13 @@ Task 12 (차트)를 건너뛰고 핵심 기능 테스트 후 최종 정리합니
 ---
 
 ## 📚 Lessons Learned
+
+### 2026-07-23 Planner 감사에서 확인된 교훈
+- `day_length`는 **hours** (export는 올바름, printReport만 /60 오용) — 단위 주석/타입 alias 권장
+- 프론트 `toLocaleTimeString` 결과를 `split(':')`로 파싱하면 ko/en 로케일에서 깨짐 → 항상 `HH:mm` 또는 timestamp 비교
+- Shadow API와 Integrated API의 Infinity/null 불일치는 클라이언트 JSON.parse 실패 원인
+- 스키마의 `Location.timezone` 필드가 존재해도 서비스에서 무시되면 문서/구현 drift
+
 
 ### 개발 시 주의사항
 - 프로그램 출력에 디버깅에 유용한 정보 포함할 것

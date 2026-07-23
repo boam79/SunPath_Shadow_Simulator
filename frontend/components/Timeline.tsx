@@ -379,7 +379,15 @@ export default function Timeline({
 
           {/* End */}
           <button
-            onClick={() => onTimeChange(endTime)}
+            onClick={() => {
+              accumulatedMinutesRef.current = endMinutes;
+              onTimeChange(endTime);
+              if (isPlaying !== undefined && onPlayPause) {
+                if (isPlaying) onPlayPause();
+              } else {
+                setInternalPlaying(false);
+              }
+            }}
             className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             title={t('timeline.last')}
           >

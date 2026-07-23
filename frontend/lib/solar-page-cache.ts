@@ -1,6 +1,7 @@
 import type { SolarCalculationResponse } from '@/lib/api';
+import { wallClockHour } from '@/lib/time-wallclock';
 
-export const CACHE_PREFIX = 'sunpath_v1_';
+export const CACHE_PREFIX = 'sunpath_v2_';
 export const CACHE_TTL_MS = 30 * 60 * 1000;
 
 export function cacheKey(lat: number, lon: number, date: string, height: number): string {
@@ -37,11 +38,10 @@ export function timelineRange(
 ): { start: string; end: string } {
   if (!solarData) return { start: '05:00', end: '20:00' };
   try {
-    const sr = new Date(solarData.summary.sunrise);
-    const ss = new Date(solarData.summary.sunset);
+    // Use civil wall-clock from ISO (location TZ), not browser local getHours()
+    const startH = Math.max(0, wallClockHour(solarData.summary.sunrise) - 1);
+    const endH = Math.min(23, wallClockHour(solarData.summary.sunset) + 1);
     const pad = (n: number) => String(n).padStart(2, '0');
-    const startH = Math.max(0, sr.getHours() - 1);
-    const endH = Math.min(23, ss.getHours() + 1);
     return { start: `${pad(startH)}:00`, end: `${pad(endH)}:00` };
   } catch {
     return { start: '05:00', end: '20:00' };

@@ -56,6 +56,7 @@ export default function SingleTabPanel({
   const [copySuccess, setCopySuccess] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchGenRef = useRef(0);
 
   useEffect(() => {
     if (searchTimeoutRef.current) {
@@ -67,19 +68,22 @@ export default function SingleTabPanel({
       return;
     }
 
+    const gen = ++searchGenRef.current;
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
         const results = await searchAddress(searchQuery);
+        if (gen !== searchGenRef.current) return;
         setSearchResults(results);
         setShowResults(true);
       } catch (error) {
+        if (gen !== searchGenRef.current) return;
         if (isDevelopment) {
           console.error('Search error:', error);
         }
         setSearchResults([]);
       } finally {
-        setIsSearching(false);
+        if (gen === searchGenRef.current) setIsSearching(false);
       }
     }, 500);
 
@@ -296,21 +300,21 @@ export default function SingleTabPanel({
           </button>
           <button
             type="button"
-            onClick={() => setDate('2025-06-21')}
+            onClick={() => setDate(`${new Date().getFullYear()}-06-21`)}
             className="px-3 py-1.5 text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-xl hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors"
           >
             {t('sidebar.quickDates.solstice')}
           </button>
           <button
             type="button"
-            onClick={() => setDate('2025-12-21')}
+            onClick={() => setDate(`${new Date().getFullYear()}-12-21`)}
             className="px-3 py-1.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
           >
             {t('sidebar.quickDates.winter')}
           </button>
           <button
             type="button"
-            onClick={() => setDate('2025-03-20')}
+            onClick={() => setDate(`${new Date().getFullYear()}-03-20`)}
             className="px-3 py-1.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
           >
             {t('sidebar.quickDates.spring')}

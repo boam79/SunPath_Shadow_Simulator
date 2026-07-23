@@ -206,10 +206,17 @@ class CacheManager:
             return 0
         
         try:
-            keys = self.redis_client.client.keys(pattern)
-            if keys:
-                return self.redis_client.client.delete(*keys)
-            return 0
+            # Prefer SCAN over KEYS to avoid blocking Redis
+            client = self.redis_client.client
+            deleted = 0
+            cursor = 0
+            while True:
+                cursor, keys = client.scan(cursor=cursor, match=pattern, count=200)
+                if keys:
+                    deleted += client.delete(*keys)
+                if cursor == 0:
+                    break
+            return deleted
         except Exception as e:
             print(f"Cache clear error: {e}")
             return 0

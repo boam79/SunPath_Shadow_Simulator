@@ -25,7 +25,9 @@ class IrradianceCalculator:
         end_time: str = "23:59",
         interval_minutes: int = 60,
         altitude: float = 0,
-        model: str = "ineichen"
+        model: str = "ineichen",
+        timezone_name: str = None,
+        apply_refraction: bool = True,
     ) -> pd.DataFrame:
         """
         Calculate clear sky irradiance using specified model
@@ -39,6 +41,8 @@ class IrradianceCalculator:
             interval_minutes: Time interval in minutes
             altitude: Elevation above sea level in meters
             model: Clear sky model ('ineichen', 'haurwitz', 'simplified_solis')
+            timezone_name: Optional IANA timezone
+            apply_refraction: Prefer apparent solar angles when True
             
         Returns:
             DataFrame with GHI, DNI, DHI columns
@@ -58,7 +62,9 @@ class IrradianceCalculator:
             start_time=start_time,
             end_time=end_time,
             interval_minutes=interval_minutes,
-            altitude=altitude
+            altitude=altitude,
+            timezone_name=timezone_name,
+            apply_refraction=apply_refraction,
         )
         
         # Calculate clear sky irradiance using Location object
@@ -94,9 +100,10 @@ class IrradianceCalculator:
         time_hours = np.arange(len(irradiance_data)) * interval_hours
 
         # Integrate using trapezoidal rule with time axis (W/m² * hours → Wh/m² → kWh/m²)
-        total_ghi = np.trapz(irradiance_data['ghi'].values, x=time_hours) / 1000
-        total_dni = np.trapz(irradiance_data['dni'].values, x=time_hours) / 1000
-        total_dhi = np.trapz(irradiance_data['dhi'].values, x=time_hours) / 1000
+        trapz = getattr(np, "trapezoid", None) or getattr(np, "trapz")
+        total_ghi = trapz(irradiance_data['ghi'].values, x=time_hours) / 1000
+        total_dni = trapz(irradiance_data['dni'].values, x=time_hours) / 1000
+        total_dhi = trapz(irradiance_data['dhi'].values, x=time_hours) / 1000
         
         return {
             'ghi': float(total_ghi),

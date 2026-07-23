@@ -9,7 +9,8 @@ class Location(BaseModel):
     """Location coordinates"""
     lat: float = Field(..., ge=-90, le=90, description="Latitude in degrees")
     lon: float = Field(..., ge=-180, le=180, description="Longitude in degrees")
-    altitude: Optional[float] = Field(0, ge=0, description="Altitude in meters")
+    # Allow below-sea-level sites (e.g. Dead Sea)
+    altitude: Optional[float] = Field(0, ge=-500, le=9000, description="Altitude in meters")
     timezone: Optional[str] = Field(None, description="IANA timezone (e.g., 'Asia/Seoul')")
 
 class DateTimeRange(BaseModel):
@@ -28,6 +29,26 @@ class DateTimeRange(BaseModel):
             return v
         except ValueError:
             raise ValueError("Date must be in ISO 8601 format (YYYY-MM-DD)")
+
+    @field_validator('start_time', 'end_time')
+    @classmethod
+    def validate_hhmm(cls, v):
+        if v is None:
+            return v
+        try:
+            datetime.strptime(v, "%H:%M")
+            return v
+        except ValueError:
+            raise ValueError("Time must be in HH:MM format (00:00–23:59)")
+
+    @field_validator('end_time')
+    @classmethod
+    def validate_start_before_end(cls, end_time, info):
+        start = info.data.get('start_time')
+        if start and end_time:
+            if datetime.strptime(end_time, "%H:%M") < datetime.strptime(start, "%H:%M"):
+                raise ValueError("end_time must be greater than or equal to start_time")
+        return end_time
 
 class ObjectProperties(BaseModel):
     """Physical object properties"""

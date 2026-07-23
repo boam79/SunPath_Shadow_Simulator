@@ -6,6 +6,7 @@ import SolarChart from '@/components/Chart';
 import OptimizationPanel from '@/components/OptimizationPanel';
 import { useI18n } from '@/lib/i18n-context';
 import type { SolarCalculationResponse, SolarDataPoint } from '@/lib/api';
+import { wallClockInstant } from '@/lib/time-wallclock';
 
 // Dynamically import Map to avoid SSR issues
 const Map = dynamic(() => import('@/components/Map'), {
@@ -84,20 +85,20 @@ export default function MainContent({
   }
 
   // Interpolate data point at selected time for smooth animation
-  // Use useMemo to prevent recalculating on every render
+  // Match currentTime as location wall-clock (same offset as series timestamps)
   const currentDataPoint = useMemo((): SolarDataPoint | null => {
-    if (!solarData) return null;
-    // Use explicit timezone to avoid parsing issues
-    // Format: YYYY-MM-DDTHH:mm:ss (local timezone)
-    const target = new Date(`${date}T${currentTime}:00`);
-    if (isNaN(target.getTime())) {
+    if (!solarData || solarData.series.length === 0) return null;
+    const sample = solarData.series[0]?.timestamp
+      ?? solarData.summary.sunrise
+      ?? solarData.summary.solar_noon;
+    const tt = wallClockInstant(date, currentTime, sample);
+    if (!Number.isFinite(tt)) {
       if (process.env.NODE_ENV === 'development') {
-        console.error(`Invalid date/time: ${date}T${currentTime}:00`);
+        console.error(`Invalid date/time: ${date}T${currentTime}`);
       }
       return null;
     }
-    const series = solarData.series.map(p => ({ p, t: new Date(p.timestamp).getTime() }));
-    const tt = target.getTime();
+    const series = solarData.series.map(p => ({ p, t: Date.parse(p.timestamp) }));
 
     // find neighbors
     let prev = series[0];
