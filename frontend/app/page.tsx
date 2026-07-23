@@ -102,7 +102,7 @@ function HomeInner() {
   };
 
   return (
-    <div className="app-page-bg flex min-h-screen flex-col">
+    <div className="app-page-bg flex h-dvh max-h-dvh flex-col overflow-hidden">
       <StructuredData />
       <OnboardingModal />
       <Header
@@ -124,12 +124,12 @@ function HomeInner() {
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row md:overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         <div className="hidden min-h-0 shrink-0 md:block md:w-72 md:overflow-y-auto md:border-r md:border-[color:var(--glass-border)] md:bg-[color:var(--glass)] md:backdrop-blur-md">
           <Sidebar {...sidebarProps} />
         </div>
 
-        <div className="relative flex min-h-0 flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:min-h-0 md:pb-0">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:min-h-0 md:pb-0">
           <MainContent
             location={location}
             date={date}
@@ -145,8 +145,8 @@ function HomeInner() {
 
           {/* D1: mobile map timeline dock — play without opening settings */}
           {isMobile && mobilePanel === 'map' && !moreSheetOpen && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-[4.75rem] z-30 px-3 md:hidden">
-              <div className="pointer-events-auto d1-timeline-dock shadow-soft">
+            <div className="pointer-events-none absolute inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 px-3 md:hidden">
+              <div className="pointer-events-auto d1-timeline-dock mb-2 shadow-soft">
                 <Timeline
                   currentTime={currentTime}
                   onTimeChange={handleTimeChange}
@@ -195,8 +195,8 @@ function HomeInner() {
         </div>
       )}
 
-      <footer className="mt-auto border-t border-amber-100/90 bg-white/80 px-3 py-3 backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/80 md:px-8 md:py-5">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 pb-[max(4.5rem,env(safe-area-inset-bottom))] text-xs text-stone-600 dark:text-stone-300 md:flex-row md:justify-between md:gap-4 md:pb-0 md:text-sm">
+      <footer className="mt-auto hidden border-t border-[color:var(--glass-border)] bg-[color:var(--glass)] px-3 py-3 backdrop-blur-md md:block md:px-8 md:py-5">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 text-xs text-ink-muted md:flex-row md:justify-between md:gap-4 md:text-sm">
           <div className="flex flex-col items-center gap-2 md:mb-0 md:flex-row md:flex-wrap md:items-center md:gap-x-3">
             <button
               type="button"

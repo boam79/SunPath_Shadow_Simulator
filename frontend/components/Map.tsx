@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Map, { Marker, NavigationControl, GeolocateControl, Source, Layer } from 'react-map-gl/maplibre';
+import type { MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { MapPin, Sun } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
@@ -18,6 +19,8 @@ interface MapComponentProps {
 
 export default function MapComponent({ location, onLocationChange, currentDataPoint, solarSeries, currentTime }: MapComponentProps) {
   const { t } = useI18n();
+  const mapRef = useRef<MapRef>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [viewState, setViewState] = useState({
     longitude: location?.lon || 126.9780,
     latitude: location?.lat || 37.5665,
@@ -33,23 +36,42 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
       setGeolocationSupported(true);
     }
   }, []);
+
+  // Container size changes (mobile flex/absolute) → force MapLibre resize
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => {
+      try {
+        mapRef.current?.getMap()?.resize();
+      } catch {
+        /* ignore */
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   
-  // MapLibre 스타일을 state로 관리하여 불필요한 재렌더링 방지
+  // Prefer Carto basemap (stable CDN) over OSM direct tiles
   const [mapStyle] = useState({
     version: 8 as const,
     sources: {
-      'osm': {
+      'basemap': {
         type: 'raster' as const,
-        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tiles: [
+          'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        ],
         tileSize: 256,
-        attribution: '© OpenStreetMap contributors'
+        attribution: '© OpenStreetMap © CARTO'
       }
     },
     layers: [
       {
-        id: 'osm',
+        id: 'basemap',
         type: 'raster' as const,
-        source: 'osm'
+        source: 'basemap'
       }
     ]
   });
@@ -156,13 +178,21 @@ export default function MapComponent({ location, onLocationChange, currentDataPo
   };
 
   return (
-    <div className="w-full h-full relative">
+    <div ref={containerRef} className="absolute inset-0 h-full min-h-[240px] w-full">
       <Map
+        ref={mapRef}
         {...viewState}
         onMove={(evt) => setViewState(evt.viewState)}
         onClick={handleMapClick}
         mapStyle={mapStyle}
         style={{ width: '100%', height: '100%' }}
+        onLoad={(e) => {
+          try {
+            e.target.resize();
+          } catch {
+            /* ignore */
+          }
+        }}
       >
         {/* Navigation Controls */}
         <NavigationControl position="top-right" />

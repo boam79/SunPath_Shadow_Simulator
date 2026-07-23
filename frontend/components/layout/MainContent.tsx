@@ -10,7 +10,12 @@ import { wallClockInstant } from '@/lib/time-wallclock';
 
 // Dynamically import Map to avoid SSR issues
 const Map = dynamic(() => import('@/components/Map'), {
-  ssr: false
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full min-h-[240px] w-full items-center justify-center bg-[#dbeaf5] text-sm font-medium text-ink-muted dark:bg-slate-900">
+      Loading map…
+    </div>
+  ),
 });
 
 /** `mapOnly` / `dataOnly`: 모바일 하단 탭용. `full`: 기본(데스크톱 포함). */
@@ -197,26 +202,26 @@ export default function MainContent({
   }, [solarData?.summary?.sunset, locale]);
 
   return (
-    <div className={`flex flex-1 flex-col overflow-hidden ${mapOnly ? 'min-h-0' : ''}`}>
+    <div className={`flex h-full min-h-0 flex-1 flex-col overflow-hidden ${mapOnly ? '' : ''}`}>
       {showMap && (
         <div
-          className={`z-20 ${
-            mapOnly ? 'flex min-h-0 flex-1 flex-col' : 'sticky top-0'
+          className={`z-20 min-h-0 ${
+            mapOnly ? 'relative flex flex-1 flex-col' : 'sticky top-0 shrink-0'
           }`}
         >
           <div
-            className={`mx-auto w-full ${
-              mapOnly
-                ? 'flex min-h-0 flex-1 flex-col px-0 pb-0 pt-0'
-                : 'max-w-none px-0 md:px-0'
+            className={`relative w-full ${
+              mapOnly ? 'min-h-0 flex-1' : ''
             }`}
           >
             <div
-              className={`d1-map-stage relative bg-sky/30 dark:bg-slate-950 ${
-                mapOnly ? 'flex min-h-0 flex-1 flex-col rounded-none' : 'h-[min(72vh,780px)] flex-none md:h-[calc(100vh-7.5rem)]'
+              className={`d1-map-stage relative bg-[#dbeaf5] dark:bg-slate-950 ${
+                mapOnly
+                  ? 'absolute inset-0 min-h-[240px]'
+                  : 'h-[min(72vh,780px)] flex-none md:h-[calc(100vh-7.5rem)]'
               }`}
             >
-              <div className="relative h-full min-h-0 w-full flex-1 overflow-hidden">
+              <div className="absolute inset-0 min-h-[240px] w-full overflow-hidden">
                 <Map
                   location={location}
                   onLocationChange={handleLocationChange}
@@ -226,6 +231,8 @@ export default function MainContent({
                 />
               </div>
             </div>
+            {/* Reserve height when map is absolute (mapOnly) */}
+            {mapOnly && <div className="h-full min-h-[50dvh] w-full" aria-hidden />}
           </div>
         </div>
       )}
