@@ -332,6 +332,13 @@ export default {
     shadowPoly: '그림자 면',
   },
 
+  map3d: {
+    controlsAria: '지도 3D 설정',
+    terrain: '지형',
+    buildings: '건물',
+    sunColumn: '태양 높이',
+  },
+
   panelTilt: {
     title: '패널 기울기 (POA)',
     tilt: '기울기',

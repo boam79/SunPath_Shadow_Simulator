@@ -332,6 +332,13 @@ export default {
     shadowPoly: 'Shadow area',
   },
 
+  map3d: {
+    controlsAria: 'Map 3D settings',
+    terrain: 'Terrain',
+    buildings: 'Buildings',
+    sunColumn: 'Sun height',
+  },
+
   panelTilt: {
     title: 'Panel tilt (POA)',
     tilt: 'Tilt',
