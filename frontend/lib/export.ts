@@ -20,6 +20,7 @@ export function exportToCSV(data: SolarCalculationResponse, filename?: string): 
     'DNI (W/m²)',
     'DHI (W/m²)',
     'PAR (W/m²)',
+    'POA (W/m²)',
     'Shadow Length (m)',
     'Shadow Direction (°)'
   ];
