@@ -15,7 +15,7 @@ export default function Sidebar({
   objectHeight,
   setObjectHeight,
   currentTime,
-  setCurrentTime,
+  setCurrentTime: _setCurrentTime,
   solarData,
   timeline,
   compareEnabled = false,
