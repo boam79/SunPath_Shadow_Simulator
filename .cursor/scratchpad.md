@@ -31,6 +31,15 @@
 코드베이스 정적 분석으로 **확정 버그 18건**과 **고도화 제안(P0~P2)** 을 식별함.
 목표는 MVP 정확도(타임존)·클라이언트 호환성·보안(캐시) 결함을 우선 정리하고, UX/테스트 고도화로 이어가는 것.
 
+### 2026-07-23 Planner: 태양 경로 분석·데이터 고도화
+
+**역할:** Planner (분석·제안만, 코드 변경 없음)
+
+현재 제품은 clear-sky 통합 API + 지도 HUD/차트/최적화로 “하루 시뮬레이션”은 되지만, **진짜 태양 경로 분석**과 **데이터 깊이**는 반쯤만 노출됨.  
+이미 계산·별도 API에 있는 값(PAR, POA, polygon, weather shortwave, solar_noon, total kWh)이 UI에 안 나오거나, 지도 “경로”가 실제로는 **그림자 끝점 궤적**인 점이 핵심 갭.
+
+목표: 분석 정확도·가독성·도메인(건축/태양광/농업) 맞춤 데이터를 단계적으로 드러내기.
+
 ### 차별화 포인트
 - 기존 CAD/BIM 도구 대비 낮은 진입 장벽
 - 단순 일출/일몰 시간 제공 서비스를 넘어선 동적 시뮬레이션
@@ -168,6 +177,59 @@
 2. **정확도 묶음 B**: B1+B9 timezone (백엔드 IANA + 프론트 파싱)
 3. **캐시/보안 묶음 C**: B2+B3+B4
 4. 이후 P1 레이스/검증/모바일 Timeline
+
+---
+
+### 2026-07-23 — 태양 경로 분석 · 데이터 고도화 (Planner)
+
+**현황 요약**
+- 통합 `POST /api/v1/integrated/calculate`: sun(alt/az/zenith/hour_angle), irradiance(GHI/DNI/DHI/PAR), shadow(length/dir/coords), summary(일출몰·noon·day_length·max_alt·total_irradiance)
+- UI 노출: HUD(고도·GHI·그림자길이), Chart(고도/방위·GHI/DNI/DHI·그림자), Optimizer, 계절(고도·일장만), WeatherStrip(운량·강수%)
+- **미연결·오해:** 지도 “태양 경로”≈그림자 tip 궤적; POA/tilt; shadow polygon; weather shortwave 미표시; AdvancedOptions interval/sky model 미반영; altitude=0 고정; season “일사” 카피는 실제 미표시
+
+#### A. 태양 경로 분석 (시각·기하)
+
+| ID | 제안 | 성공 기준 | 침습도 |
+|----|------|-----------|--------|
+| SP1 | **진태양 하루 궤적** (지도 또는 천구/방위-고도 플롯) — tip trail과 라벨 분리 | “태양 경로”와 “그림자 끝 궤적” 레전드 구분, 주간 점만 | 중 (Map/Chart) |
+| SP2 | Timeline 스크럽 **툴팁** (시각·고도·GHI·그림자) | 재생/드래그 시 현재 포인트 수치 1줄 | 소 |
+| SP3 | Summary **계기판** (일출·남중·일몰·일장·최대고도·총 kWh/m²) | analytics/HUD에 summary 6필드 노출 | 소 (이미 API 있음) |
+| SP4 | Shadow **폴리곤**/건물 footprint (Shadow API 연결) | 선택 시 면적 그림자 폴리라인 | 중 |
+| SP5 | 극지/백야 상태 배너 (polar conditions) | 고위도 날짜에서 경고+일장 정합 | 소~중 |
+
+#### B. 데이터·일사 고도화
+
+| ID | 제안 | 성공 기준 | 침습도 |
+|----|------|-----------|--------|
+| SD1 | **실측/예보 보정**: Open-Meteo shortwave·운량 vs clear-sky GHI 이중 시리즈 | 차트 토글 “맑은날 모델 / 기상 보정” | 중 |
+| SD2 | **POA** (패널 tilt/azimuth) → 통합 API + 차트 | AdvancedOptions 또는 비교 탭에서 POA 곡선 | 중~대 |
+| SD3 | **PAR** 농업 모드 (차트·HUD·프리셋) | 농업 프리셋 시 PAR 기본 노출 | 소 |
+| SD4 | 계절 비교에 **총/최대 GHI·최소 그림자** | SeasonComparison 카드 수치 확장 (카피 정합) | 소 |
+| SD5 | 사이트 **고도·IANA TZ**를 geocode/timezonefinder로 request 반영 | altitude≠0, wall-clock 정합 유지 | 소 (기반 일부 완료) |
+| SD6 | interval/sky model **실연결** (또는 UI 제거) | 15/30/60분 선택 시 series 밀도 변화 | 소 |
+
+#### C. 내보내기·분석 도구
+
+| ID | 제안 | 성공 기준 |
+|----|------|-----------|
+| SE1 | CSV에 shadow coords·summary 블록·(옵션) weather 열 | 엑셀에서 하루 요약+시계열 |
+| SE2 | “분석 리포트” PDF/인쇄: noon·total kWh·최적 구간 | printReport가 summary 전부 반영 |
+| SE3 | 비교 A/B 높이 외에 **날짜/위치 A-B** 스냅샷 | 비교 탭에서 delta 표 |
+
+#### D. 권장 실행 묶음 (승인 후 Executor 1묶음씩)
+
+1. **분석 노출 묶음 S0 (최소·즉시 가치)** — SP2, SP3, SD4, SE2  
+   - 이미 있는 데이터를 UI에 올리기. 백엔드 거의 불필요.
+2. **진태양 경로 묶음 S1** — SP1 (+ 레전드/카피 수정)  
+   - “태양 경로 분석” 제품 약속과 UI 일치.
+3. **일사 신뢰 묶음 S2** — SD1, SD5, SD6  
+   - 기상 보정 + 옵션 실연결.
+4. **도메인 묶음 S3** — SD2(POA)·SD3(PAR)·SP4(폴리곤)  
+   - 태양광/농업/건축 차별화.
+
+**비목표(이번 제안에서 제외):** DEM 지형 그림자 고정밀, BIM 건물 메시, Perez 전면 교체(연구 과제).
+
+**사용자 확인 필요:** S0 / S1 / S2 / S3 중 Executor로 진행할 묶음(복수 가능).
 
 ---
 
@@ -649,6 +711,7 @@
 ## 📊 Project Status Board
 
 ### 🔵 To Do (대기 중)
+- [ ] **[Planner 2026-07-23] 태양경로·데이터 고도화** — S0(노출) / S1(진태양경로) / S2(기상보정) / S3(POA·PAR·폴리곤) 승인 대기
 - [ ] **[Planner 2026-07-23] 사이드바 UX S1 Instrument Console** — 방향 승인 대기 (S1/S2/S3)
 - [ ] **[Planner 2026-07-23] UI/UX 디자인 리프레시** (D1 Solar Instrument 권장) — 방향 승인 대기
 - [ ] **[Planner 2026-07-23] 버그 핫픽스 A** (printReport/Chart/cache 400/end_lat/Timeline End/error clear) — 승인 대기
@@ -844,6 +907,19 @@
 ---
 
 ## 💬 Executor's Feedback or Assistance Requests
+
+### 2026-07-23 - Planner: 태양 경로 분석·데이터 고도화 제안
+
+**역할:** Planner — 코드 변경 없음. Key Challenges에 SP/SD/SE 표와 실행 묶음 S0–S3 기록.
+
+**한 줄 진단:** 계산은 있는데 UI가 “경로·일사 분석”을 다 안 보여 줌. 지도 경로는 그림자 tip 궤적.
+
+**권장 첫 묶음:** **S0** (Summary 계기판 + Timeline 툴팁 + 계절 GHI + 리포트) → 바로 체감, 리스크 최소.  
+다음: **S1** 진태양 궤적으로 제품 약속 정합.
+
+**사용자에게 물을 것:** Executor로 **S0 / S1 / S2 / S3** 중 무엇을 진행할지.
+
+---
 
 ### 2026-07-23 - Executor: PC+모바일 유저스토리 전수 · 버그 수정
 
