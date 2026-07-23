@@ -845,6 +845,22 @@
 
 ## 💬 Executor's Feedback or Assistance Requests
 
+### 2026-07-23 - Executor: 지도 3D 태양 시뮬 M0–M3 전부
+
+**역할:** Executor — 「빼지 말고 전부」
+
+**구현:**
+- OpenFreeMap Liberty + Terrarium DEM + building-3d
+- 2D/3D · 지형 · 건물 토글, pitch/bearing, 시간대 sky
+- 태양 extrusion 기둥/경로/광선, 그림자 slab + polygon
+- 모바일 exaggeration↓; BIM 레이캐스트는 slab 근사
+
+**검증:** vitest 18 · next build OK
+
+**사용자 확인:** 3D 토글 후 지형/건물·재생 시 태양 기둥 높이.
+
+---
+
 ### 2026-07-23 - Executor: 태양경로·데이터 고도화 S0–S3 전부 구현
 
 **역할:** Executor — 사용자 「전부 진행해」
