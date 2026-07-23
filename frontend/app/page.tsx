@@ -195,7 +195,7 @@ function HomeInner() {
         </div>
       )}
 
-      <footer className="mt-auto hidden border-t border-[color:var(--glass-border)] bg-[color:var(--glass)] px-3 py-3 backdrop-blur-md md:block md:px-8 md:py-5">
+      <footer className="mt-auto hidden shrink-0 border-t border-[color:var(--glass-border)] bg-[color:var(--glass)] px-3 py-2.5 backdrop-blur-md md:block md:px-8 md:py-3">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 text-xs text-ink-muted md:flex-row md:justify-between md:gap-4 md:text-sm">
           <div className="flex flex-col items-center gap-2 md:mb-0 md:flex-row md:flex-wrap md:items-center md:gap-x-3">
             <button

@@ -11,6 +11,7 @@ export interface WeatherHourly {
 export interface WeatherData {
   hourly: WeatherHourly;
   daily: { sunrise: string[]; sunset: string[] };
+  unavailable?: boolean;
 }
 
 export async function fetchWeather(lat: number, lon: number, date: string): Promise<WeatherData | null> {
@@ -22,7 +23,10 @@ export async function fetchWeather(lat: number, lon: number, date: string): Prom
     });
     const res = await fetch(`/api/weather?${params}`);
     if (!res.ok) return null;
-    return await res.json() as WeatherData;
+    const data = (await res.json()) as WeatherData;
+    // 예보 범위 밖 등 soft-empty 응답은 UI에서 숨김 (콘솔 502 대신 200)
+    if (data.unavailable || !data.hourly?.cloudcover?.length) return null;
+    return data;
   } catch {
     return null;
   }

@@ -843,6 +843,20 @@
 
 ## 💬 Executor's Feedback or Assistance Requests
 
+### 2026-07-23 - Executor: PC 유저 스토리 검증·수정
+
+**방법:** Playwright Chromium 1440×900 / 1280×720로 production 유저 스토리 실행 (온보딩 닫기 → 검색 → 재생 → 날짜/높이 → 지도 클릭 → 차트 → 공유).
+
+**발견:**
+1. PC 지도 `md:h-[calc(100vh-7.5rem)]`가 header+footer를 무시 → 지도가 푸터와 겹치고 차트 영역 높이 ≈0
+2. `/api/weather`가 Open-Meteo 예보 윈도우 밖 날짜(예: 동지)에 502 → 콘솔 에러 스팸
+3. (테스트 스크립트 실수) 위도 number input에 높이 20 입력 → 실제 버그 아님
+
+**수정:** MainContent PC 지도 높이 `min(52dvh, 100dvh-14rem)` + full 레이아웃 스크롤; weather는 archive 폴백/빈 200; footer 패딩 축소.
+
+**사용자 확인:** PC에서 푸터 겹침·동지 날짜 콘솔 502가 사라졌는지 확인 요청.
+
+
 ### 2026-07-23 - Executor: D1 적용 + Vercel 빌드 수정
 
 **빌드 에러 원인:** `MainContent.tsx`에서 `target` 변수 제거 후 `target.toISOString()` 잔존 → TypeError. `new Date(tt).toISOString()`로 수정.
@@ -1428,6 +1442,11 @@ Task 12 (차트)를 건너뛰고 핵심 기능 테스트 후 최종 정리합니
 ---
 
 ## 📚 Lessons Learned
+
+### 2026-07-23 PC 검증
+- 모바일용 `100vh` 지도 높이를 데스크톱에 그대로 쓰면 footer가 document flow에 있을 때 반드시 겹침 → `100dvh - (header+footer)` 또는 flex 자식 높이 사용
+- Open-Meteo forecast `start_date`는 약 ±수주 윈도우만 허용. 밖이면 400 → 프록시가 502로 감싸면 DevTools에만 보이는 “PC 에러”처럼 느껴짐. soft-empty 200 또는 archive 폴백이 맞음
+- Playwright로 number input `.first()`는 위도 필드일 수 있음 — 높이 변경 테스트는 placeholder/label로 지정
 
 ### 2026-07-23 Planner 감사에서 확인된 교훈
 - `day_length`는 **hours** (export는 올바름, printReport만 /60 오용) — 단위 주석/타입 alias 권장

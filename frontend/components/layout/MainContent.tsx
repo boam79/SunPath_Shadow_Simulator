@@ -202,7 +202,11 @@ export default function MainContent({
   }, [solarData?.summary?.sunset, locale]);
 
   return (
-    <div className={`flex h-full min-h-0 flex-1 flex-col overflow-hidden ${mapOnly ? '' : ''}`}>
+    <div
+      className={`flex h-full min-h-0 flex-1 flex-col ${
+        mapOnly ? 'overflow-hidden' : 'overflow-y-auto'
+      }`}
+    >
       {showMap && (
         <div
           className={`z-20 min-h-0 ${
@@ -218,7 +222,8 @@ export default function MainContent({
               className={`d1-map-stage relative bg-[#dbeaf5] dark:bg-slate-950 ${
                 mapOnly
                   ? 'absolute inset-0 min-h-[240px]'
-                  : 'h-[min(72vh,780px)] flex-none md:h-[calc(100vh-7.5rem)]'
+                  : // PC: header+footer(~14rem)를 빼서 푸터와 겹치지 않게. 차트 영역도 남김.
+                    'h-[min(56vh,560px)] flex-none md:h-[min(52dvh,calc(100dvh-14rem))]'
               }`}
             >
               <div className="absolute inset-0 min-h-[240px] w-full overflow-hidden">
