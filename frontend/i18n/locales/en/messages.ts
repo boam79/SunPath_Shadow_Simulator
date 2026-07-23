@@ -30,7 +30,7 @@ export default {
 
   header: {
     title: 'SunPath & Shadow',
-    subtitle: 'Pick a place — see today’s sun and shadows, the friendly way',
+    subtitle: 'See the sun move — shadows in real time',
     openSidebar: 'Open sidebar',
     toggleDark: 'Toggle dark mode',
     selectLanguage: 'Select language',

@@ -1,6 +1,6 @@
 'use client';
 
-import { Sun, Moon, Globe, Sparkles } from 'lucide-react';
+import { Sun, Moon, Globe } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n-context';
 import { locales, localeNames } from '@/lib/i18n';
@@ -63,11 +63,11 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-amber-100/90 bg-white/75 shadow-soft backdrop-blur-md dark:border-slate-700/80 dark:bg-slate-900/75">
-      <div className="container mx-auto max-w-7xl px-4 py-3 md:py-4">
+    <header className="sticky top-0 z-50 border-b border-[color:var(--glass-border)] bg-[color:var(--glass)] backdrop-blur-md">
+      <div className="container mx-auto max-w-7xl px-4 py-3 md:py-3.5">
         <div className="flex items-center justify-between gap-3">
           <div
-            className="flex min-w-0 cursor-pointer select-none items-center gap-3 rounded-2xl p-1 transition-colors hover:bg-amber-50/80 dark:hover:bg-slate-800/60"
+            className="flex min-w-0 cursor-pointer select-none items-center gap-3 rounded-2xl p-1 transition-colors hover:bg-sky/40 dark:hover:bg-slate-800/60"
             onClick={onReset}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -79,15 +79,14 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
             tabIndex={0}
             aria-label={t('header.title')}
           >
-            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-orange-400 to-rose-400 shadow-md ring-2 ring-white/60 dark:ring-amber-200/20">
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sun shadow-sun ring-2 ring-white/50 dark:ring-sun/20">
               <Sun className="h-6 w-6 text-white drop-shadow-sm" />
-              <Sparkles className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 text-amber-100" aria-hidden />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-bold tracking-tight text-stone-800 dark:text-white md:text-xl">
-                {t('header.title')}
+              <h1 className="font-display truncate text-xl font-semibold tracking-tight text-ink dark:text-white md:text-2xl">
+                SunPath
               </h1>
-              <p className="truncate text-xs font-medium text-sky-700/90 dark:text-sky-200/90 md:text-sm">
+              <p className="truncate text-xs font-medium text-ink-muted dark:text-sky-200/80 md:text-sm">
                 {t('header.subtitle')}
               </p>
             </div>
@@ -145,13 +144,13 @@ export default function Header({ onReset, onToggleSidebar }: HeaderProps) {
             <button
               type="button"
               onClick={toggleDarkMode}
-              className="rounded-full p-2.5 text-stone-600 transition-colors hover:bg-violet-100/80 hover:text-violet-800 dark:text-stone-200 dark:hover:bg-slate-800 dark:hover:text-amber-300"
+              className="rounded-full p-2.5 text-ink-muted transition-colors hover:bg-sky/50 hover:text-ink dark:text-stone-200 dark:hover:bg-slate-800 dark:hover:text-sun"
               aria-label={t('header.toggleDark')}
             >
               {darkMode ? (
-                <Sun className="h-5 w-5 text-amber-400" />
+                <Sun className="h-5 w-5 text-sun" />
               ) : (
-                <Moon className="h-5 w-5 text-violet-500" />
+                <Moon className="h-5 w-5 text-ink-muted" />
               )}
             </button>
 

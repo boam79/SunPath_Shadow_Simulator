@@ -35,14 +35,14 @@ export default function OnboardingModal() {
       aria-modal="true"
       aria-labelledby="onboarding-title"
     >
-      <div className="w-full max-w-md rounded-[1.75rem] border border-amber-100/90 bg-white p-6 shadow-2xl dark:border-slate-600 dark:bg-slate-800 sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-sky-600 dark:text-sky-400">
+      <div className="w-full max-w-md rounded-[1.75rem] border border-[color:var(--glass-border)] bg-[color:var(--glass)] p-6 shadow-soft backdrop-blur-md sm:p-8">
+        <p className="text-sm font-semibold uppercase tracking-wide text-sun-deep">
           {t('onboarding.kicker')}
         </p>
-        <h2 id="onboarding-title" className="mt-1 text-xl font-bold tracking-tight text-stone-800 dark:text-white">
+        <h2 id="onboarding-title" className="font-display mt-1 text-xl font-semibold tracking-tight text-ink dark:text-white">
           {t('onboarding.title')}
         </h2>
-        <ol className="mt-5 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-stone-600 dark:text-stone-300">
+        <ol className="mt-5 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-ink-muted">
           <li>{t('onboarding.step1')}</li>
           <li>{t('onboarding.step2')}</li>
           <li>{t('onboarding.step3')}</li>
@@ -50,7 +50,7 @@ export default function OnboardingModal() {
         <button
           type="button"
           onClick={dismiss}
-          className="mt-8 w-full rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-500 py-3.5 text-base font-bold text-white shadow-md transition hover:from-sky-600 hover:to-cyan-600"
+          className="d1-sun-cta mt-8 w-full rounded-2xl py-3.5 text-base shadow-sun"
         >
           {t('onboarding.cta')}
         </button>

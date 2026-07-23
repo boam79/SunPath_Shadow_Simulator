@@ -2,39 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* D1 Solar Instrument tokens */
 :root {
-  --background: #fffdfb;
-  --foreground: #1c1917;
+  --sky: #e8f4fc;
+  --horizon: #f7f0e8;
+  --sun: #f5a524;
+  --sun-deep: #e08e0a;
+  --ink: #1c2430;
+  --ink-muted: #5a6573;
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(28, 36, 48, 0.08);
+  --background: var(--horizon);
+  --foreground: var(--ink);
   --surface: #ffffff;
-  --surface-muted: #fff8f0;
-  --accent-warm: #fb923c;
-  --accent-sky: #38bdf8;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f8fafc;
-    --surface: #1e293b;
-    --surface-muted: #172554;
-    --accent-warm: #fdba74;
-    --accent-sky: #7dd3fc;
-  }
+  --surface-muted: var(--sky);
+  --accent-warm: var(--sun);
+  --accent-sky: #5ba4d6;
 }
 
 html.dark {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --surface: #1e293b;
-  --surface-muted: #172554;
-  --accent-warm: #fdba74;
-  --accent-sky: #7dd3fc;
+  --sky: #152033;
+  --horizon: #0f1620;
+  --sun: #f5a524;
+  --sun-deep: #ffc14d;
+  --ink: #f1f5f9;
+  --ink-muted: #94a3b8;
+  --glass: rgba(15, 22, 32, 0.82);
+  --glass-border: rgba(245, 165, 36, 0.12);
+  --background: var(--horizon);
+  --foreground: var(--ink);
+  --surface: #152033;
+  --surface-muted: #1a2538;
+  --accent-warm: var(--sun);
+  --accent-sky: #7eb8e0;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1, h2, .font-display {
+  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
 }
 
 @layer utilities {
@@ -45,12 +55,56 @@ body {
 
 @layer components {
   .app-page-bg {
-    @apply min-h-screen bg-gradient-to-br from-amber-50 via-orange-50/50 to-sky-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
+    min-height: 100vh;
+    background:
+      radial-gradient(120% 80% at 70% 0%, var(--sky) 0%, transparent 55%),
+      linear-gradient(165deg, var(--sky) 0%, var(--horizon) 48%, #efe6d8 100%);
   }
+  html.dark .app-page-bg {
+    background:
+      radial-gradient(100% 70% at 80% 0%, #1e3a5f 0%, transparent 50%),
+      linear-gradient(165deg, #0f1620 0%, #152033 55%, #0c121a 100%);
+  }
+
+  .d1-glass {
+    @apply border backdrop-blur-md;
+    background: var(--glass);
+    border-color: var(--glass-border);
+  }
+
+  .d1-map-stage {
+    @apply relative overflow-hidden;
+    box-shadow: 0 12px 40px -16px rgba(28, 36, 48, 0.28);
+  }
+
+  .d1-sun-cta {
+    @apply font-semibold text-white transition;
+    background: linear-gradient(135deg, var(--sun) 0%, var(--sun-deep) 100%);
+  }
+  .d1-sun-cta:hover {
+    filter: brightness(1.05);
+  }
+
   .friendly-input {
-    @apply rounded-xl border border-amber-100/90 bg-white/95 text-stone-800 shadow-sm transition-shadow placeholder:text-stone-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300/40 dark:border-stone-600 dark:bg-slate-800/95 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-sky-500 dark:focus:ring-sky-500/30;
+    @apply rounded-xl border bg-white/90 text-[color:var(--ink)] shadow-sm transition-shadow placeholder:text-[color:var(--ink-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--sun)]/35 dark:bg-slate-900/80 dark:text-stone-100;
+    border-color: var(--glass-border);
   }
+
   .friendly-card {
-    @apply rounded-2xl border border-amber-100/80 bg-white/90 shadow-card dark:border-stone-600 dark:bg-slate-800/90;
+    @apply rounded-2xl border backdrop-blur-sm;
+    background: var(--glass);
+    border-color: var(--glass-border);
+  }
+
+  .d1-timeline-dock {
+    @apply d1-glass rounded-2xl px-3 py-2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

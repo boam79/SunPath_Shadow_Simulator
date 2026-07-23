@@ -8,6 +8,7 @@ import MobileBottomNav, { type MobileNavId } from '@/components/layout/MobileBot
 import StructuredData from '@/components/StructuredData';
 import KakaoPayDonation from '@/components/KakaoPayDonation';
 import OnboardingModal from '@/components/OnboardingModal';
+import Timeline from '@/components/Timeline';
 import { useI18n } from '@/lib/i18n-context';
 import { useSolarPageState } from '@/lib/hooks/useSolarPageState';
 
@@ -115,22 +116,20 @@ function HomeInner() {
 
       {isLoading && loadingMs > 5000 && (
         <div
-          className="flex items-center gap-3 border-b border-amber-200/90 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 text-sm font-medium text-amber-900 dark:border-amber-800/50 dark:from-amber-950/50 dark:to-orange-950/40 dark:text-amber-100"
+          className="flex items-center gap-3 border-b border-[color:var(--glass-border)] bg-sky/60 px-4 py-3 text-sm font-medium text-ink dark:bg-slate-900/80 dark:text-amber-100"
           role="status"
         >
-          <span className="text-lg" aria-hidden>
-            ☀️
-          </span>
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-sun" aria-hidden />
           <span>{coldStartText}</span>
         </div>
       )}
 
       <div className="flex min-h-0 flex-1 flex-col md:flex-row md:overflow-hidden">
-        <div className="hidden min-h-0 shrink-0 md:block md:w-72 md:overflow-y-auto">
+        <div className="hidden min-h-0 shrink-0 md:block md:w-72 md:overflow-y-auto md:border-r md:border-[color:var(--glass-border)] md:bg-[color:var(--glass)] md:backdrop-blur-md">
           <Sidebar {...sidebarProps} />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col pb-20 md:min-h-0 md:pb-0">
+        <div className="relative flex min-h-0 flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:min-h-0 md:pb-0">
           <MainContent
             location={location}
             date={date}
@@ -143,6 +142,23 @@ function HomeInner() {
             onRetry={fetchSolarData}
             layout={mainLayout}
           />
+
+          {/* D1: mobile map timeline dock — play without opening settings */}
+          {isMobile && mobilePanel === 'map' && !moreSheetOpen && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-[4.75rem] z-30 px-3 md:hidden">
+              <div className="pointer-events-auto d1-timeline-dock shadow-soft">
+                <Timeline
+                  currentTime={currentTime}
+                  onTimeChange={handleTimeChange}
+                  isPlaying={isPlaying}
+                  onPlayPause={handlePlayPause}
+                  startTime={tlStart}
+                  endTime={tlEnd}
+                  variant="sidebar"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -185,7 +185,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
 
   if (isLoading) {
     return (
-      <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+      <div className="bg-gradient-to-br from-sky/40 to-horizon rounded-lg p-4 border border-[color:var(--glass-border)]">
         <div className="flex items-center space-x-3">
           <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-pulse" />
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('optimization.analysis')}</span>
@@ -201,7 +201,7 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
   const opt = optimization.optimization;
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+    <div className="d1-glass rounded-lg p-4">
       <div className="flex items-center space-x-2 mb-4">
         <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -287,17 +287,17 @@ export default function OptimizationPanel({ solarData }: OptimizationPanelProps)
 
         {/* Shadow Interference Periods */}
         {opt.shadow_interference_periods.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+          <div className="d1-glass rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+              <AlertTriangle className="w-4 h-4 text-sun-deep" />
+              <span className="text-xs font-semibold text-ink-muted">
                 {t('optimization.shadowInterference')}
               </span>
             </div>
             <div className="space-y-2">
               {opt.shadow_interference_periods.map((period, idx) => (
                 <div key={idx} className="text-xs">
-                  <span className="font-medium text-purple-900 dark:text-purple-300">
+                  <span className="font-medium text-ink dark:text-stone-200">
                     {period.start} ~ {period.end}
                   </span>
                   <span className="text-gray-600 dark:text-gray-400 ml-2">

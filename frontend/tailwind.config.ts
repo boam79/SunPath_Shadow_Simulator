@@ -12,21 +12,35 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        /** 페이지 배경 틴트 (라이트) */
+        sky: {
+          DEFAULT: "var(--sky)",
+          soft: "#E8F4FC",
+        },
+        horizon: "var(--horizon)",
+        sun: {
+          DEFAULT: "var(--sun)",
+          deep: "var(--sun-deep)",
+        },
+        ink: {
+          DEFAULT: "var(--ink)",
+          muted: "var(--ink-muted)",
+        },
         cream: {
           50: "#fffdfb",
-          100: "#fff8f0",
-          200: "#ffecd8",
-          300: "#fde4c4",
+          100: "#f7f0e8",
+          200: "#efe6d8",
+          300: "#e5d9c6",
         },
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-outfit)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-fraunces)", "ui-serif", "Georgia", "serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
       boxShadow: {
-        soft: "0 4px 24px -6px rgba(251, 191, 36, 0.18), 0 12px 32px -12px rgba(14, 165, 233, 0.12)",
-        card: "0 2px 14px rgba(251, 146, 60, 0.1)",
+        soft: "0 8px 32px -12px rgba(28, 36, 48, 0.18)",
+        card: "0 4px 20px -8px rgba(28, 36, 48, 0.14)",
+        sun: "0 4px 20px -4px rgba(245, 165, 36, 0.45)",
       },
       borderRadius: {
         "4xl": "2rem",

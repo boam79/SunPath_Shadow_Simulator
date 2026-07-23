@@ -30,7 +30,7 @@ export default {
 
   header: {
     title: 'SunPath & Shadow',
-    subtitle: '위치만 정하면, 오늘의 해와 그림자가 쉽게 보여요',
+    subtitle: '해가 움직이는 걸 보세요 — 그림자가 실시간으로',
     openSidebar: '사이드바 열기',
     toggleDark: '다크모드 토글',
     selectLanguage: '언어 선택',

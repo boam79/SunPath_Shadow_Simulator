@@ -171,6 +171,53 @@
 
 ---
 
+
+### 2026-07-23 — UI/UX · 프론트 디자인 제안 (Planner)
+
+현재 UI는 **도구형 대시보드**(사이드바 + 지도 + 차트)이며, cream/amber/sky “friendly” 테마와 Geist 폰트, 카드형 패널이 많다. 아래는 제품 정체성(태양·그림자·장소)을 살리는 재디자인 방향.
+
+#### 디자인 방향 (택 1 권장)
+
+**D1. Solar Instrument (추천)**  
+- 컨셉: 측량·일조 계측기. 지도가 무대, 컨트롤은 얇은 오버레이.
+- 팔레트: 낮 하늘 `#E8F4FC` → 지평 `#F7F0E8`, 액센트 태양 `#F5A524`, 그림자 잉크 `#1C2430` (퍼플/크림-테라코타 클리셰 회피)
+- 타이포: 디스플레이 `Fraunces` 또는 `Source Serif 4`(브랜드만), UI `Söhne`/대체로 `Outfit` 또는 `DM Sans` (Geist 탈피)
+- 1화면: 브랜드 워드마크 + 짧은 한 줄 + 지도 full-bleed + Play CTA. 통계/차트는 스크롤 아래 또는 드로어.
+
+**D2. Architectural Quiet**  
+- 미니멀 건축 도면 톤. 낮은 채도, 헤어라인, 여백. 카드 최소화.
+- 액센트는 단 하나(amber sun). 다크모드는 “야경”이 아니라 제도판 딥 네이비.
+
+#### UX 개선 (우선순위)
+
+| ID | 제안 | 이유 |
+|----|------|------|
+| U1 | 모바일 지도 하단에 **컴팩트 Timeline** 고정 | 지금 Timeline이 설정 시트에만 있어 “시간→그림자” 루프가 끊김 |
+| U2 | 사이드바를 **Primary / Advanced** 2단**으로 | Single 탭에 검색·날짜·높이·비교·내보내기·기부가 혼재 |
+| U3 | 첫 방문: 온보딩 대신 **지도 위 3초 코치마크** (위치 핀→시간 슬라이더→재생) | 모달 텍스트 3단계는 스킵 유도 |
+| U4 | Summary를 **한 줄 계기판**(일출·일몰·최대고도·총일사)으로 | 카드 나열보다 스캔 속도↑ |
+| U5 | 차트는 기본 **고도 1개**, 나머지는 “더 보기” | 차트 3단 카드는 정보 과부하 |
+| U6 | 그림자 색 = 시간대 그라데이션과 레전드 일치 | 레전드 보라 vs 실선 불일치 |
+| U7 | 로딩: 콜드스타트 배너 대신 **지도 스켈레톤 + 예상 대기 초** | 불안감↓ |
+| U8 | 접근성: Timeline 키보드(←→), focus trap, `prefers-reduced-motion` | MVP 갭 |
+
+#### 비주얼 모션 (2–3개만)
+
+1. 태양 마커: 고도에 따른 미세 scale/opacity (pulse 남발 금지)
+2. 타임라인 재생 시 그림자 선 length 보간 (이미 있음) + 0.2s ease
+3. 패널 open/close: height/opacity만, bounce 없음
+
+#### 구현 묶음 (Executor 시)
+
+1. **Theme tokens** — CSS 변수(sun/shadow/sky/ink), 폰트 교체, purple 그라데이션 제거  
+2. **Map-first layout** — 데스크톱도 지도 비중↑, 사이드 축소/접기  
+3. **Mobile Timeline dock** — U1  
+4. **Summary strip + chart progressive disclosure** — U4·U5  
+5. **Coachmark onboarding** — U3  
+
+성공 기준: 모바일에서 지도 탭만으로 재생·그림자 확인 가능; Lighthouse a11y ≥ 90; 브랜드이 첫 뷰포트에서 지도+로고로 식별 가능.
+
+
 ## 📋 High-level Task Breakdown
 
 ### Phase 1: MVP 개발 (목표: 4주)
@@ -602,6 +649,7 @@
 ## 📊 Project Status Board
 
 ### 🔵 To Do (대기 중)
+- [ ] **[Planner 2026-07-23] UI/UX 디자인 리프레시** (D1 Solar Instrument 권장) — 방향 승인 대기
 - [ ] **[Planner 2026-07-23] 버그 핫픽스 A** (printReport/Chart/cache 400/end_lat/Timeline End/error clear) — 승인 대기
 - [ ] **[Planner 2026-07-23] 타임존 정확도 B** (IANA + 프론트 wall-clock)
 - [ ] **[Planner 2026-07-23] 캐시·보안 C** (키 altitude, Shadow null, clear 인증)
@@ -794,6 +842,22 @@
 ---
 
 ## 💬 Executor's Feedback or Assistance Requests
+
+### 2026-07-23 - Executor: D1 적용 + Vercel 빌드 수정
+
+**빌드 에러 원인:** `MainContent.tsx`에서 `target` 변수 제거 후 `target.toISOString()` 잔존 → TypeError. `new Date(tt).toISOString()`로 수정.
+
+**D1 적용:** CSS 토큰(sky/horizon/sun/ink), Outfit+Fraunces, map-first, 모바일 Timeline dock, 퍼플 제거.
+
+**검증:** `next build` 성공, vitest 10, lint OK. master 푸시로 Vercel 재배포 예정.
+
+
+### 2026-07-23 - Planner: UI/UX·프론트 디자인 제안
+
+분석만 수행. 코드 변경 없음. Key Challenges에 D1/D2 방향과 U1–U8 UX 과제 기록.
+
+**사용자 확인:** D1 vs D2, Executor로 Theme+Mobile Timeline부터 진행할지.
+
 
 ### 2026-07-23 - Executor: 버그픽스·고도화 전부 구현
 

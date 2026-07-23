@@ -27,10 +27,10 @@ export default function MobileBottomNav({ active, onSelect }: MobileBottomNavPro
       <button
         type="button"
         onClick={() => onSelect(id)}
-        className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl py-2 transition ${
+          className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl py-2 transition ${
           on
-            ? 'text-sky-600 dark:text-sky-400'
-            : 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200'
+            ? 'text-sun-deep dark:text-sun'
+            : 'text-ink-muted hover:text-ink dark:text-stone-400 dark:hover:text-stone-200'
         }`}
         aria-current={on ? 'page' : undefined}
       >
@@ -42,7 +42,7 @@ export default function MobileBottomNav({ active, onSelect }: MobileBottomNavPro
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-amber-100/90 bg-white/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-6px_24px_rgba(251,191,36,0.12)] backdrop-blur-lg dark:border-slate-700 dark:bg-slate-900/95 md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-[color:var(--glass-border)] bg-[color:var(--glass)] pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-soft backdrop-blur-lg md:hidden"
       aria-label={t('nav.aria')}
     >
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1">

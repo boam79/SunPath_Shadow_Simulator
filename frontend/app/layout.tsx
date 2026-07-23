@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
+import { Outfit, Fraunces } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import I18nWrapper from "@/components/I18nWrapper";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
 });
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
@@ -96,7 +104,7 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased text-stone-800 dark:text-stone-100`}
+        className={`${outfit.variable} ${fraunces.variable} ${geistMono.variable} font-sans antialiased text-ink dark:text-stone-100`}
       >
         <script
           dangerouslySetInnerHTML={{
