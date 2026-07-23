@@ -663,6 +663,7 @@
 ### 🟡 In Progress (진행 중)
 - [x] Task 13: 프론트엔드 - 데이터 내보내기 기능 (완료!)
 - [ ] Task 18: 배포 파이프라인 및 애플리케이션 배포
+- [x] **PC+모바일 유저스토리 E2E · Timeline 이중마운트/a11y 버그픽스** (검증 완료, 사용자 확인 대기)
 
 ### 🟢 Completed (완료)
 
@@ -843,6 +844,23 @@
 ---
 
 ## 💬 Executor's Feedback or Assistance Requests
+
+### 2026-07-23 - Executor: PC+모바일 유저스토리 전수 · 버그 수정
+
+**역할:** Executor
+
+**발견·수정 버그:**
+1. 모바일에서 CSS `hidden` PC Sidebar가 여전히 마운트 → Timeline interval 이중 → 재생 2배속. **조건부 렌더(`onDesktop`/`onMobile`)로 해결.**
+2. `isMobile` 초기 `false`로 모바일 첫 페인트에 PC Sidebar 플래시 → **`null` 미측정 상태** 도입.
+3. `MobileBottomNav`의 `md:hidden`이 JS `isMobile`(UA)과 충돌 → **CSS 제거**, 부모에서만 마운트.
+4. Timeline 재생 컨트롤 `aria-label`/`type=button` 부족 → a11y·E2E 셀렉터 보강.
+5. 날짜·높이·검색 `aria-label` 추가로 숨은/중복 input 오조작 방지.
+
+**검증:** Playwright PC 3 + Mobile 3 = **6 passed**. vitest 10 passed. `next build` OK.
+
+**사용자 확인 요청:** 모바일에서 재생 속도가 정상(1배)인지, 설정 시트 날짜 변경이 보이는 입력으로 되는지.
+
+---
 
 ### 2026-07-23 - Executor: 사이드바 D1 Instrument Console
 
@@ -1505,6 +1523,12 @@ Task 12 (차트)를 건너뛰고 핵심 기능 테스트 후 최종 정리합니
 ---
 
 ## 📚 Lessons Learned
+
+### 2026-07-23 모바일 Timeline 이중 마운트
+- `hidden md:flex`로 감춘 컴포넌트도 React에 마운트되면 `useEffect` interval이 돈다 → 반응형 분기는 **CSS hide가 아니라 조건부 렌더**
+- `isMobile` 초기값을 `false`로 두면 좁은 뷰포트에서 PC 크롬이 한 프레임 마운트됨 → `null` 후 측정
+- Playwright 온보딩은 `goto` 전 `addInitScript(localStorage)`로 닫을 것. CTA 클릭만으로는 race 가능
+- backdrop `aria-label=닫기`와 헤더 텍스트 `닫기`가 둘 다 role=button이면 `.first()`가 backdrop를 집어 타임아웃 → `filter({ hasText })` 사용
 
 ### 2026-07-23 PC map-first
 - Tailwind에서 같은 요소에 `relative`+`absolute`를 같이 넣으면 생성 CSS 순서로 한쪽이 이김 → position은 조건부 단일 클래스만

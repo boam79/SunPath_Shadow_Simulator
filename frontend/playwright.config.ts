@@ -23,5 +23,30 @@ export default defineConfig({
         timeout: 180_000,
         cwd: __dirname,
       },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      testIgnore: /user-stories\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'pc-stories',
+      testMatch: /user-stories\.spec\.ts/,
+      grep: /PC user stories/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: 'mobile-stories',
+      testMatch: /user-stories\.spec\.ts/,
+      grep: /Mobile user stories/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        userAgent:
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+      },
+    },
+  ],
 });

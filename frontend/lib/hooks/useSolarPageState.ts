@@ -37,7 +37,8 @@ export function useSolarPageState() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMs, setLoadingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  /** null = 아직 미측정(SSR/첫 페인트). false로 시작하면 모바일에서 PC Sidebar가 잠깐 마운트됨 */
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [copyToast, setCopyToast] = useState(false);
 
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);

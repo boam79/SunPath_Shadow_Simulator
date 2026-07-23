@@ -42,7 +42,7 @@ export default function MobileBottomNav({ active, onSelect }: MobileBottomNavPro
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-[color:var(--glass-border)] bg-[color:var(--glass)] pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-soft backdrop-blur-lg md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-[color:var(--glass-border)] bg-[color:var(--glass)] pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-soft backdrop-blur-lg"
       aria-label={t('nav.aria')}
     >
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1">

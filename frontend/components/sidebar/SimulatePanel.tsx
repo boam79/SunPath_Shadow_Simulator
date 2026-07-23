@@ -143,6 +143,7 @@ export default function SimulatePanel({
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchResults.length > 0 && setShowResults(true)}
               placeholder={t('sidebar.addressSearchPlaceholder')}
+              aria-label={t('sidebar.addressSearchPlaceholder')}
               className="friendly-input w-full py-2 pl-9 pr-9 text-sm"
             />
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
@@ -252,6 +253,7 @@ export default function SimulatePanel({
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
+          aria-label={t('sidebar.date')}
           className="friendly-input w-full px-3 py-2 text-sm"
         />
         <div className="grid grid-cols-2 gap-1.5">
@@ -317,6 +319,7 @@ export default function SimulatePanel({
           max={100}
           value={objectHeight}
           onChange={(e) => setObjectHeight(parseFloat(e.target.value))}
+          aria-label={t('sidebar.objectHeight')}
           className="w-full accent-[color:var(--sun)]"
         />
         <div className="flex justify-between text-[10px] text-ink-muted">

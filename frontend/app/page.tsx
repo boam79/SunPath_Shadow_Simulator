@@ -70,7 +70,10 @@ function HomeInner() {
     String(Math.round(loadingMs / 1000))
   );
 
-  const mainLayout = isMobile ? (mobilePanel === 'map' ? 'mapOnly' : 'dataOnly') : 'full';
+  const onMobile = isMobile === true;
+  const onDesktop = isMobile === false;
+
+  const mainLayout = onMobile ? (mobilePanel === 'map' ? 'mapOnly' : 'dataOnly') : 'full';
 
   const navActive: MobileNavId = moreSheetOpen ? 'more' : mobilePanel === 'data' ? 'data' : 'map';
 
@@ -125,11 +128,18 @@ function HomeInner() {
       )}
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
-        <div className="hidden min-h-0 shrink-0 md:flex md:w-80 md:flex-col md:overflow-hidden md:border-r md:border-[color:var(--glass-border)] md:bg-[color:var(--glass)] md:backdrop-blur-md lg:w-[22rem]">
-          <Sidebar {...sidebarProps} />
-        </div>
+        {/* PC only — 모바일에서 CSS hidden으로 남겨두면 Timeline이 이중 마운트되어 재생이 2배로 튐 */}
+        {onDesktop && (
+          <div className="flex min-h-0 w-80 shrink-0 flex-col overflow-hidden border-r border-[color:var(--glass-border)] bg-[color:var(--glass)] backdrop-blur-md lg:w-[22rem]">
+            <Sidebar {...sidebarProps} />
+          </div>
+        )}
 
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:min-h-0 md:pb-0">
+        <div
+          className={`relative flex min-h-0 flex-1 flex-col overflow-hidden ${
+            onMobile ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]' : 'pb-0'
+          }`}
+        >
           <MainContent
             location={location}
             date={date}
@@ -144,8 +154,8 @@ function HomeInner() {
           />
 
           {/* D1: mobile map timeline dock — play without opening settings */}
-          {isMobile && mobilePanel === 'map' && !moreSheetOpen && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 px-3 md:hidden">
+          {onMobile && mobilePanel === 'map' && !moreSheetOpen && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 px-3">
               <div className="pointer-events-auto d1-timeline-dock mb-2 shadow-soft">
                 <Timeline
                   currentTime={currentTime}
@@ -162,10 +172,10 @@ function HomeInner() {
         </div>
       </div>
 
-      <MobileBottomNav active={navActive} onSelect={handleMobileNav} />
+      {onMobile && <MobileBottomNav active={navActive} onSelect={handleMobileNav} />}
 
-      {moreSheetOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+      {onMobile && moreSheetOpen && (
+        <div className="fixed inset-0 z-50">
           <button
             type="button"
             className="absolute inset-0 bg-stone-900/45 backdrop-blur-sm"
@@ -219,7 +229,7 @@ function HomeInner() {
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             <KakaoPayDonation
-              isMobile={isMobile}
+              isMobile={onMobile}
               className="inline-flex cursor-pointer items-center rounded-full bg-gradient-to-r from-amber-400 to-yellow-400 px-2.5 py-1 text-[11px] font-bold text-stone-900 shadow-sm transition hover:from-amber-500 hover:to-yellow-500"
               variant="link"
             />

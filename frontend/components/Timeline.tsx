@@ -334,18 +334,22 @@ export default function Timeline({
         <div className={`flex items-center justify-center ${isSidebar ? 'space-x-2' : 'space-x-3 md:space-x-4'}`}>
           {/* Reset */}
           <button
+            type="button"
             onClick={handleReset}
             className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             title={t('timeline.first')}
+            aria-label={t('timeline.first')}
           >
             <SkipBack className={`${isSidebar ? 'w-3.5 h-3.5' : 'w-4 h-4 md:w-5 md:h-5'} text-gray-700 dark:text-gray-300`} />
           </button>
 
           {/* Step Backward */}
           <button
+            type="button"
             onClick={handleStepBackward}
             className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             title={t('timeline.hourBack')}
+            aria-label={t('timeline.hourBack')}
           >
             <span className={`${isSidebar ? 'text-sm' : 'text-lg md:text-xl'} font-bold text-gray-700 dark:text-gray-300`}>-1h</span>
           </button>
@@ -359,6 +363,7 @@ export default function Timeline({
             }}
             className={`${isSidebar ? 'p-2.5' : 'p-3 md:p-4'} bg-blue-600 hover:bg-blue-700 rounded-full transition-colors`}
             title={playing ? t('timeline.pause') : t('timeline.play')}
+            aria-label={playing ? t('timeline.pause') : t('timeline.play')}
             aria-pressed={playing}
           >
             {playing ? (
@@ -370,15 +375,18 @@ export default function Timeline({
 
           {/* Step Forward */}
           <button
+            type="button"
             onClick={handleStepForward}
             className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             title={t('timeline.hourForward')}
+            aria-label={t('timeline.hourForward')}
           >
             <span className={`${isSidebar ? 'text-sm' : 'text-lg md:text-xl'} font-bold text-gray-700 dark:text-gray-300`}>+1h</span>
           </button>
 
           {/* End */}
           <button
+            type="button"
             onClick={() => {
               accumulatedMinutesRef.current = endMinutes;
               onTimeChange(endTime);
@@ -390,6 +398,7 @@ export default function Timeline({
             }}
             className={`${isSidebar ? 'p-1' : 'p-1.5 md:p-2'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             title={t('timeline.last')}
+            aria-label={t('timeline.last')}
           >
             <SkipForward className={`${isSidebar ? 'w-3.5 h-3.5' : 'w-4 h-4 md:w-5 md:h-5'} text-gray-700 dark:text-gray-300`} />
           </button>
@@ -401,7 +410,10 @@ export default function Timeline({
           {[0.5, 1, 2, 5].map((speed) => (
             <button
               key={speed}
+              type="button"
               onClick={() => setPlaySpeedSafe(speed)}
+              aria-label={`${speed}x`}
+              aria-pressed={playSpeed === speed}
               className={`${isSidebar ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs'} rounded-full transition-colors ${
                 playSpeed === speed
                   ? 'bg-blue-600 text-white'
